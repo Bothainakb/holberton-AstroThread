@@ -1,0 +1,105 @@
+IDEA DEVELOPMENT DOCUMENTATION
+
+Introduction
+
+During the idea development stage, our team brainstormed and discussed different project concepts before deciding on the MVP we wanted to develop. We considered three main ideas: AstroThread, Nurture, and a ticket reselling platform.
+
+Each idea was evaluated based on its innovation, technical feasibility, potential impact, MVP scope, and the skills and interests of our team. We discussed the strengths and weaknesses of each concept and considered the challenges that could affect its development.
+
+After this evaluation, we selected AstroThread as our final MVP concept.
+
+1. AstroThread - Selected Idea
+
+Concept:
+
+AstroThread is an interactive research platform focused on physics and astronomy. Instead of being simply an electronic library for research papers, the platform is built around the concept of a "research thread", allowing users to follow a scientific idea from its origins through related research, discoveries, data, and recent developments.
+
+The platform will also include interactive educational games and challenges to make learning about physics and astronomy more engaging.
+
+Main Features:
+
+* Research Threads: Follow a scientific topic from the original idea to the latest research.
+* Research Timeline: See how scientific ideas and discoveries developed over time.
+* Data Visualization: Explore scientific data through interactive visualizations.
+* Research Copilot: Ask scientific questions and receive a guided research path.
+* Personal Research Thread: Build and organize a personal research journey.
+* Educational Games: Interactive games and challenges related to physics and astronomy.
+* Research Summaries: Simplified summaries of complex scientific research.
+
+Strengths:
+
+* Offers a different approach to exploring scientific research.
+* Combines research, education, data analysis, visualization, and interactive content.
+* Provides opportunities to use AI and modern web technologies.
+* Has a clear MVP that can be expanded in the future.
+* Can create an engaging and visually interactive user experience.
+* Aligns with the team's interest in technology, research, and data.
+
+Weaknesses:
+
+* Scientific data and research can be complex and difficult to present accurately.
+* Reliable research sources and datasets need to be carefully selected.
+* Developing accurate AI-generated research summaries can be challenging.
+* Interactive visualizations and educational games may require additional development time.
+* The initial scope needs to remain focused to prevent the project from becoming too large.
+
+Why We Selected It:
+
+We selected AstroThread because it provides a strong balance between innovation and technical feasibility. The research thread concept makes it different from a traditional research library, while features such as AI, data visualization, and interactive games provide opportunities to demonstrate a wide range of technical skills.
+
+The idea also has a clear MVP that can be developed within the project's timeframe while leaving room for future expansion.
+
+2. Nurture
+
+Concept:
+
+Nurture is a platform designed to help parents better understand and manage everyday situations involving children with autism or ADHD. The platform could provide behavioral tracking, pattern identification, and guidance for different situations.
+
+Strengths:
+
+* Addresses a meaningful real-world problem.
+* Has potential for positive social impact.
+* Could use AI and data analysis to identify behavioral patterns.
+* Could provide useful tools for parents and caregivers.
+
+Weaknesses:
+
+* Health-related information requires a high level of accuracy and responsibility.
+* Medical and behavioral guidance would require professional validation.
+* The scope could become too broad for a focused MVP.
+* There are potential privacy and ethical concerns when handling children's data.
+
+Why We Did Not Select It:
+
+Although Nurture has strong potential social impact, the health-related nature of the platform would introduce additional requirements and responsibilities. We felt that these challenges could make it difficult to develop a focused and reliable MVP within the project timeframe.
+
+3. Ticket Reselling Platform
+
+Concept:
+
+The ticket reselling platform would address problems related to the resale of event tickets, particularly excessive price increases and unfair resale practices. The platform could focus on creating a more transparent and secure ticket resale experience.
+
+Strengths:
+
+* Addresses a real-world problem.
+* Has potential for fraud prevention and ticket verification.
+* Could have strong business potential.
+* Provides interesting technical challenges.
+
+Weaknesses:
+
+* Would require integration with ticketing systems and external platforms.
+* Could involve legal and regulatory challenges.
+* Ticket verification and transaction security could be difficult to implement.
+* Building a reliable marketplace could require partnerships with ticket providers.
+
+Why We Did Not Select It:
+
+The idea addressed an important problem and had strong business potential, but its technical, legal, and business requirements made it more difficult to develop within the scope and timeframe of our MVP.
+
+Final Decision
+
+After comparing the three ideas, our team selected AstroThread as the MVP concept. We believe it provides the best balance between innovation, feasibility, technical learning opportunities, and a manageable MVP scope.
+
+The main idea behind AstroThread is to move beyond simply storing or searching for research papers and instead create an interactive "research thread" that connects scientific ideas, research, discoveries, data, and learning experiences.
+
