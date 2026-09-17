@@ -1,12 +1,28 @@
 IDEA DEVELOPMENT DOCUMENTATION
 
-Introduction
+### Team Formation
+
+The team was assembled based on a shared academic and professional interest in technology, scientific research, and data-driven product development. Prior to initiating the ideation process, team members engaged in an introductory discussion to identify individual technical competencies, areas of expertise, and personal interests. This preliminary step ensured that subsequent role allocation and project evaluation could be informed by an accurate understanding of the team's collective capabilities.
+
+### Collaboration Framework
+
+To support effective collaboration throughout the project, the team established the following operating principles at the outset:
+• Open Communication: All team members were given equal opportunity to propose, question, and critique ideas, ensuring no perspective was excluded from consideration.
+• Consensus-Based Decision-Making: Project decisions, including idea selection, were made collectively through group discussion rather than unilateral or majority-based determination.
+• Scheduled Coordination: The team held [regular/weekly] meetings to review progress, discuss emerging ideas, and confirm alignment on project direction and responsibilities.
+
+### Introduction
 
 During the idea development stage, our team brainstormed and discussed different project concepts before deciding on the MVP we wanted to develop. We considered three main ideas: AstroThread, Nurture, and a ticket reselling platform.
 
 Each idea was evaluated based on its innovation, technical feasibility, potential impact, MVP scope, and the skills and interests of our team. We discussed the strengths and weaknesses of each concept and considered the challenges that could affect its development.
 
 After this evaluation, we selected AstroThread as our final MVP concept.
+
+### Idea Development Process
+The idea development process was conducted in two phases. In the first phase, team members independently generated potential project concepts based on individual interests, technical strengths, and perceived relevance. In the second phase, these concepts were presented to the full team for structured discussion and evaluation.
+This approach was deliberately adopted to ensure a broad and diverse range of ideas was considered prior to convergence on a single concept, thereby reducing the risk of premature consensus around an initial proposal.
+
 
 1. AstroThread - Selected Idea
 
