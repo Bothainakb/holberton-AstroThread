@@ -16,15 +16,29 @@ AstroThread is an interactive research platform focused on physics and astronomy
 
 The platform will also include interactive educational games and challenges to make learning about physics and astronomy more engaging.
 
-Main Features:
+Core MVP Features: 
 
-* Research Threads: Follow a scientific topic from the original idea to the latest research.
-* Research Timeline: See how scientific ideas and discoveries developed over time.
-* Data Visualization: Explore scientific data through interactive visualizations.
-* Research Copilot: Ask scientific questions and receive a guided research path.
-* Personal Research Thread: Build and organize a personal research journey.
-* Educational Games: Interactive games and challenges related to physics and astronomy.
-* Research Summaries: Simplified summaries of complex scientific research.
+Research Threads  
+
+Research Timeline  
+
+Scientific Research APIs  
+
+Research Copilot  
+
+Research Summaries  
+
+Interactive Data Visualization  
+
+Interactive Scientific Simulations  
+
+Future Expansion: 
+
+Personal Research Thread  
+
+Educational Games  
+
+Additional simulations and scientific topics  
 
 Strengths:
 
@@ -102,4 +116,42 @@ Final Decision
 After comparing the three ideas, our team selected AstroThread as the MVP concept. We believe it provides the best balance between innovation, feasibility, technical learning opportunities, and a manageable MVP scope.
 
 The main idea behind AstroThread is to move beyond simply storing or searching for research papers and instead create an interactive "research thread" that connects scientific ideas, research, discoveries, data, and learning experiences.
+
+## 2. Selected MVP Summary
+
+### MVP Overview
+
+AstroThread is an interactive scientific research platform focused on astronomy and selected physics topics. The MVP aims to transform the traditional research experience from simply reading separate scientific papers into an interactive journey that connects research, scientific data, artificial intelligence, and visual exploration.
+
+Users will be able to search for a scientific topic and discover related research through scientific APIs. The platform will organize the results into a connected research thread and timeline, helping users understand how scientific ideas and discoveries have developed over time.
+
+The MVP will also use AI to help users understand complex scientific research through summaries and guided questions. Scientific data will be presented through interactive visualizations, and selected topics will include interactive scientific simulations that allow users to explore scientific concepts visually.
+
+### Core MVP Scope
+
+The initial MVP will focus on a limited set of core features:
+
+* Scientific Research APIs for retrieving relevant research and scientific data.
+* Research Threads for connecting related papers, discoveries, and scientific concepts.
+* Research Timelines for showing the development of selected scientific topics over time.
+* AI Research Copilot for research assistance, explanations, and simplified summaries.
+* Interactive Data Visualization for presenting scientific information in an accessible way.
+* Interactive Scientific Simulations for selected astronomy and physics concepts.
+
+The platform may also include user engagement features such as a daily learning streak and a free trial with subscription plans. These features are intended to encourage continued use and provide a potential future business model.
+
+Features such as personal research collections, advanced simulations, and educational games can be expanded in future versions after the core MVP has been completed.
+
+### Rationale
+
+We selected this MVP because it combines the main strengths of the AstroThread concept while keeping the initial scope focused enough for the project timeframe. The MVP allows the team to demonstrate full-stack development, API integration, artificial intelligence, data visualization, and interactive web experiences within one coherent platform.
+
+The research thread is the central concept of the product. Instead of presenting scientific papers as isolated resources, AstroThread aims to connect them into a structured and understandable research journey. The addition of interactive visualizations and simulations further supports the goal of helping users move from reading scientific information to understanding and exploring it.
+
+### Potential Impact
+
+AstroThread has the potential to make scientific research more accessible and engaging for students, learners, and people interested in astronomy and physics. By combining scientific sources with AI-supported explanations, visual data, and interactive simulations, the platform can provide a more accessible way to explore complex scientific topics.
+
+The project could also demonstrate how modern web technologies and AI can be combined to create a different approach to scientific discovery and learning. In the future, AstroThread could expand to support more scientific fields, additional research sources, more advanced simulations, and broader educational experiences.
+
 
