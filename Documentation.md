@@ -1,36 +1,52 @@
-IDEA DEVELOPMENT DOCUMENTATION
+# IDEA DEVELOPMENT DOCUMENTATION
 
-### Team Formation
+---
+
+# 1. Team Formation
+
 Following the formation of the team, we held an introductory discussion to familiarise ourselves with one another and gain an understanding of each member's technical competencies, areas of expertise, and personal interests. This initial discussion allowed us to identify the strengths and capabilities that each member could contribute to the project.
+
 As we began the idea development process, we discussed our individual interests in technology, scientific research, and data-driven product development. These shared interests helped establish a common direction for our project and provided a foundation for generating potential MVP concepts.
 
 Before proceeding with the development of our selected idea, we discussed the responsibilities required to complete the project and distributed tasks among the three team members according to individual skills, interests, and project requirements. This included considering different aspects of the project, such as research, ideation, design, software development, and the integration of relevant technologies. The allocation of responsibilities was intended to ensure that each member had a defined area of contribution while maintaining a collaborative approach to the overall project.
+
 Although individual responsibilities were assigned, all team members remained involved in discussions, idea evaluation, and important project-related decisions. We recognised that effective teamwork would require cooperation across different areas of development, as well as a willingness to support one another when challenges arose.
 
-### Collaboration Framework
+---
+
+# 2. Collaboration Framework
+
 To support effective collaboration throughout the project, our team established the following operating principles at the outset:
-- Open Communication: 
+
+## Open Communication
+
 All three team members were given equal opportunities to propose, question, and critique ideas throughout the idea development process. We encouraged an environment in which members could express their opinions, provide constructive feedback, and raise concerns without hesitation. This ensured that different perspectives were considered when discussing potential project concepts and determining the direction of our MVP.
 
-- Collaborative Decision-Making: 
+## Collaborative Decision-Making
+
 Project decisions, including the evaluation and selection of our final MVP concept, were made through group discussions. Each team member was encouraged to contribute their views regarding the strengths, weaknesses, feasibility, and potential impact of the proposed ideas. This collaborative approach allowed us to consider different perspectives before reaching a shared decision on the direction of the project.
 
-- Task Allocation and Shared Responsibility: 
+## Task Allocation and Shared Responsibility
+
 Responsibilities were distributed among the three team members based on individual skills, interests, and the requirements of the project. Each member was expected to take ownership of their assigned tasks while remaining accountable to the team as a whole. Although specific responsibilities were allocated, members were encouraged to assist one another, exchange knowledge, and collaborate on tasks that required shared input or technical support.
 
-- Centralised Communication and Coordination:
+## Centralised Communication and Coordination
+
 Discord was established as the primary communication platform for the team. It was used to coordinate tasks, discuss project ideas, share relevant information, communicate updates, and address questions relating to the project. Using a shared communication platform helped maintain consistent contact between team members and supported the coordination of individual responsibilities.
 
-- Scheduled Coordination: 
+## Scheduled Coordination
+
 The team maintained a weekly communication schedule to review project progress, discuss emerging ideas, address potential challenges, and ensure that all members remained aligned with the overall project direction. These weekly discussions also provided opportunities to review assigned responsibilities, clarify expectations, and make adjustments where necessary.
 
-- Constructive Feedback and Continuous Improvement: 
-Team members were encouraged to provide constructive feedback on proposed ideas, project decisions, and ongoing work. Feedback was used to identify potential weaknesses, consider alternative approaches, and improve the quality of the project. This principle helped create a collaborative environment in which members could learn from one another and contribute to the continuous improvement of the MVP.
+## Constructive Feedback and Continuous Improvement
+
+Team members were encouraged to provide constructive feedback on proposed ideas, project decisions, and ongoing work. Feedback was used to identify potential weaknesses, consider alternative approaches, and improve the quality of the project. This principle helped create a collaborative environment in which team members could learn from one another and contribute to the continuous improvement of the MVP.
 
 Through this collaboration framework, our team established a structured yet flexible working environment that encouraged active participation, effective communication, and shared responsibility. These principles supported the team throughout the idea development process and provided a foundation for the subsequent planning and development of AstroThread.
 
+---
 
-### Introduction
+# 3. Introduction
 
 During the idea development stage, our team brainstormed and discussed different project concepts before deciding on the MVP we wanted to develop. We considered three main ideas: AstroThread, Nurture, and a ticket reselling platform.
 
@@ -38,44 +54,42 @@ Each idea was evaluated based on its innovation, technical feasibility, potentia
 
 After this evaluation, we selected AstroThread as our final MVP concept.
 
-### Idea Development Process
+---
+
+# 4. Idea Development Process
+
 The idea development process was conducted in two phases. In the first phase, team members independently generated potential project concepts based on individual interests, technical strengths, and perceived relevance. In the second phase, these concepts were presented to the full team for structured discussion and evaluation.
+
 This approach was deliberately adopted to ensure a broad and diverse range of ideas was considered prior to convergence on a single concept, thereby reducing the risk of premature consensus around an initial proposal.
 
+---
 
-1. AstroThread - Selected Idea
+# 5. AstroThread - Selected Idea
 
-Concept:
+## Concept
 
 AstroThread is an interactive research platform focused on physics and astronomy. Instead of being simply an electronic library for research papers, the platform is built around the concept of a "research thread", allowing users to follow a scientific idea from its origins through related research, discoveries, data, and recent developments.
 
-The platform will also include interactive educational games and challenges to make learning about physics and astronomy more engaging.
+The platform may be expanded in the future with interactive educational games and challenges to make learning about physics and astronomy more engaging.
 
-Core MVP Features: 
+## Core MVP Features
 
-Research Threads  
+* Research Threads
+* Research Timeline
+* Scientific Research APIs
+* Research Copilot
+* Research Summaries
+* Interactive Data Visualization
+* Interactive Scientific Simulations
 
-Research Timeline  
+## Future Expansion
 
-Scientific Research APIs  
+* Personal Research Thread
+* Educational Games
+* Additional simulations
+* Support for additional scientific topics and fields
 
-Research Copilot  
-
-Research Summaries  
-
-Interactive Data Visualization  
-
-Interactive Scientific Simulations  
-
-Future Expansion: 
-
-Personal Research Thread  
-
-Educational Games  
-
-Additional simulations and scientific topics  
-
-Strengths:
+## Strengths
 
 * Offers a different approach to exploring scientific research.
 * Combines research, education, data analysis, visualization, and interactive content.
@@ -84,77 +98,85 @@ Strengths:
 * Can create an engaging and visually interactive user experience.
 * Aligns with the team's interest in technology, research, and data.
 
-Weaknesses:
+## Weaknesses
 
 * Scientific data and research can be complex and difficult to present accurately.
 * Reliable research sources and datasets need to be carefully selected.
 * Developing accurate AI-generated research summaries can be challenging.
-* Interactive visualizations and educational games may require additional development time.
+* Interactive visualizations and scientific simulations may require additional development time.
 * The initial scope needs to remain focused to prevent the project from becoming too large.
 
-Why We Selected It:
+## Why We Selected It
 
-We selected AstroThread because it provides a strong balance between innovation and technical feasibility. The research thread concept makes it different from a traditional research library, while features such as AI, data visualization, and interactive games provide opportunities to demonstrate a wide range of technical skills.
+We selected AstroThread because it provides a strong balance between innovation and technical feasibility. The research thread concept makes it different from a traditional research library, while features such as AI, data visualization, and interactive scientific simulations provide opportunities to demonstrate a wide range of technical skills.
 
 The idea also has a clear MVP that can be developed within the project's timeframe while leaving room for future expansion.
 
-2. Nurture
+---
 
-Concept:
+# 6. Nurture
+
+## Concept
 
 Nurture is a platform designed to help parents better understand and manage everyday situations involving children with autism or ADHD. The platform could provide behavioral tracking, pattern identification, and guidance for different situations.
 
-Strengths:
+## Strengths
 
 * Addresses a meaningful real-world problem.
 * Has potential for positive social impact.
 * Could use AI and data analysis to identify behavioral patterns.
 * Could provide useful tools for parents and caregivers.
 
-Weaknesses:
+## Weaknesses
 
 * Health-related information requires a high level of accuracy and responsibility.
 * Medical and behavioral guidance would require professional validation.
 * The scope could become too broad for a focused MVP.
 * There are potential privacy and ethical concerns when handling children's data.
 
-Why We Did Not Select It:
+## Why We Did Not Select It
 
 Although Nurture has strong potential social impact, the health-related nature of the platform would introduce additional requirements and responsibilities. We felt that these challenges could make it difficult to develop a focused and reliable MVP within the project timeframe.
 
-3. Ticket Reselling Platform
+---
 
-Concept:
+# 7. Ticket Reselling Platform
+
+## Concept
 
 The ticket reselling platform would address problems related to the resale of event tickets, particularly excessive price increases and unfair resale practices. The platform could focus on creating a more transparent and secure ticket resale experience.
 
-Strengths:
+## Strengths
 
 * Addresses a real-world problem.
 * Has potential for fraud prevention and ticket verification.
 * Could have strong business potential.
 * Provides interesting technical challenges.
 
-Weaknesses:
+## Weaknesses
 
 * Would require integration with ticketing systems and external platforms.
 * Could involve legal and regulatory challenges.
 * Ticket verification and transaction security could be difficult to implement.
 * Building a reliable marketplace could require partnerships with ticket providers.
 
-Why We Did Not Select It:
+## Why We Did Not Select It
 
 The idea addressed an important problem and had strong business potential, but its technical, legal, and business requirements made it more difficult to develop within the scope and timeframe of our MVP.
 
-Final Decision
+---
 
-After comparing the three ideas, our team selected AstroThread as the MVP concept. We believe it provides the best balance between innovation, feasibility, technical learning opportunities, and a manageable MVP scope.
+# 8. Final Decision
+
+After comparing the three ideas, our team selected AstroThread as the MVP concept. We believe it provides a strong balance between innovation, feasibility, technical learning opportunities, and a manageable MVP scope.
 
 The main idea behind AstroThread is to move beyond simply storing or searching for research papers and instead create an interactive "research thread" that connects scientific ideas, research, discoveries, data, and learning experiences.
 
-## 2. Selected MVP Summary
+---
 
-### MVP Overview
+# 9. Selected MVP Summary
+
+## MVP Overview
 
 AstroThread is an interactive scientific research platform focused on astronomy and selected physics topics. The MVP aims to transform the traditional research experience from simply reading separate scientific papers into an interactive journey that connects research, scientific data, artificial intelligence, and visual exploration.
 
@@ -162,7 +184,7 @@ Users will be able to search for a scientific topic and discover related researc
 
 The MVP will also use AI to help users understand complex scientific research through summaries and guided questions. Scientific data will be presented through interactive visualizations, and selected topics will include interactive scientific simulations that allow users to explore scientific concepts visually.
 
-### Core MVP Scope
+## Core MVP Scope
 
 The initial MVP will focus on a limited set of core features:
 
@@ -177,16 +199,14 @@ The platform may also include user engagement features such as a daily learning 
 
 Features such as personal research collections, advanced simulations, and educational games can be expanded in future versions after the core MVP has been completed.
 
-### Rationale
+## Rationale
 
 We selected this MVP because it combines the main strengths of the AstroThread concept while keeping the initial scope focused enough for the project timeframe. The MVP allows the team to demonstrate full-stack development, API integration, artificial intelligence, data visualization, and interactive web experiences within one coherent platform.
 
 The research thread is the central concept of the product. Instead of presenting scientific papers as isolated resources, AstroThread aims to connect them into a structured and understandable research journey. The addition of interactive visualizations and simulations further supports the goal of helping users move from reading scientific information to understanding and exploring it.
 
-### Potential Impact
+## Potential Impact
 
 AstroThread has the potential to make scientific research more accessible and engaging for students, learners, and people interested in astronomy and physics. By combining scientific sources with AI-supported explanations, visual data, and interactive simulations, the platform can provide a more accessible way to explore complex scientific topics.
 
 The project could also demonstrate how modern web technologies and AI can be combined to create a different approach to scientific discovery and learning. In the future, AstroThread could expand to support more scientific fields, additional research sources, more advanced simulations, and broader educational experiences.
-
-
