@@ -1,15 +1,34 @@
 IDEA DEVELOPMENT DOCUMENTATION
 
 ### Team Formation
+Following the formation of the team, we held an introductory discussion to familiarise ourselves with one another and gain an understanding of each member's technical competencies, areas of expertise, and personal interests. This initial discussion allowed us to identify the strengths and capabilities that each member could contribute to the project.
+As we began the idea development process, we discussed our individual interests in technology, scientific research, and data-driven product development. These shared interests helped establish a common direction for our project and provided a foundation for generating potential MVP concepts.
 
-The team was assembled based on a shared academic and professional interest in technology, scientific research, and data-driven product development. Prior to initiating the ideation process, team members engaged in an introductory discussion to identify individual technical competencies, areas of expertise, and personal interests. This preliminary step ensured that subsequent role allocation and project evaluation could be informed by an accurate understanding of the team's collective capabilities.
+Before proceeding with the development of our selected idea, we discussed the responsibilities required to complete the project and distributed tasks among the three team members according to individual skills, interests, and project requirements. This included considering different aspects of the project, such as research, ideation, design, software development, and the integration of relevant technologies. The allocation of responsibilities was intended to ensure that each member had a defined area of contribution while maintaining a collaborative approach to the overall project.
+Although individual responsibilities were assigned, all team members remained involved in discussions, idea evaluation, and important project-related decisions. We recognised that effective teamwork would require cooperation across different areas of development, as well as a willingness to support one another when challenges arose.
 
 ### Collaboration Framework
+To support effective collaboration throughout the project, our team established the following operating principles at the outset:
+- Open Communication: 
+All three team members were given equal opportunities to propose, question, and critique ideas throughout the idea development process. We encouraged an environment in which members could express their opinions, provide constructive feedback, and raise concerns without hesitation. This ensured that different perspectives were considered when discussing potential project concepts and determining the direction of our MVP.
 
-To support effective collaboration throughout the project, the team established the following operating principles at the outset:
-• Open Communication: All team members were given equal opportunity to propose, question, and critique ideas, ensuring no perspective was excluded from consideration.
-• Consensus-Based Decision-Making: Project decisions, including idea selection, were made collectively through group discussion rather than unilateral or majority-based determination.
-• Scheduled Coordination: The team held [regular/weekly] meetings to review progress, discuss emerging ideas, and confirm alignment on project direction and responsibilities.
+- Collaborative Decision-Making: 
+Project decisions, including the evaluation and selection of our final MVP concept, were made through group discussions. Each team member was encouraged to contribute their views regarding the strengths, weaknesses, feasibility, and potential impact of the proposed ideas. This collaborative approach allowed us to consider different perspectives before reaching a shared decision on the direction of the project.
+
+- Task Allocation and Shared Responsibility: 
+Responsibilities were distributed among the three team members based on individual skills, interests, and the requirements of the project. Each member was expected to take ownership of their assigned tasks while remaining accountable to the team as a whole. Although specific responsibilities were allocated, members were encouraged to assist one another, exchange knowledge, and collaborate on tasks that required shared input or technical support.
+
+- Centralised Communication and Coordination:
+Discord was established as the primary communication platform for the team. It was used to coordinate tasks, discuss project ideas, share relevant information, communicate updates, and address questions relating to the project. Using a shared communication platform helped maintain consistent contact between team members and supported the coordination of individual responsibilities.
+
+- Scheduled Coordination: 
+The team maintained a weekly communication schedule to review project progress, discuss emerging ideas, address potential challenges, and ensure that all members remained aligned with the overall project direction. These weekly discussions also provided opportunities to review assigned responsibilities, clarify expectations, and make adjustments where necessary.
+
+- Constructive Feedback and Continuous Improvement: 
+Team members were encouraged to provide constructive feedback on proposed ideas, project decisions, and ongoing work. Feedback was used to identify potential weaknesses, consider alternative approaches, and improve the quality of the project. This principle helped create a collaborative environment in which members could learn from one another and contribute to the continuous improvement of the MVP.
+
+Through this collaboration framework, our team established a structured yet flexible working environment that encouraged active participation, effective communication, and shared responsibility. These principles supported the team throughout the idea development process and provided a foundation for the subsequent planning and development of AstroThread.
+
 
 ### Introduction
 
