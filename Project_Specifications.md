@@ -23,13 +23,20 @@ Integrate one focused AI feature by summarizing and explaining scientific papers
 ### Stakeholders and Team Roles
 Stakeholders:
  Internal    Team members (PM, Team Lead, Frontend, Backend, AI, UI/UX): Design, build, and manage the AstroThread MVP
+ 
  Internal    Course Supervisor / Tutor: Reviews progress and gives technical and scope guidance
+ 
  External    End Users (Students & Researchers): Use AstroThread to explore and understand astronomy/physics research
 
 Team Roles:
-  Project Manage:  Oversees planning and tracks progress against the 3-month timeli
+  Project Manage:  Oversees planning and tracks progress against the 3-month timeline
+  
   Team Lea: Facilitates technical decisions (API contracts, Git workflow, DB schem
+  
   Frontend Develope:  Builds the React UI: Research Thread pages, Timeline, Visualizations, navition
+  
   Backend Develope: Builds the API: Users/Auth, Research Topics, Threads, Papers, AI requests
- ¢ AI Develope:  Integrates the AI assistant: paper summarization, term explanation, Q&
- ¢ UI/UX Designe: Designs the interface and user flow: Home- Topic- Thread- Timeline- Visualization- Paper- AI
+  
+  AI Develope:  Integrates the AI assistant: paper summarization, term explanation, Q&
+  
+  UI/UX Designe: Designs the interface and user flow: Home- Topic- Thread- Timeline- Visualization- Paper- AI
