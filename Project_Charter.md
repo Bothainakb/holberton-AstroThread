@@ -91,3 +91,22 @@ The team will focus on the features required for the MVP and postpone additional
 | **Interactive Feature Complexity** — A simulation or interactive challenge may require more development time than expected.                    | Keep it optional and use a simple interactive element if enough time remains after the core MVP is completed.                                |
 | **Deployment Problems** — The application may work locally but have issues after deployment.                                                   | Test deployment before the final stage and make sure the Frontend, Backend, Database, APIs, and environment variables work together.         |
 
+## 4. High-Level Plan
+
+The AstroThread project will be completed over a 12-week period. The project will follow five main stages, from idea development to final project closure.
+
+| Stage                                    | Timeline   | Key Milestones / Deliverables                                                                                                                |
+| ---------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Stage 1: Idea Development**            | Completed  | Team formation, brainstorming, evaluation of ideas, and selection of AstroThread.                                                            |
+| **Stage 2: Project Charter Development** | Week 1–2   | Define project objectives, stakeholders and roles, project scope, risks, and overall project plan.                                           |
+| **Stage 3: Technical Documentation**     | Week 3–4   | Define system architecture, database structure, APIs, technical requirements, and UI/UX design.                                              |
+| **Stage 4: MVP Development**             | Week 5–10  | Develop the React frontend, backend, database, Research Threads, timelines, data visualizations, scientific papers, and AI-assisted feature. |
+| **Stage 5: Project Closure**             | Week 11–12 | Complete testing, fix bugs, deploy the MVP, finalize documentation, and prepare the final presentation.                                      |
+
+### Project Timeline
+
+* **Week 1–2:** Project Charter Development
+* **Week 3–4:** Technical Documentation
+* **Week 5–10:** MVP Development
+* **Week 11–12:** Testing, Deployment, and Project Closure
+
