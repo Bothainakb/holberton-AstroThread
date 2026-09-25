@@ -7,13 +7,13 @@ AstroThread exists to make astronomy and physics research approachable and engag
 Develop and launch an MVP of AstroThread within 3 months, allowing users to explore 5 topics in astronomy and physics through Research Threads.
 Measured by: Is the MVP built? Can a user actually use it? Does it cover 5 topics?
 
-2. Implement Research Timelines 
-Add a Research Timeline and Data Visualization to those same 5 topics before the project ends, so the content is interactive rather than purely written research.
- Timeline: how the idea or discovery developed over time
- Data Visualization: the data presented visually (charts, graphs)
- If time allows: a small simulation or interactive challenge
+2. Make Content Interactive:
+Add a Research Timeline and Data Visualization to the 5 selected topics before the project ends, so the content is interactive rather than purely written research.
+ Timeline: how the idea or discovery developed over time.
+ Data Visualization: the data presented visually (charts, graphs).
+ If time allows: a small simulation or interactive challenge.
 
-3. Use AI as a research aid
+4. Use AI as a research aid
 Integrate one focused AI feature by summarizing and explaining scientific papers so users can understand the research, ready before the final presentation.
   User selects a paper
   Gets a simplified summary
@@ -75,9 +75,8 @@ Team Roles:
 
 ## Future Optional Enhancements
 
-* **Interactive Element:** If time allows, the MVP may include a small simulation or interactive challenge related to a scientific topic.
-
-
+* **Interactive Simulation:** If time allows, the MVP may include a small simulation or interactive challenge related to a scientific topic.
+* **Interactive Challenges:** If time allows, the MVP may include a small simulation or interactive challenge related to a scientific topic.
 
 The team will focus on the features required for the MVP and postpone additional features that could increase the project scope or affect completion within the three-month timeline. 
 
