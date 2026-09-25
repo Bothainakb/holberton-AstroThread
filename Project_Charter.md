@@ -7,7 +7,7 @@ AstroThread exists to make astronomy and physics research approachable and engag
 Develop and launch an MVP of AstroThread within 3 months, allowing users to explore 5 topics in astronomy and physics through Research Threads.
 Measured by: Is the MVP built? Can a user actually use it? Does it cover 5 topics?
 
-2. Make the content interactive
+2. Implement Research Timelines 
 Add a Research Timeline and Data Visualization to those same 5 topics before the project ends, so the content is interactive rather than purely written research.
  Timeline: how the idea or discovery developed over time
  Data Visualization: the data presented visually (charts, graphs)
@@ -29,17 +29,18 @@ Stakeholders:
  External    End Users (Students & Researchers): Use AstroThread to explore and understand astronomy/physics research
 
 Team Roles:
-  Project Manage:  Oversees planning and tracks progress against the 3-month timeline
+
+  Project Manager: Coordinates the project timeline, tracks progress, organizes meetings, and ensures that project objectives and deadlines are met.
   
-  Team Lea: Facilitates technical decisions (API contracts, Git workflow, DB schem
-  
-  Frontend Develope:  Builds the React UI: Research Thread pages, Timeline, Visualizations, navition
-  
-  Backend Develope: Builds the API: Users/Auth, Research Topics, Threads, Papers, AI requests
-  
+  Team Lead: Facilitates technical decisions, coordinates development tasks, maintains the Git workflow, and helps resolve technical issues.
+
+  Full-Stack Development Team: All team members participate in frontend, backend, database, API, and AI integration tasks. 
+  Responsibilities are rotated across features so that each member gains practical experience in different areas of full-stack development.
+     
   AI Develope:  Integrates the AI assistant: paper summarization, term explanation, Q&
-  
-  UI/UX Designe: Designs the interface and user flow: Home- Topic- Thread- Timeline- Visualization- Paper- AI
+
+  UI/UX Responsibilities: The team collaborates on user flows, wireframes, interface design, and usability decisions.
+
 
 # 2. Define Scope
 
@@ -54,8 +55,6 @@ Team Roles:
 * **Scientific Papers:** Users can access information about relevant scientific papers and their original sources.
 
 * **AI Research Assistant:** A focused AI feature will help users understand scientific papers by providing simplified summaries, explaining difficult terms, and answering questions about specific parts of a paper.
-
-* **Interactive Element:** If time allows, the MVP may include a small simulation or interactive challenge related to a scientific topic.
 
 * **React User Interface:** The frontend will provide the main navigation flow from Home → Topic → Research Thread → Timeline → Visualization → Paper → AI.
 
@@ -74,7 +73,13 @@ Team Roles:
 * Complex web scraping from many scientific sources.
 * Full bilingual Arabic/English support if it affects the 3-month development timeline.
 
-The team will focus on the features required for the MVP and postpone additional features that could increase the project scope or affect completion within the three-month timeline.
+## Future Optional Enhancements
+
+* **Interactive Element:** If time allows, the MVP may include a small simulation or interactive challenge related to a scientific topic.
+
+
+
+The team will focus on the features required for the MVP and postpone additional features that could increase the project scope or affect completion within the three-month timeline. 
 
 # 3. Identify Risks
 
@@ -86,7 +91,7 @@ The team will focus on the features required for the MVP and postpone additional
 | **AI Integration Complexity** — The AI assistant may take longer to integrate than expected.                                                   | Start with one focused AI function, such as paper summarization or explaining scientific terms, instead of building a complex AI system.     |
 | **Scientific Data Quality** — Data may be incomplete, inconsistent, or difficult to verify.                                                    | Use reliable scientific sources and verify datasets before adding them to the platform.                                                      |
 | **Frontend/Backend Integration** — Individual features may work separately but encounter problems when connected.                              | Define API contracts early and integrate the frontend and backend continuously throughout development.                                       |
-| **Team Coordination** — Delays or difficulties in one role may affect other team members.                                                      | Clearly divide responsibilities between the Project Manager, Team Lead, Frontend, Backend, AI, and UI/UX roles and regularly track progress. |
+| **Team Coordination** — Delays or difficulties in one role may affect other team members.                                                      | Use shared development responsibilities, rotate technical ownership across features, and hold regular team meetings to track progress and resolve blockers. |
 | **Git/Merge Conflicts** — Multiple team members working on the codebase may create conflicts.                                                  | Use branches, Pull Requests, and a clear Git workflow.                                                                                       |
 | **Interactive Feature Complexity** — A simulation or interactive challenge may require more development time than expected.                    | Keep it optional and use a simple interactive element if enough time remains after the core MVP is completed.                                |
 | **Deployment Problems** — The application may work locally but have issues after deployment.                                                   | Test deployment before the final stage and make sure the Frontend, Backend, Database, APIs, and environment variables work together.         |
