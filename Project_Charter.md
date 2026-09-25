@@ -1,63 +1,51 @@
-### Project Objectives
- Purpose:
+# Project Objectives
+
+## Purpose
+
 AstroThread exists to make astronomy and physics research approachable and engaging, thus turning scientific papers into interactive Research Threads, complete with timelines, data visualizations, and AI-assisted explanations, that any curious user can explore.
 
- SMART Objectives:
-1. Build and launch the MVP
-Develop and launch an MVP of AstroThread within 3 months, allowing users to explore 5 topics in astronomy and physics through Research Threads.
-Measured by: Is the MVP built? Can a user actually use it? Does it cover 5 topics?
+## SMART Objectives
 
-2. Make Content Interactive:
-Add a Research Timeline and Data Visualization to the 5 selected topics before the project ends, so the content is interactive rather than purely written research.
- Timeline: how the idea or discovery developed over time.
- Data Visualization: the data presented visually (charts, graphs).
- If time allows: a small simulation or interactive challenge.
+1. **Build and launch the MVP:** Develop and launch an MVP of AstroThread within 3 months, allowing users to explore 5 topics in astronomy and physics through Research Threads. Measured by: Is the MVP built? Can a user actually use it? Does it cover 5 topics?
 
-4. Use AI as a research aid
-Integrate one focused AI feature by summarizing and explaining scientific papers so users can understand the research, ready before the final presentation.
-  User selects a paper
-  Gets a simplified summary
-  Can ask about a specific part of the paper
-  Gets plain-language explanations of difficult terms
+2. **Make Content Interactive:** Add a Research Timeline and Data Visualization to the 5 selected topics before the project ends, so the content is interactive rather than purely written research. Timeline: how the idea or discovery developed over time. Data Visualization: the data presented visually through charts and graphs.
 
-### Stakeholders and Team Roles
-Stakeholders:
- Internal    Team members (PM, Team Lead, Frontend, Backend, AI, UI/UX): Design, build, and manage the AstroThread MVP
- 
- Internal    Course Supervisor / Tutor: Reviews progress and gives technical and scope guidance
- 
- External    End Users (Students & Researchers): Use AstroThread to explore and understand astronomy/physics research
+3. **Use AI as a research aid:** Integrate one focused AI feature by summarizing and explaining scientific papers so users can understand the research, ready before the final presentation. Users will be able to select a paper, receive a simplified summary, ask questions about a specific part of the paper, and get plain-language explanations of difficult terms.
 
-Team Roles:
+---
 
-  Project Manager: Coordinates the project timeline, tracks progress, organizes meetings, and ensures that project objectives and deadlines are met.
-  
-  Team Lead: Facilitates technical decisions, coordinates development tasks, maintains the Git workflow, and helps resolve technical issues.
+# Stakeholders and Team Roles
 
-  Full-Stack Development Team: All team members participate in frontend, backend, database, API, and AI integration tasks. 
-  Responsibilities are rotated across features so that each member gains practical experience in different areas of full-stack development.
-     
-  AI Develope:  Integrates the AI assistant: paper summarization, term explanation, Q&
+## Stakeholders
 
-  UI/UX Responsibilities: The team collaborates on user flows, wireframes, interface design, and usability decisions.
+**Internal Team Members:** Design, build, test, and manage the AstroThread MVP.
 
+**Internal Course Supervisor / Tutor:** Reviews progress and provides technical and project scope guidance.
+
+**External End Users (Students & Researchers):** Use AstroThread to explore and understand astronomy and physics research.
+
+## Team Roles
+
+**Project Manager:** Coordinates the project timeline, tracks progress, organizes meetings, and ensures that project objectives and deadlines are met.
+
+**Team Lead:** Facilitates technical decisions, coordinates development tasks, maintains the Git workflow, and helps resolve technical issues.
+
+**Full-Stack Development Team:** All team members participate in frontend, backend, database, API, and AI integration tasks. Responsibilities are rotated across features so that each member gains practical experience in different areas of full-stack development.
+
+**UI/UX Responsibilities:** The team collaborates on user flows, wireframes, interface design, and usability decisions.
+
+---
 
 # 2. Define Scope
 
 ## In-Scope
 
 * **Research Threads:** Users can explore 5 selected astronomy and physics topics through connected Research Threads, showing the development of each scientific idea from its origin to current research.
-
 * **Research Timeline:** Each of the 5 topics will include a timeline showing important discoveries and developments over time.
-
 * **Data Visualization:** Scientific data related to the selected topics will be presented using charts, graphs, or other visual formats.
-
 * **Scientific Papers:** Users can access information about relevant scientific papers and their original sources.
-
 * **AI Research Assistant:** A focused AI feature will help users understand scientific papers by providing simplified summaries, explaining difficult terms, and answering questions about specific parts of a paper.
-
 * **React User Interface:** The frontend will provide the main navigation flow from Home → Topic → Research Thread → Timeline → Visualization → Paper → AI.
-
 * **Backend and API:** The backend will support research topics, threads, papers, users/authentication where required, and AI requests.
 
 ## Out-of-Scope
@@ -76,26 +64,29 @@ Team Roles:
 ## Future Optional Enhancements
 
 * **Interactive Simulation:** If time allows, the MVP may include a small simulation or interactive challenge related to a scientific topic.
-* **Interactive Challenges:** If time allows, the MVP may include a small simulation or interactive challenge related to a scientific topic.
 
-The team will focus on the features required for the MVP and postpone additional features that could increase the project scope or affect completion within the three-month timeline. 
+The team will focus on the features required for the MVP and postpone additional features that could increase the project scope or affect completion within the three-month timeline.
+
+---
 
 # 3. Identify Risks
 
-| **Risk**                                                                                                                                       | **Mitigation**                                                                                                                               |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Time Constraints** — The team may not complete all planned features within the 3-month timeline.                                             | Prioritize the MVP features and divide the work according to the existing team roles. Postpone non-essential features if necessary.          |
-| **Scope Creep** — New features or ideas may continuously be added during development.                                                          | Keep the In-Scope and Out-of-Scope lists clear and require the team to agree before adding new features.                                     |
-| **Scientific API/Data Availability** — Required scientific APIs or datasets may be difficult to access, limited, or change during development. | Test APIs early, use reliable sources, and prepare alternative datasets when possible.                                                       |
-| **AI Integration Complexity** — The AI assistant may take longer to integrate than expected.                                                   | Start with one focused AI function, such as paper summarization or explaining scientific terms, instead of building a complex AI system.     |
-| **Scientific Data Quality** — Data may be incomplete, inconsistent, or difficult to verify.                                                    | Use reliable scientific sources and verify datasets before adding them to the platform.                                                      |
-| **Frontend/Backend Integration** — Individual features may work separately but encounter problems when connected.                              | Define API contracts early and integrate the frontend and backend continuously throughout development.                                       |
-| **Team Coordination** — Delays or difficulties in one role may affect other team members.                                                      | Use shared development responsibilities, rotate technical ownership across features, and hold regular team meetings to track progress and resolve blockers. |
-| **Git/Merge Conflicts** — Multiple team members working on the codebase may create conflicts.                                                  | Use branches, Pull Requests, and a clear Git workflow.                                                                                       |
-| **Interactive Feature Complexity** — A simulation or interactive challenge may require more development time than expected.                    | Keep it optional and use a simple interactive element if enough time remains after the core MVP is completed.                                |
-| **Deployment Problems** — The application may work locally but have issues after deployment.                                                   | Test deployment before the final stage and make sure the Frontend, Backend, Database, APIs, and environment variables work together.         |
+| Risk                                                                                                                                           | Mitigation                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Time Constraints** — The team may not complete all planned features within the 3-month timeline.                                             | Prioritize the MVP features and postpone non-essential features if necessary.                                                                               |
+| **Scope Creep** — New features or ideas may continuously be added during development.                                                          | Keep the In-Scope and Out-of-Scope lists clear and require the team to agree before adding new features.                                                    |
+| **Scientific API/Data Availability** — Required scientific APIs or datasets may be difficult to access, limited, or change during development. | Test APIs early, use reliable sources, and prepare alternative datasets when possible.                                                                      |
+| **AI Integration Complexity** — The AI assistant may take longer to integrate than expected.                                                   | Start with one focused AI function, such as paper summarization or explaining scientific terms, instead of building a complex AI system.                    |
+| **Scientific Data Quality** — Data may be incomplete, inconsistent, or difficult to verify.                                                    | Use reliable scientific sources and verify datasets before adding them to the platform.                                                                     |
+| **Frontend/Backend Integration** — Individual features may work separately but encounter problems when connected.                              | Define API contracts early and integrate the frontend and backend continuously throughout development.                                                      |
+| **Team Coordination** — Delays or difficulties in one part of the project may affect other team members.                                       | Use shared development responsibilities, rotate technical ownership across features, and hold regular team meetings to track progress and resolve blockers. |
+| **Git/Merge Conflicts** — Multiple team members working on the codebase may create conflicts.                                                  | Use branches, Pull Requests, and a clear Git workflow.                                                                                                      |
+| **Interactive Feature Complexity** — A simulation or interactive challenge may require more development time than expected.                    | Keep it optional and use a simple interactive element if enough time remains after the core MVP is completed.                                               |
+| **Deployment Problems** — The application may work locally but have issues after deployment.                                                   | Test deployment before the final stage and make sure the Frontend, Backend, Database, APIs, and environment variables work together.                        |
 
-## 4. High-Level Plan
+---
+
+# 4. High-Level Plan
 
 The AstroThread project will be completed over a 12-week period. The project will follow five main stages, from idea development to final project closure.
 
@@ -107,10 +98,9 @@ The AstroThread project will be completed over a 12-week period. The project wil
 | **Stage 4: MVP Development**             | Week 5–10  | Develop the React frontend, backend, database, Research Threads, timelines, data visualizations, scientific papers, and AI-assisted feature. |
 | **Stage 5: Project Closure**             | Week 11–12 | Complete testing, fix bugs, deploy the MVP, finalize documentation, and prepare the final presentation.                                      |
 
-### Project Timeline
+## Project Timeline
 
 * **Week 1–2:** Project Charter Development
 * **Week 3–4:** Technical Documentation
 * **Week 5–10:** MVP Development
 * **Week 11–12:** Testing, Deployment, and Project Closure
-
