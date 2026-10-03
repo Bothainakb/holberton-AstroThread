@@ -18,21 +18,22 @@
 
 ## Mockups : 
 
- Home — navbar, search bar, featured thread cards.
+ Home: navbar, search bar, featured thread cards.
 
- Research Threads — search + category filter, grid of thread cards.
+ Research Threads : Search with category filters, grid of thread cards, Interactive elements.
 
- Thread Details: Overview / Timeline / Related Papers.
+ Thread Details :  Overview / Timeline / Related Papers.
   
- Research Timeline — vertical timeline, year + event + description.
+ Research Timeline : vertical timeline, year + event + description.
   
- Data Visualization — chart with basic controls (dropdown/slider).
+ Data Visualization : chart with basic controls (dropdown/slider).
 
- NASA Media Panel — image/data card tied to a thread's topic.
+ NASA Media Panel : image/data card tied to a thread's topic.
 
- AI Research Assistant — AI interface for asking questions and receiving explanations about research topics and papers.
+ AI Research Assistant : AI interface for asking questions and receiving explanations about research topics and papers.
  
 
 ## System Flow: 
 User → React Frontend → Flask REST API → PostgreSQL.
+
 For external services, the backend communicates with NASA, OpenAlex, and OpenAI APIs, with responses returned to the React frontend.
