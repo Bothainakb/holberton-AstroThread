@@ -9,8 +9,8 @@
 | Must | As a user | I want to view a timeline of discoveries, so that I can understand how a scientific idea developed over time. |
 | Must | As a user |  I want to explore scientific data through interactive charts, so that I can understand it visually. |
 | Must | As a user | I want to see astronomy images and data from NASA linked to a topic, so that the content feels concrete. |
-| Must | As a visitor | I want to register and log in -> so that my activity and progress are saved. |
-| Should | As a user | I want to search for related research and authors , so that a thread connects to real scientific sources. |
+| Must | As a visitor | I want to register and log in so that my activity and progress are saved. |
+| Should | As a user | I want to search for related research and authors, so that a thread connects to real scientific sources. |
 | Should | As a user | I want to filter threads by category (e.g. black holes, exoplanets), so that I can find topics that interest me. |
 | Should | As a user | I want to try an interactive simulation of an astronomy or physics concept, so that I can learn by experimenting. |
 | Could | As a learner | I want a daily learning streak, so that I stay motivated to come back. |
@@ -22,16 +22,17 @@
 
  Research Threads — search + category filter, grid of thread cards.
 
- Thread Details — tabs: Overview / Timeline / Related Papers.
+ Thread Details: Overview / Timeline / Related Papers.
   
- Research Timeline — vertical timeline, year + event + description
+ Research Timeline — vertical timeline, year + event + description.
   
- Data Visualization — chart with basic controls (dropdown/slider)
+ Data Visualization — chart with basic controls (dropdown/slider).
 
- NASA Media Panel — image/data card tied to a thread's topic (replaces the old "Copilot panel" idea)
+ NASA Media Panel — image/data card tied to a thread's topic.
 
  AI Research Assistant — AI interface for asking questions and receiving explanations about research topics and papers.
  
 
 ## System Flow: 
-User → React Frontend → Flask REST API → PostgreSQL (via SQLAlchemy). For external services, the backend communicates with NASA, OpenAlex, and OpenAI APIs, with responses returned to the React frontend.
+User → React Frontend → Flask REST API → PostgreSQL.
+For external services, the backend communicates with NASA, OpenAlex, and OpenAI APIs, with responses returned to the React frontend.
