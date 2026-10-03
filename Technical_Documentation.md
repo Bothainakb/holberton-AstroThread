@@ -4,6 +4,7 @@
 | Priority | user | story |
 | --- | --- | --- |
 | Must | As a student | I want to browse and search research threads, so that I can explore scientific topics in an organized way. |
+| Must | As a user | i want to ask an AI assistant about a research topic or paper, so that i can understand complex scientific information more easily. |
 | Must | As a user |  I want to open a thread and see its overview and related papers, so that I can follow a topic from its origin to recent work. |
 | Must | As a user | I want to view a timeline of discoveries, so that I can understand how a scientific idea developed over time. |
 | Must | As a user |  I want to explore scientific data through interactive charts, so that I can understand it visually. |
@@ -14,21 +15,23 @@
 | Should | As a user | I want to try an interactive simulation of an astronomy or physics concept, so that I can learn by experimenting. |
 | Could | As a learner | I want a daily learning streak, so that I stay motivated to come back. |
 | Could | As a user | I want to bookmark threads, so that I can return to them quickly. |
-| Won't | AI Research Copilot, AI-generated summaries, arXiv integration, p444ersonal research collections, educational games (future enhancements — depend on the AI API and features not in this MVP). |
 
 ## Mockups : 
 
-Home — navbar, search bar, featured thread cards.
+ Home — navbar, search bar, featured thread cards.
 
  Research Threads — search + category filter, grid of thread cards.
 
  Thread Details — tabs: Overview / Timeline / Related Papers.
   
-  Research Timeline — vertical timeline, year + event + description
+ Research Timeline — vertical timeline, year + event + description
   
  Data Visualization — chart with basic controls (dropdown/slider)
 
  NASA Media Panel — image/data card tied to a thread's topic (replaces the old "Copilot panel" idea)
 
-Login / Sign Up — simple centered form
-One-line summary for your doc: User → React frontend → Flask REST API → PostgreSQL (via SQLAlchemy) and, for external data, → NASA / OpenAlex APIs, with responses flowing back the same path.
+ AI Research Assistant — AI interface for asking questions and receiving explanations about research topics and papers.
+ 
+
+## System Flow: 
+User → React Frontend → Flask REST API → PostgreSQL (via SQLAlchemy). For external services, the backend communicates with NASA, OpenAlex, and OpenAI APIs, with responses returned to the React frontend.
