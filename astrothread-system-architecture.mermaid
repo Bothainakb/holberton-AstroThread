@@ -1,0 +1,100 @@
+flowchart TB
+
+    subgraph CLIENT["01 CLIENT / PRESENTATION LAYER"]
+        direction LR
+        USERS(["Users<br/>Visitor, Student, Researcher"])
+        subgraph FRONTEND["React Frontend: pages, UI components, router, API client"]
+            direction LR
+            P1["Home"]
+            P2["Research Threads"]
+            P3["Thread Details"]
+            P4["Data Visualization"]
+            P5["AI Assistant"]
+            P6["Login / Sign Up"]
+            P7["Profile"]
+        end
+        USERS <-->|"HTTPS"| FRONTEND
+    end
+
+    subgraph JWT["JWT AUTHENTICATION"]
+        direction TB
+        J1["1. User signs in through React<br/>email and password sent to Flask"]
+        J2["2. Flask verifies the user<br/>and returns a JWT token"]
+        J3["3. React sends the JWT<br/>with protected requests"]
+        J1 --> J2 --> J3
+    end
+
+    subgraph BACKEND["02 BACKEND / APPLICATION LAYER: Flask REST API, Python"]
+        direction TB
+        subgraph MW["Middleware"]
+            direction LR
+            M1["Auth check (JWT)"]
+            M2["Request validation"]
+            M3["Error handling"]
+        end
+        subgraph MODS["Feature modules"]
+            direction LR
+            F1["Auth"]
+            F2["Users"]
+            F3["Threads"]
+            F4["Papers"]
+            F5["Timeline"]
+            F6["Visualization"]
+            F7["AI assistant"]
+            F8["Bookmarks"]
+        end
+        subgraph DA["Data access"]
+            direction LR
+            DBQ["Database queries"]
+            APIC["API clients with caching"]
+        end
+        MW --> MODS --> DA
+    end
+
+    subgraph DB["03 DATABASE LAYER: PostgreSQL Database"]
+        direction LR
+        T1[("users")]
+        T2[("research_threads")]
+        T3[("research_papers")]
+        T4[("thread_papers")]
+        T5[("timeline_events")]
+        T6[("chart_data")]
+        T7[("bookmarks")]
+    end
+
+    subgraph EXT["04 EXTERNAL APIS"]
+        direction TB
+        NASA["NASA APIs<br/>Astronomy images and data"]
+        OPENALEX["OpenAlex API<br/>Papers, authors and metadata"]
+        AI["AI provider API<br/>Summaries and explanations"]
+    end
+
+    FRONTEND -->|"REST API requests<br/>HTTPS, JSON<br/>JWT sent with protected requests"| BACKEND
+    BACKEND -.->|"JSON responses<br/>JWT token after successful login"| FRONTEND
+
+    DBQ -->|"SQL queries: read and write"| DB
+    DB -.->|"Query results: stored data"| DBQ
+
+    APIC <-->|"NASA API"| NASA
+    APIC <-->|"OpenAlex API"| OPENALEX
+    APIC <-->|"AI API"| AI
+
+    classDef auth fill:#FDEFDD,stroke:#B4530A,color:#B4530A,font-weight:bold
+    classDef page fill:#FFFFFF,stroke:#B9BEDD,color:#111827
+    classDef ext fill:#FFFFFF,stroke:#0E7490,color:#111827
+    classDef ai fill:#FFFFFF,stroke:#5B4BDB,color:#111827
+
+    class M1,F1,J1,J2,J3 auth
+    class P1,P2,P3,P4,P5,P6,P7,M2,M3,F2,F3,F4,F5,F6,F7,F8,DBQ,APIC,T1,T2,T3,T4,T5,T6,T7,USERS page
+    class NASA,OPENALEX ext
+    class AI ai
+
+    style CLIENT fill:#F2F5FD,stroke:#C9CFE8
+    style BACKEND fill:#F2F5FD,stroke:#C9CFE8
+    style DB fill:#F2F5FD,stroke:#C9CFE8
+    style EXT fill:#F2F5FD,stroke:#C9CFE8
+    style FRONTEND fill:#FFFFFF,stroke:#5B4BDB
+    style JWT fill:#FFFFFF,stroke:#B4530A
+    style MW fill:#F2F5FD,stroke:#C9CFE8
+    style MODS fill:#F2F5FD,stroke:#C9CFE8
+    style DA fill:#F2F5FD,stroke:#C9CFE8
