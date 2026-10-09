@@ -1,0 +1,70 @@
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant F as Frontend (React)
+    participant B as Backend (Flask REST API)
+    participant D as Database (PostgreSQL)
+    participant O as OpenAlex API
+    participant N as NASA API
+    participant A as AI provider API
+
+    rect rgba(108, 140, 255, 0.10)
+    Note over U,D: Part 1 - Browse and search research threads
+    U->>F: Open Research Threads page
+    F->>B: GET /research-threads
+    B->>B: Middleware validates the request
+    B->>D: Get all threads
+    D-->>B: research_threads rows
+    B-->>F: 200 OK {threads}
+    F-->>U: Display thread cards
+    U->>F: Enter a topic or pick a category
+    F->>B: GET /research-threads with query and category
+    B->>D: Search and filter threads
+    D-->>B: Matching threads
+    alt Results found
+        B-->>F: 200 OK {threads}
+        F-->>U: Display matching thread cards
+    else No results
+        B-->>F: 200 OK with an empty list
+        F-->>U: Display the empty state
+    end
+    end
+
+    rect rgba(43, 140, 126, 0.10)
+    Note over U,N: Part 2 - Open a thread and explore its content
+    U->>F: Select a research thread
+    F->>B: GET /research-threads/{id}
+    B->>D: Get overview, timeline events and chart data
+    D-->>B: Thread, timeline_events and chart_data rows
+    B->>O: Request related papers (cache first)
+    O-->>B: Papers, authors and metadata
+    B->>D: Save papers and link them to the thread
+    B->>N: Request images and data for the topic (cache first)
+    N-->>B: NASA images and data
+    B-->>F: 200 OK {thread, timeline, papers, charts, nasaMedia}
+    F-->>U: Display Overview, Timeline, Related Papers and NASA media
+    end
+
+    rect rgba(255, 181, 71, 0.12)
+    Note over U,A: Part 3 - Ask the AI assistant about a paper
+    U->>F: Select a paper and ask a question
+    F->>B: POST /ai/explain {paperId, question}
+    B->>D: Load paper from research_papers
+    alt Paper is stored
+        D-->>B: Paper
+    else Paper is not stored
+        D-->>B: Not found
+        B->>O: Request the paper
+        O-->>B: Paper and metadata
+    end
+    B->>A: Send the paper and the question
+    alt AI provider responds
+        A-->>B: Explanation
+        B-->>F: 200 OK {explanation}
+        F-->>U: Show the explanation in the chat
+    else AI provider fails or times out
+        A-->>B: Error or timeout
+        B-->>F: JSON error
+        F-->>U: Show the error state
+    end
+    end
