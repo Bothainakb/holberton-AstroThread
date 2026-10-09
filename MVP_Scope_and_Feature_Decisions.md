@@ -1,162 +1,292 @@
-# AstroThread — MVP Scope and Feature Decisions
+# AstroThread — Technical Documentation
 
-## 1. Project Scope
+## 1. Define User Stories and Mockups
 
-AstroThread is an interactive astronomy and physics research platform that organizes scientific research into guided Research Threads. The platform connects research papers, discovery timelines, data visualizations, NASA media, and AI-powered explanations.
+### 1.1 User Stories
 
-The MVP will prioritize essential features that can realistically be implemented by one developer within three months.
+* Visitor/User registration and login.
+* User browsing and searching research threads.
+* User viewing research details, timelines, charts, and NASA media.
+* User using the AI Research Assistant.
+* User bookmarking research threads.
+* User managing profile information and changing password.
+* User viewing and upgrading a subscription plan.
+* Owner managing research threads and related content.
 
-## 2. User Roles and Permissions
+### 1.2 Mockups
 
-The platform will have two roles: **User** and **Owner**.
+* Home Page.
+* Research Threads Page.
+* Research Thread Details Page.
+* Data Visualization and Timeline sections.
+* AI Research Assistant.
+* Login and Registration Pages.
+* User Profile and Subscription Plans.
+* Owner Dashboard.
 
-### User
+## 2. Design System Architecture
 
-* Register and log in.
-* Browse and search research threads.
-* View research thread details and related papers.
-* Explore discovery timelines and data visualizations.
-* View relevant NASA media.
-* Use the AI Research Assistant.
-* Bookmark research threads.
-* Manage profile information and change password.
-* View current subscription plan and status.
+### 2.1 Architecture Overview
 
-### Owner
+AstroThread uses a client-server architecture:
 
-* Access the Owner dashboard.
-* Create, edit, and delete research threads.
-* Manage research thread information and related content.
-* Manage timeline events and research visualization data.
-* Access Owner-only features protected by backend authorization.
+* **Frontend:** React.
+* **Backend:** Python and Flask REST API.
+* **Database:** PostgreSQL.
+* **External Services:** NASA data/media API, research metadata API, and an AI service.
 
-Owner permissions are separate from subscription plans. A Premium subscription does not grant Owner privileges.
+### 2.2 Main Components
 
-## 3. Subscription Plans
+* React User Interface.
+* Flask REST API.
+* Authentication and Authorization.
+* Research Thread Management.
+* Subscription Management.
+* AI Research Assistant.
+* PostgreSQL Database.
+* External API Integration.
 
-AstroThread will include two subscription plans: **Free** and **Premium**.
+### 2.3 Authentication and Authorization
 
-### Free Plan
+Users authenticate through the login page. The backend validates credentials and issues an authentication token.
 
-* Browse and search research threads.
-* View research papers and thread details.
-* Explore discovery timelines and data visualizations.
-* Access relevant NASA media.
-* Use the AI Research Assistant with basic usage limits.
-* Bookmark research threads.
+The system has two roles:
 
-### Premium Plan
+* **User:** Accesses research features, bookmarks, profile, and subscription information.
+* **Owner:** Manages research threads and their related content.
 
-* Includes all Free plan features.
-* Provides increased AI Research Assistant usage limits.
+Owner permissions are enforced by the backend. A Premium subscription does not grant Owner privileges.
 
-Exact usage limits, prices, and billing periods will not be defined until they are confirmed and can be implemented.
+## 3. Define Components, Classes, and Database Design
 
-## 4. Subscription Implementation
+### 3.1 Main Classes and Components
 
-For the MVP, subscriptions will use a **demo activation flow without real payments**.
+* User
+* ResearchThread
+* ResearchPaper
+* TimelineEvent
+* ChartData
+* Bookmark
+* Subscription
+* AIResearchAssistant
 
-* Users can view and compare the Free and Premium plans.
-* Free users can select the Upgrade to Premium option.
-* The backend will activate the demo Premium plan and save the subscription status in the database.
-* The Profile page will display the user's current plan and subscription status.
-* Premium-only limits must be checked by the backend, not only hidden or displayed differently in the frontend.
+### 3.2 Database Tables
 
-The MVP will not process real payments, collect payment card information, or generate real invoices.
+**users**
 
-## 5. User Interface Changes
+* id
+* name
+* email
+* password_hash
+* role
+* created_at
+* updated_at
 
-The existing AstroThread Figma design will be updated without redesigning the entire project.
+**research_threads**
 
-### Subscription Plans Page
+* id
+* title
+* category
+* summary
+* is_featured
+* created_at
 
-The page will include:
+**research_papers**
 
-* Free and Premium plan cards.
-* A comparison of available features.
-* An indication of the user's current plan.
-* An Upgrade to Premium button for Free users.
-* A clear confirmation state after demo activation.
+* id
+* openalex_id
+* title
+* authors
+* publication_year
+* abstract
+* url
 
-### Profile Page
+**thread_papers**
 
-The page will include:
+* thread_id
+* paper_id
 
-* Basic profile information.
-* Current subscription plan.
-* Subscription status.
-* An action to view or upgrade the plan.
-* An option to change the password.
+**timeline_events**
 
-### Owner Dashboard
+* id
+* thread_id
+* year
+* title
+* description
 
-The dashboard will provide simple content management features:
+**chart_data**
 
-* Create research threads.
-* Edit existing research threads.
-* Delete research threads.
-* Manage associated timeline events and visualization data.
+* id
+* thread_id
+* title
+* chart_type
+* dataset
 
-The interface will reuse the existing design system, colors, typography, buttons, and components.
+**bookmarks**
 
-## 6. Database Requirements
+* id
+* user_id
+* thread_id
+* created_at
 
-The database will include a `subscriptions` table to store subscription information.
+**subscriptions**
 
-Suggested fields:
+* id
+* user_id
+* plan
+* status
+* start_date
+* end_date
+* created_at
+* updated_at
 
-* `id`
-* `user_id`
-* `plan`
-* `status`
-* `start_date`
-* `end_date`
-* `created_at`
-* `updated_at`
+### 3.3 Relationships
 
-The `user_id` field will reference the user who owns the subscription.
+* A User can have multiple Bookmarks.
+* A ResearchThread can have multiple Bookmarks.
+* A ResearchThread can have multiple TimelineEvents.
+* A ResearchThread can have multiple ChartData records.
+* ResearchThreads and ResearchPapers have a many-to-many relationship through thread_papers.
+* A User can have subscription records over time, while the system must enforce the intended active-subscription rule.
 
-The subscription plan and user role will be stored and managed separately. Subscription status and Premium access must be validated by the backend.
+### 3.4 Roles and Subscription Plans
 
-## 7. Security Requirements
+The `role` field identifies whether an account is a User or Owner.
 
-* Passwords must be securely hashed and never stored as plain text.
-* Authenticated endpoints must validate the user's authentication token.
-* Owner-only endpoints must verify the Owner role on the backend.
-* Users must not be able to modify another user's profile, bookmarks, or subscription.
-* Premium-only functionality must be checked by the backend.
-* Password changes must verify the current password before accepting a new password.
-* Input validation and appropriate error responses must be implemented.
+The subscription `plan` identifies whether the user has Free or Premium access. Roles and subscription plans are separate.
 
-## 8. Testing Requirements
+For the MVP:
 
-Testing will cover the following scenarios:
+* **Free:** Access to core research features and basic AI usage.
+* **Premium:** Core features plus increased AI usage limits.
+* Subscription activation will be a demo flow without real payment processing.
 
-* User registration and login.
+## 4. Create High-Level Sequence Diagrams
+
+### 4.1 User Login
+
+1. The user submits email and password.
+2. React sends the credentials to Flask.
+3. Flask validates the credentials against the database.
+4. Flask returns an authentication token and the user's role.
+5. React opens the appropriate interface.
+
+### 4.2 Research Thread Browsing
+
+1. The user opens the Research Threads page.
+2. React requests research threads from Flask.
+3. Flask retrieves the records from PostgreSQL.
+4. Flask returns the results.
+5. React displays the research threads.
+
+### 4.3 AI Research Assistant
+
+1. The user submits a question or requests an explanation.
+2. React sends the request to Flask with the authentication token.
+3. Flask checks authorization and applicable usage limits.
+4. Flask calls the AI service.
+5. Flask returns the response to React.
+
+### 4.4 Premium Demo Activation
+
+1. The user selects Upgrade to Premium.
+2. React sends the request to Flask.
+3. Flask verifies the authenticated user.
+4. Flask updates the subscription record using the demo activation flow.
+5. React displays the updated subscription status.
+
+### 4.5 Owner Content Management
+
+1. The Owner submits a create, edit, or delete request.
+2. React sends the request to Flask with the authentication token.
+3. Flask verifies the token and Owner role.
+4. Flask validates the request and updates PostgreSQL.
+5. Flask returns the result to React.
+
+## 5. Document External and Internal APIs
+
+### 5.1 Internal APIs
+
+| Method | Endpoint                          | Purpose                              |
+| ------ | --------------------------------- | ------------------------------------ |
+| POST   | `/auth/register`                  | Register a User account              |
+| POST   | `/auth/login`                     | Authenticate a user                  |
+| PATCH  | `/auth/password`                  | Change the current user's password   |
+| GET    | `/research-threads`               | List research threads                |
+| GET    | `/research-threads/{id}`          | Retrieve thread details              |
+| GET    | `/research-threads/{id}/papers`   | Retrieve related papers              |
+| GET    | `/research-threads/{id}/timeline` | Retrieve timeline events             |
+| GET    | `/research-threads/{id}/charts`   | Retrieve chart data                  |
+| GET    | `/profile`                        | Retrieve the current user's profile  |
+| PATCH  | `/profile`                        | Update the current user's profile    |
+| GET    | `/bookmarks`                      | List the current user's bookmarks    |
+| POST   | `/bookmarks`                      | Add a bookmark                       |
+| DELETE | `/bookmarks/{thread_id}`          | Remove a bookmark                    |
+| GET    | `/subscription/plans`             | List available plans                 |
+| GET    | `/subscription/me`                | Retrieve the current subscription    |
+| POST   | `/subscription/activate-demo`     | Activate a demo Premium subscription |
+| POST   | `/ai/explain`                     | Request an AI explanation            |
+| POST   | `/owner/research-threads`         | Create a research thread             |
+| PATCH  | `/owner/research-threads/{id}`    | Update a research thread             |
+| DELETE | `/owner/research-threads/{id}`    | Delete a research thread             |
+
+Owner endpoints require Owner authorization. User-specific endpoints must enforce ownership and authentication as appropriate.
+
+These endpoints are proposed specifications and must be aligned with the actual Flask routes before being marked as implemented.
+
+### 5.2 External APIs
+
+* **NASA API:** Provides relevant astronomy images and data.
+* **Research Metadata API:** Provides research paper metadata, such as titles, authors, abstracts, and publication information.
+* **AI Service API:** Generates explanations and summaries based on supported research content.
+
+The selected providers, required credentials, request formats, and error handling will be documented during implementation.
+
+## 6. Plan SCM and QA Strategies
+
+### 6.1 Software Configuration Management (SCM)
+
+* Use Git and GitHub for version control.
+* Keep the `main` branch stable.
+* Develop features in separate branches.
+* Use descriptive commit messages.
+* Test changes before merging into `main`.
+* Keep secrets and API keys out of the repository.
+* Document setup instructions and environment variables in README.md.
+
+### 6.2 Quality Assurance (QA)
+
+Testing will cover:
+
+* Registration and login.
 * Invalid credentials and password changes.
-* Access restrictions for unauthenticated users.
 * User and Owner authorization.
-* Creating, editing, and deleting research threads.
-* Subscription activation and status updates.
-* Free and Premium feature restrictions.
-* Preventing users from modifying other users' data.
-* Successful and unsuccessful API requests.
+* Research thread retrieval and content management.
+* Bookmark creation and removal.
+* Subscription activation and status.
+* Free and Premium AI usage restrictions.
+* External API failures and invalid responses.
+* Input validation and error handling.
 
-## 9. MVP Limitations and Future Improvements
+### 6.3 Security
 
-The following features are outside the initial MVP scope:
+* Store passwords as secure hashes.
+* Validate authentication tokens.
+* Enforce Owner permissions on the backend.
+* Prevent users from modifying other users' data.
+* Validate subscription status and Premium limits on the backend.
+* Protect API credentials and sensitive configuration.
+* Return appropriate HTTP status codes and error messages.
 
-* Real payment processing and billing.
-* Multiple subscription tiers beyond Free and Premium.
-* Advanced subscription analytics.
+### 6.4 Implementation and Testing Principle
+
+This document defines the intended technical design. Features that are not implemented must remain identified as planned rather than completed. All endpoint names, database fields, and flows must be updated to match the final implementation.
+
+## 7. Post-MVP Improvements
+
+* Real payment processing.
 * Interactive physics simulations.
-* Additional external research integrations beyond those required for the MVP.
-* Streaks, achievements, and other gamification features.
-
-These features may be considered after the MVP is completed.
-
-## 10. Implementation Principle
-
-All documented features must match the actual implementation. Features that are not implemented must be clearly identified as planned or out of scope.
-
-The priority is to deliver a functional, secure, and coherent MVP with a manageable scope for a single developer, rather than introducing unnecessary complexity.
+* Additional research integrations.
+* Advanced subscription management.
+* Streaks and achievements.
+* Additional languages and accessibility improvements.
