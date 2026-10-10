@@ -484,8 +484,8 @@ Password changes must verify the current password before accepting a new one. Re
 ### 5.2 External APIs
 
 - NASA API: Provides relevant astronomy images and data.
-- Research Metadata API: Provides research paper metadata, such as titles, authors, abstracts, and publication information.
-- AI Service API: Generates explanations or summaries based on supported research content.
+- OpenAlex API: Provides research paper metadata, including titles, authors, abstracts, and publication information.
+- OpenAI API: Generates explanations and summaries and answers user questions based on relevant research-paper context.
 
 The selected providers, request formats, required credentials, response formats, rate limits, and error handling must be documented during implementation.
 
