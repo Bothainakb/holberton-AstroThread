@@ -3,13 +3,16 @@ import Footer from './components/Footer/Footer'
 import Navbar from './components/Navbar/Navbar'
 import StarField from './components/StarField/StarField'
 import {
+  LOGIN_CANVAS,
   RESEARCH_THREADS_CANVAS,
   THREAD_DETAILS_CANVAS,
+  loginStars,
   researchThreadsStars,
   threadDetailsStars,
 } from './data/stars'
 import { researchThreads } from './data/threads'
 import HomePage from './pages/Home/HomePage'
+import LoginPage from './pages/Login/LoginPage'
 import ResearchSearchPage from './pages/ResearchSearch/ResearchSearchPage'
 import ResearchThreadsPage from './pages/ResearchThreads/ResearchThreadsPage'
 import ThreadDetailsPage from './pages/ThreadDetails/ThreadDetailsPage'
@@ -20,11 +23,13 @@ type Page =
   | { name: 'home' }
   | { name: 'research-threads' }
   | { name: 'research-search' }
+  | { name: 'login' }
   | { name: 'thread-details'; threadId: string }
 
 function resolvePage(pathname: string): Page {
   if (pathname === routes.researchThreads) return { name: 'research-threads' }
   if (pathname === routes.researchSearch) return { name: 'research-search' }
+  if (pathname === routes.login) return { name: 'login' }
   const threadId = matchThreadDetails(pathname)
   if (threadId) return { name: 'thread-details', threadId }
   // Unknown paths fall back to the Home page until more pages exist.
@@ -34,6 +39,7 @@ function resolvePage(pathname: string): Page {
 function pageTitle(page: Page) {
   if (page.name === 'research-threads') return 'Research Threads · AstroThread'
   if (page.name === 'research-search') return 'Research Search · AstroThread'
+  if (page.name === 'login') return 'Login · AstroThread'
   if (page.name === 'thread-details') {
     const thread = researchThreads.find((item) => item.id === page.threadId)
     return `${thread ? thread.title : 'Thread not found'} · AstroThread`
@@ -41,10 +47,11 @@ function pageTitle(page: Page) {
   return 'AstroThread'
 }
 
-/** Navbar item to highlight; Search has no text link, only the search icon. */
+/** Navbar item to highlight; Search and Login are the icon and button, not text links. */
 function activeNavHref(page: Page) {
   if (page.name === 'home') return routes.home
   if (page.name === 'research-search') return routes.researchSearch
+  if (page.name === 'login') return routes.login
   return routes.researchThreads
 }
 
@@ -75,6 +82,9 @@ function App() {
           glow="thread-details"
         />
       )}
+      {page.name === 'login' && (
+        <StarField stars={loginStars} twinkles={[]} canvas={LOGIN_CANVAS} glow="login" />
+      )}
       {page.name === 'home' && <StarField />}
 
       <Navbar activeHref={activeNavHref(page)} />
@@ -82,6 +92,7 @@ function App() {
       {page.name === 'home' && <HomePage />}
       {page.name === 'research-threads' && <ResearchThreadsPage />}
       {page.name === 'research-search' && <ResearchSearchPage />}
+      {page.name === 'login' && <LoginPage />}
       {/* The key resets the selected stage when switching between threads. */}
       {page.name === 'thread-details' && (
         <ThreadDetailsPage key={page.threadId} threadId={page.threadId} />

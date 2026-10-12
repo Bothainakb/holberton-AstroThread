@@ -72,6 +72,16 @@
   box-shadow: var(--glow-primary);
 }
 
+/* Figma "05-login-session": the Login button is the active item on the Login page. */
+.navbar__login--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.navbar__login--active:hover {
+  box-shadow: var(--glow-cyan);
+}
+
 @media (max-width: 1080px) {
   .navbar__links {
     gap: 24px;

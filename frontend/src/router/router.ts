@@ -6,6 +6,7 @@ export const routes = {
   home: '/',
   researchThreads: '/research-threads',
   researchSearch: '/research-search',
+  login: '/login',
 } as const
 
 /** Path of a thread's details page, e.g. "/research-threads/black-holes". */

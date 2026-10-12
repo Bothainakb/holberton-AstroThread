@@ -16,7 +16,7 @@ interface StarFieldProps {
   twinkles?: Star[]
   canvas?: StarCanvas
   /** Background glow layout; each Figma frame has its own nebula. */
-  glow?: 'home' | 'research-threads' | 'thread-details'
+  glow?: 'home' | 'research-threads' | 'thread-details' | 'login'
 }
 
 function positionStyle(star: Star, canvas: StarCanvas, extra?: CSSProperties): CSSProperties {
