@@ -65,9 +65,13 @@ function Navbar({ activeHref = routes.home }: NavbarProps) {
           <a className="navbar__icon-button" href="#" aria-label="Profile">
             <img src={userIcon} alt="" width={16.7505} height={17.7502} />
           </a>
-          <a className="navbar__login" href="#">
+          <Link
+            className={`navbar__login${activeHref === routes.login ? ' navbar__login--active' : ''}`}
+            href={routes.login}
+            aria-current={activeHref === routes.login ? 'page' : undefined}
+          >
             Login
-          </a>
+          </Link>
         </div>
       </div>
     </header>

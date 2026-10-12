@@ -1,4 +1,6 @@
 import type { CSSProperties } from 'react'
+import error from '../../assets/icons/auth/error.svg'
+import eye from '../../assets/icons/auth/eye.svg'
 import arrowLeft from '../../assets/icons/thread/arrow-left.svg'
 import arrowRight from '../../assets/icons/thread/arrow-right.svg'
 import bookmark from '../../assets/icons/thread/bookmark.svg'
@@ -12,8 +14,9 @@ import stageResearch from '../../assets/icons/thread/stage-research.svg'
 import stages from '../../assets/icons/thread/stages.svg'
 import './Icon.css'
 
-// Icons exported from the Figma frame "03-research-thread-details". Sizes are
-// the SVG sizes, which include 1px of padding for the stroke outlines.
+// Icons exported from the Figma frames "03-research-thread-details" and
+// "05-login-session" / "08-login-form-states". Sizes are the SVG sizes, which
+// include 1px of padding for the stroke outlines.
 const icons = {
   'arrow-left': { src: arrowLeft, width: 13.67, height: 12 },
   'arrow-right': { src: arrowRight, width: 12.5, height: 11 },
@@ -26,6 +29,8 @@ const icons = {
   'stage-discoveries': { src: stageDiscoveries, width: 18.79, height: 18.79 },
   'stage-data': { src: stageData, width: 19.33, height: 19.33 },
   'stage-latest': { src: stageLatest, width: 16.08, height: 21.5 },
+  eye: { src: eye, width: 18.67, height: 12.83 },
+  error: { src: error, width: 14, height: 14 },
 } as const
 
 export type IconName = keyof typeof icons
