@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { useRef, type FormEvent } from 'react'
 import searchIcon from '../../assets/icons/search-muted.svg'
 import './SearchBar.css'
 
@@ -10,6 +10,8 @@ interface SearchBarProps {
   value?: string
   onChange?: (query: string) => void
   onSearch?: (query: string) => void
+  /** Show a clear button while the (controlled) input has text. */
+  clearable?: boolean
 }
 
 /** Figma "Search Bar": search input for research topics and papers. */
@@ -20,7 +22,16 @@ function SearchBar({
   value,
   onChange,
   onSearch,
+  clearable = false,
 }: SearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const showClear = clearable && Boolean(value)
+
+  function handleClear() {
+    onChange?.('')
+    inputRef.current?.focus()
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const query = new FormData(event.currentTarget).get('q')
@@ -29,7 +40,9 @@ function SearchBar({
 
   return (
     <form
-      className={['search-bar', className].filter(Boolean).join(' ')}
+      className={['search-bar', clearable && 'search-bar--clearable', className]
+        .filter(Boolean)
+        .join(' ')}
       role="search"
       onSubmit={handleSubmit}
     >
@@ -38,6 +51,7 @@ function SearchBar({
       </label>
       <img className="search-bar__icon" src={searchIcon} alt="" width={17.25} height={17.25} />
       <input
+        ref={inputRef}
         id={id}
         className="search-bar__input"
         type="search"
@@ -47,6 +61,18 @@ function SearchBar({
         value={value}
         onChange={onChange ? (event) => onChange(event.target.value) : undefined}
       />
+      {showClear && (
+        <button type="button" className="search-bar__clear" aria-label="Clear search" onClick={handleClear}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path
+              d="M1 1L11 11M11 1L1 11"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      )}
     </form>
   )
 }

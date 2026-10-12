@@ -43,3 +43,38 @@
 .search-bar__input::-webkit-search-cancel-button {
   filter: invert(0.7);
 }
+
+/* Optional clear button (clearable search bars only). */
+.search-bar--clearable .search-bar__input {
+  padding-right: 52px;
+}
+
+/* The custom clear button replaces the browser's own one. */
+.search-bar--clearable .search-bar__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-bar__clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+
+.search-bar__clear:hover {
+  background: var(--color-surface-light);
+  color: var(--color-text);
+}
