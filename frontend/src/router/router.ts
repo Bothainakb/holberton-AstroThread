@@ -5,6 +5,7 @@ import { useSyncExternalStore } from 'react'
 export const routes = {
   home: '/',
   researchThreads: '/research-threads',
+  researchSearch: '/research-search',
 } as const
 
 /** Path of a thread's details page, e.g. "/research-threads/black-holes". */

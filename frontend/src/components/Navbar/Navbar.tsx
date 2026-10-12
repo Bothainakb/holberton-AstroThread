@@ -54,9 +54,14 @@ function Navbar({ activeHref = routes.home }: NavbarProps) {
         </nav>
 
         <div className="navbar__actions">
-          <a className="navbar__icon-button" href="#search" aria-label="Search">
+          <Link
+            className="navbar__icon-button"
+            href={routes.researchSearch}
+            aria-label="Search"
+            aria-current={activeHref === routes.researchSearch ? 'page' : undefined}
+          >
             <img src={searchIcon} alt="" width={17.25} height={17.25} />
-          </a>
+          </Link>
           <a className="navbar__icon-button" href="#" aria-label="Profile">
             <img src={userIcon} alt="" width={16.7505} height={17.7502} />
           </a>
