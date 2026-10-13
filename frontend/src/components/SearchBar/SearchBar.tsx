@@ -12,6 +12,7 @@ interface SearchBarProps {
   onSearch?: (query: string) => void
   /** Show a clear button while the (controlled) input has text. */
   clearable?: boolean
+  maxLength?: number
 }
 
 /** Figma "Search Bar": search input for research topics and papers. */
@@ -23,6 +24,7 @@ function SearchBar({
   onChange,
   onSearch,
   clearable = false,
+  maxLength,
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const showClear = clearable && Boolean(value)
@@ -58,6 +60,7 @@ function SearchBar({
         name="q"
         placeholder={placeholder}
         autoComplete="off"
+        maxLength={maxLength}
         value={value}
         onChange={onChange ? (event) => onChange(event.target.value) : undefined}
       />

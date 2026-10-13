@@ -18,3 +18,21 @@
 .tag--link:hover {
   box-shadow: inset 0 0 0 1px rgb(34 211 238 / 40%);
 }
+
+/* Button tags look the same as link tags. */
+.tag--button {
+  border: 0;
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.tag--pressed,
+.tag--pressed:hover {
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.tag--button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

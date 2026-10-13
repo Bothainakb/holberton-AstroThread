@@ -41,6 +41,26 @@ export function usePathname() {
   return useSyncExternalStore(subscribe, getPathname)
 }
 
+function getSearch() {
+  return window.location.search
+}
+
+/** Value of a URL query parameter such as "?q=...", or "" when it is missing. */
+export function useSearchParam(name: string) {
+  const search = useSyncExternalStore(subscribe, getSearch)
+  return new URLSearchParams(search).get(name) ?? ''
+}
+
+/** Sets or removes a URL query parameter without adding a history entry. */
+export function replaceSearchParam(name: string, value: string) {
+  const url = new URL(window.location.href)
+  if (value) url.searchParams.set(name, value)
+  else url.searchParams.delete(name)
+  if (url.href === window.location.href) return
+  window.history.replaceState(window.history.state, '', url)
+  window.dispatchEvent(new Event(NAVIGATE_EVENT))
+}
+
 export function navigate(to: string) {
   const url = new URL(to, window.location.href)
   window.history.pushState(null, '', url)

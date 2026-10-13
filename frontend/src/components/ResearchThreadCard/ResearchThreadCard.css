@@ -109,3 +109,12 @@
 .thread-card__link:hover svg {
   transform: translateX(3px);
 }
+
+/* Cards without stage data keep the footer pinned to the bottom. */
+.thread-card__description:has(+ .thread-card__footer) {
+  margin-bottom: 16px;
+}
+
+.thread-card__description + .thread-card__footer {
+  margin-top: auto;
+}

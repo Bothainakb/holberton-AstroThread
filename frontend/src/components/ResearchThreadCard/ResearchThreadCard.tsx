@@ -4,46 +4,61 @@ import { threadDetailsPath } from '../../router/router'
 import Tag from '../Tag/Tag'
 import './ResearchThreadCard.css'
 
+/**
+ * Threads from the API only have the core fields; paper count, stages and the
+ * updated label are shown when available.
+ */
+export type ResearchThreadCardData = Pick<ResearchThread, 'id' | 'title' | 'category' | 'description'> &
+  Partial<Pick<ResearchThread, 'paperCount' | 'completedStages' | 'totalStages' | 'updatedLabel'>>
+
 interface ResearchThreadCardProps {
-  thread: ResearchThread
+  thread: ResearchThreadCardData
 }
 
 function ResearchThreadCard({ thread }: ResearchThreadCardProps) {
-  const stages = Array.from({ length: thread.totalStages }, (_, index) => index < thread.completedStages)
+  const { completedStages, totalStages } = thread
+  const hasStages = completedStages !== undefined && totalStages !== undefined
+  const stages = hasStages
+    ? Array.from({ length: totalStages }, (_, index) => index < completedStages)
+    : []
 
   return (
     <article className="thread-card">
       <div className="thread-card__meta">
         <Tag>{thread.category}</Tag>
-        <span className="thread-card__muted">{thread.paperCount} papers</span>
+        {thread.paperCount !== undefined && (
+          <span className="thread-card__muted">{thread.paperCount} papers</span>
+        )}
       </div>
 
       <h3 className="thread-card__title">{thread.title}</h3>
       <p className="thread-card__description">{thread.description}</p>
 
-      <div className="thread-card__progress">
-        <div className="thread-card__progress-label">
-          <span>Research stages</span>
-          <span className="thread-card__progress-count">
-            {thread.completedStages} / {thread.totalStages}
-          </span>
+      {hasStages && (
+        <div className="thread-card__progress">
+          <div className="thread-card__progress-label">
+            <span>Research stages</span>
+            <span className="thread-card__progress-count">
+              {completedStages} / {totalStages}
+            </span>
+          </div>
+          <div
+            className="thread-card__stages"
+            role="progressbar"
+            aria-label={`${thread.title} research stages`}
+            aria-valuemin={0}
+            aria-valuemax={totalStages}
+            aria-valuenow={completedStages}
+          >
+            {stages.map((isComplete, index) => (
+              <span
+                key={index}
+                className={`thread-card__stage${isComplete ? ' thread-card__stage--complete' : ''}`}
+              />
+            ))}
+          </div>
         </div>
-        <div
-          className="thread-card__stages"
-          role="progressbar"
-          aria-label={`${thread.title} research stages`}
-          aria-valuemin={0}
-          aria-valuemax={thread.totalStages}
-          aria-valuenow={thread.completedStages}
-        >
-          {stages.map((isComplete, index) => (
-            <span
-              key={index}
-              className={`thread-card__stage${isComplete ? ' thread-card__stage--complete' : ''}`}
-            />
-          ))}
-        </div>
-      </div>
+      )}
 
       <div className="thread-card__footer">
         <Link className="thread-card__link" href={threadDetailsPath(thread.id)}>
@@ -58,7 +73,7 @@ function ResearchThreadCard({ thread }: ResearchThreadCardProps) {
             />
           </svg>
         </Link>
-        <span className="thread-card__muted">{thread.updatedLabel}</span>
+        {thread.updatedLabel && <span className="thread-card__muted">{thread.updatedLabel}</span>}
       </div>
     </article>
   )
