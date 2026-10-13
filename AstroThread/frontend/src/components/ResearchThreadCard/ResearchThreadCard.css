@@ -1,0 +1,120 @@
+.thread-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 311px;
+  padding: 24px 24px 37px;
+  border: 1px solid var(--color-surface-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.thread-card:hover {
+  border-color: rgb(108 99 255 / 50%);
+  box-shadow: var(--shadow-lg);
+}
+
+.thread-card__meta,
+.thread-card__progress-label,
+.thread-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.thread-card__muted,
+.thread-card__progress-label {
+  font-size: 12px;
+  color: var(--color-text-subtle);
+}
+
+.thread-card__muted,
+.thread-card__link {
+  white-space: nowrap;
+}
+
+.thread-card__footer {
+  flex-wrap: wrap;
+}
+
+.thread-card__title {
+  margin-top: 17px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.thread-card__description {
+  max-width: 296px;
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--color-text-secondary);
+}
+
+.thread-card__progress {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.thread-card__progress-count {
+  color: var(--color-accent);
+}
+
+.thread-card__stages {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.thread-card__stage {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-surface-light);
+}
+
+.thread-card__stage--complete {
+  background: var(--color-accent);
+}
+
+.thread-card__footer {
+  margin-top: 16px;
+  padding-top: 21px;
+  border-top: 1px solid var(--color-surface-light);
+}
+
+.thread-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 27px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+@media (max-width: 1080px) {
+  .thread-card__link {
+    gap: 12px;
+  }
+}
+
+.thread-card__link svg {
+  transition: transform 180ms ease;
+}
+
+.thread-card__link:hover svg {
+  transform: translateX(3px);
+}
+
+/* Cards without stage data keep the footer pinned to the bottom. */
+.thread-card__description:has(+ .thread-card__footer) {
+  margin-bottom: 16px;
+}
+
+.thread-card__description + .thread-card__footer {
+  margin-top: auto;
+}
