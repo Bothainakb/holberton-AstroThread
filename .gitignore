@@ -1,0 +1,14 @@
+# Secrets: never commit real credentials
+.env
+.env.*
+!.env.example
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Ignore old root-level project folders
+/backend/
+/frontend/
