@@ -1,6 +1,7 @@
 // Static content for the Home page, copied from the Figma frame "01-home".
-// These will be replaced with API data once the backend is connected.
-import { researchThreads as allThreads } from './threads'
+// Research threads come from the API (see HomePage); the rest is still static.
+import type { ResearchThreadCardData } from '../components/ResearchThreadCard/ResearchThreadCard'
+import type { ApiThread } from '../services/api'
 
 export interface TimelineEvent {
   year: number
@@ -20,14 +21,29 @@ export const popularTopics = [
   'Quantum Physics',
 ]
 
-/** The three threads featured on the Home page, in Figma order. */
-const featuredThreadIds = ['black-holes', 'exoplanets', 'dark-matter']
+/** Number of thread cards in the Home page grid (one row of three). */
+export const HOME_THREAD_LIMIT = 3
 
-export const researchThreads = featuredThreadIds.map((id) => {
-  const thread = allThreads.find((item) => item.id === id)
-  if (!thread) throw new Error(`Unknown featured thread: ${id}`)
-  return thread
-})
+/** "Black Holes" -> "black-holes", the id used by the Thread Details routes. */
+function slugify(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * Builds a Home page card from an API thread. Paper count, stages and the
+ * updated label are not in the database yet, so the card hides them.
+ */
+export function toHomeThread(thread: ApiThread): ResearchThreadCardData {
+  return {
+    id: slugify(thread.title) || String(thread.id),
+    title: thread.title,
+    category: thread.category,
+    description: thread.description,
+  }
+}
 
 export const blackHoleTimeline: TimelineEvent[] = [
   { year: 2015, label: 'First Observation' },
