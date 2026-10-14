@@ -12,8 +12,12 @@ The goal is to develop the AstroThread MVP by implementing the core features, co
 | Build the Home and Research Threads pages | Must Have | Frontend Developer | Figma designs |
 | Create APIs to display research threads | Must Have | Backend Developer | Backend setup |
 | Connect the frontend to the backend | Must Have | Frontend and Backend Developers | Frontend pages and APIs |
-| Test core features and fix bugs | Must Have | QA | Core features implemented |
+| Test core features and fix critical bugs | Must Have | QA | Core features implemented |
 | Review code and merge changes | Must Have | SCM | Code submitted |
+| Implement user registration and login | Should Have | Frontend and Backend Developers | Backend setup |
+| Implement bookmarks | Should Have | Frontend and Backend Developers | User authentication |
+| Improve charts and visual design | Could Have | Frontend Developer | Core features completed |
+| Implement advanced features outside the MVP scope | Won't Have | Development Team | Future development |
 
 ## 3. Sprint Schedule
 
@@ -21,8 +25,8 @@ The goal is to develop the AstroThread MVP by implementing the core features, co
 **Duration:** Week 1
 
 - Set up the database and backend.
-- Build the main frontend pages.
-- Create the API endpoints for research threads.
+- Build the Home and Research Threads pages.
+- Create API endpoints for research threads.
 
 **Sprint Goal:** Prepare the core components of the application.
 
@@ -30,18 +34,18 @@ The goal is to develop the AstroThread MVP by implementing the core features, co
 **Duration:** Week 2
 
 - Connect the frontend to the backend.
-- Test the main features.
-- Fix bugs and review the code.
-- Prepare the MVP for demonstration.
+- Implement prioritized additional features if time allows.
+- Test the main features and fix bugs.
+- Review code and prepare the MVP for demonstration.
 
 **Sprint Goal:** Deliver an integrated and tested MVP.
 
 ## 4. MoSCoW Prioritization
 
-- **Must Have:** Display research threads, view thread details, and connect the frontend to the backend.
-- **Should Have:** User registration, login, and bookmarks.
-- **Could Have:** Additional charts and UI improvements.
-- **Won't Have:** Features outside the agreed MVP scope.
+- **Must Have:** Database and backend setup, research threads, thread details, API integration, and core testing.
+- **Should Have:** User registration, login, and bookmarks, if they can be deferred without violating MVP requirements.
+- **Could Have:** Additional charts and visual improvements.
+- **Won't Have:** Advanced features outside the agreed MVP scope.
 
 ## 5. Definition of Done
 
@@ -58,4 +62,4 @@ A task is considered complete when the feature works as expected, the code is pu
 
 The team will track task completion, review progress regularly, identify blockers, and adjust priorities when necessary.
 
-Sprint reviews will demonstrate completed features, while retrospectives will identify improvements for the next sprint.
+At the end of each sprint, the team will conduct a sprint review to demonstrate completed features and a retrospective to identify improvements for the next sprint.
