@@ -2,64 +2,70 @@
 
 ## 1. Sprint Goal
 
-The goal is to develop the AstroThread MVP by implementing the core features, connecting the frontend to the backend, and testing the application.
+The goal is to organize AstroThread MVP development into manageable sprints, prioritize features, assign responsibilities, and define dependencies to ensure the core features are implemented and tested.
 
-## 2. Sprint Tasks and Responsibilities
+## 2. Sprint Duration
 
-| Task | Priority | Responsible Role | Dependency |
+- Sprint 1: 5 days
+- Sprint 2: 5 days
+
+The schedule can be adjusted according to team progress and the project deadline.
+
+## 3. Sprint 1 – Core Features
+
+**Goal:** Set up the project and implement the basic research browsing functionality.
+
+| Task | Priority | Responsibility | Dependency |
 |---|---|---|---|
-| Set up the database and backend | Must Have | Backend Developer | None |
-| Build the Home and Research Threads pages | Must Have | Frontend Developer | Figma designs |
-| Create APIs to display research threads | Must Have | Backend Developer | Backend setup |
-| Connect the frontend to the backend | Must Have | Frontend and Backend Developers | Frontend pages and APIs |
-| Test core features and fix critical bugs | Must Have | QA | Core features implemented |
-| Review code and merge changes | Must Have | SCM | Code submitted |
-| Implement user registration and login | Should Have | Frontend and Backend Developers | Backend setup |
-| Implement bookmarks | Should Have | Frontend and Backend Developers | User authentication |
-| Improve charts and visual design | Could Have | Frontend Developer | Core features completed |
-| Implement advanced features outside the MVP scope | Won't Have | Development Team | Future development |
+| Set up frontend, backend, and database | Must Have | Development Team | None |
+| Implement user registration and login | Must Have | Backend Developer | Database setup |
+| Display and search research threads | Must Have | Frontend and Backend Developers | Project setup |
+| Display thread details and related research papers | Must Have | Frontend and Backend Developers | Research threads |
+| Implement initial database models and API endpoints | Must Have | Backend Developer | Database setup |
+| Review code and test completed features | Must Have | QA / Development Team | Implemented features |
 
-## 3. Sprint Schedule
+## 4. Sprint 2 – Research Features and Integration
 
-### Sprint 1: Core Development
-**Duration:** Week 1
+**Goal:** Complete the main research experience, connect components, and test the MVP.
 
-- Set up the database and backend.
-- Build the Home and Research Threads pages.
-- Create API endpoints for research threads.
+| Task | Priority | Responsibility | Dependency |
+|---|---|---|---|
+| Display discovery timelines | Must Have | Frontend and Backend Developers | Thread details |
+| Integrate NASA images and data | Must Have | Backend Developer | Research thread structure |
+| Implement interactive data visualizations | Must Have | Frontend and Backend Developers | Chart data and APIs |
+| Integrate the AI research assistant | Must Have | Backend Developer | AI API configuration |
+| Implement bookmarks, profile, and password changes | Should Have | Frontend and Backend Developers | Authentication |
+| Implement Owner Dashboard for managing research threads | Should Have | Frontend and Backend Developers | Authentication and authorization |
+| Add Premium subscription demo functionality | Could Have | Development Team | Core application features |
+| Perform integration testing and fix bugs | Must Have | QA / Development Team | Implemented features |
+| Review and merge code changes | Must Have | SCM / Development Team | Code changes |
 
-**Sprint Goal:** Prepare the core components of the application.
+## 5. MoSCoW Prioritization
 
-### Sprint 2: Integration and Testing
-**Duration:** Week 2
+- **Must Have:** User registration and login, browsing and searching research threads, thread details, related papers, discovery timelines, NASA media, data visualizations, and the AI assistant.
+- **Should Have:** Bookmarks, profile management, password changes, and Owner Dashboard.
+- **Could Have:** Premium subscription plans and demo activation.
+- **Won't Have in This MVP:** Real payment processing, advanced physics simulations, and other post-MVP enhancements.
 
-- Connect the frontend to the backend.
-- Implement prioritized additional features if time allows.
-- Test the main features and fix bugs.
-- Review code and prepare the MVP for demonstration.
+## 6. Definition of Done
 
-**Sprint Goal:** Deliver an integrated and tested MVP.
+A task is considered complete when:
 
-## 4. MoSCoW Prioritization
+- The feature works according to its requirements.
+- The code is reviewed and follows project standards.
+- Relevant tests are performed and passed.
+- Identified bugs are fixed or documented.
+- Changes are committed to the GitHub repository.
 
-- **Must Have:** Database and backend setup, research threads, thread details, API integration, and core testing.
-- **Should Have:** User registration, login, and bookmarks, if they can be deferred without violating MVP requirements.
-- **Could Have:** Additional charts and visual improvements.
-- **Won't Have:** Advanced features outside the agreed MVP scope.
+## 7. Team Responsibilities
 
-## 5. Definition of Done
+- **Project Manager:** Organizes sprint planning, tracks progress, and coordinates the team.
+- **SCM:** Manages branches, commits, pull requests, and code integration.
+- **QA:** Tests features, documents bugs, and verifies fixes.
+- **Development Team:** Implements frontend, backend, database, and API features.
 
-A task is considered complete when the feature works as expected, the code is pushed to GitHub, and the required tests pass.
+Team members will be assigned specific tasks according to their roles and availability.
 
-## 6. Team Responsibilities
+## 8. Sprint Tracking
 
-- **Project Manager (PM):** Organizes tasks, tracks progress, and monitors deadlines.
-- **Source Control Manager (SCM):** Manages Git branches, reviews changes, and coordinates code integration.
-- **Quality Assurance (QA):** Tests features, reports bugs, and verifies fixes.
-- **Developers:** Implement frontend, backend, and database tasks.
-
-## 7. Progress Tracking
-
-The team will track task completion, review progress regularly, identify blockers, and adjust priorities when necessary.
-
-At the end of each sprint, the team will conduct a sprint review to demonstrate completed features and a retrospective to identify improvements for the next sprint.
+The team will review task progress regularly, discuss blockers, and update the sprint plan when necessary. At the end of each sprint, the team will review completed work and identify improvements for the next sprint.
