@@ -1,31 +1,16 @@
-import os
-
 import psycopg
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from auth import auth_bp
+from db import get_db_connection
+
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-
-
-def get_db_connection():
-    password = os.getenv("DB_PASSWORD")
-
-    if not password:
-        raise RuntimeError(
-            "DB_PASSWORD is not set. Check your backend/.env file."
-        )
-
-    return psycopg.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=os.getenv("DB_PORT", "5432"),
-        dbname=os.getenv("DB_NAME", "astrothread_db"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=password,
-    )
+app.register_blueprint(auth_bp)
 
 
 @app.route("/api/health", methods=["GET"])
