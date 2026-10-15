@@ -72,6 +72,13 @@
   box-shadow: var(--glow-primary);
 }
 
+/* "Log out" is a button, so it needs the link's font, color and cursor. */
+.navbar__login--button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
 /* Figma "05-login-session": the Login button is the active item on the Login page. */
 .navbar__login--active {
   border-color: var(--color-accent);
