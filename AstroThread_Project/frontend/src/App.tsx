@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { restoreSession } from './auth/auth'
 import Footer from './components/Footer/Footer'
 import Navbar from './components/Navbar/Navbar'
 import StarField from './components/StarField/StarField'
@@ -62,6 +63,11 @@ function App() {
   useEffect(() => {
     document.title = title
   }, [title])
+
+  // Picks up an existing login session (HttpOnly cookie) after a reload.
+  useEffect(() => {
+    restoreSession()
+  }, [])
 
   return (
     <div className="app">
