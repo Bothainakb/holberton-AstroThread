@@ -229,5 +229,312 @@ class ThreadsIntegrationTests(unittest.TestCase):
         self.assertEqual(self.search("   "), all_threads)
 
 
+PASSWORD = "correct horse battery"
+# A fast hash method keeps the tests quick; login accepts any Werkzeug hash.
+PASSWORD_HASH = backend.generate_password_hash(PASSWORD, method="pbkdf2:sha256:1000")
+USER_ROW = (1, "ada@example.com", "user", PASSWORD_HASH)
+OWNER_ROW = (2, "owner@example.com", "owner", PASSWORD_HASH)
+SESSION_COOKIE = "astrothread_session"
+
+
+class AuthTestCase(unittest.TestCase):
+    """Uses a test secret key and a fake database connection."""
+
+    def setUp(self):
+        backend.app.logger.disabled = True
+        self.addCleanup(setattr, backend.app.logger, "disabled", False)
+        config = mock.patch.dict(backend.app.config, {"SECRET_KEY": "test-secret"})
+        config.start()
+        self.addCleanup(config.stop)
+
+        self.client = backend.app.test_client()
+        connection = mock.MagicMock()
+        self.cursor = connection.__enter__.return_value.cursor.return_value
+        self.cursor = self.cursor.__enter__.return_value
+        self.cursor.fetchone.return_value = None
+        patcher = mock.patch.object(
+            backend, "get_db_connection", return_value=connection
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def login(self, row, password=PASSWORD, **extra):
+        """Signs in as the account in `row` (the database returns that row)."""
+        self.cursor.fetchone.return_value = row
+        body = {"email": row[1] if row else "nobody@example.com", "password": password}
+        return self.client.post("/api/auth/login", json={**body, **extra})
+
+    def set_stored_user(self, row):
+        """What the users table returns for the session lookup."""
+        self.cursor.fetchone.return_value = row[:3] if row else None
+
+
+class LoginTests(AuthTestCase):
+    def test_user_login_returns_verified_user(self):
+        response = self.login(USER_ROW)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {"user": {"id": 1, "email": "ada@example.com", "role": "user"}},
+        )
+        self.assertIsNotNone(self.client.get_cookie(SESSION_COOKIE))
+
+    def test_owner_login_returns_owner_role(self):
+        response = self.login(OWNER_ROW)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["user"]["role"], "owner")
+
+    def test_role_sent_by_client_is_ignored(self):
+        response = self.login(USER_ROW, role="owner")
+
+        self.assertEqual(response.get_json()["user"]["role"], "user")
+
+    def test_response_never_contains_password_data(self):
+        body = self.login(USER_ROW).get_data(as_text=True)
+
+        self.assertNotIn("password", body)
+        self.assertNotIn(PASSWORD_HASH, body)
+
+    def test_session_cookie_is_http_only_and_holds_no_role(self):
+        header = self.login(OWNER_ROW).headers["Set-Cookie"]
+
+        self.assertIn("HttpOnly", header)
+        self.assertIn("SameSite=Lax", header)
+        with self.client.session_transaction() as session:
+            self.assertEqual(dict(session), {"_permanent": False, "user_id": 2})
+
+    def test_email_is_matched_case_insensitively(self):
+        self.cursor.fetchone.return_value = USER_ROW
+        self.client.post(
+            "/api/auth/login",
+            json={"email": "  Ada@Example.COM ", "password": PASSWORD},
+        )
+
+        sql, params = self.cursor.execute.call_args.args
+        self.assertIn("lower(email) = %s", sql)
+        self.assertEqual(params, ("ada@example.com",))
+
+    def test_wrong_password_is_rejected(self):
+        response = self.login(USER_ROW, password="wrong password")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json(), {"error": backend.INVALID_CREDENTIALS})
+        self.assertIsNone(self.client.get_cookie(SESSION_COOKIE))
+
+    def test_unknown_email_gets_the_same_response_as_wrong_password(self):
+        with mock.patch.object(
+            backend, "check_password_hash", wraps=backend.check_password_hash
+        ) as check:
+            response = self.login(None)
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json(), {"error": backend.INVALID_CREDENTIALS})
+        # A hash is still checked, so the timing does not reveal the miss.
+        check.assert_called_once_with(backend.DUMMY_PASSWORD_HASH, PASSWORD)
+        self.assertIsNone(self.client.get_cookie(SESSION_COOKIE))
+
+    def test_missing_or_invalid_fields_are_rejected_without_querying(self):
+        bodies = [
+            {},
+            {"email": "ada@example.com"},
+            {"password": PASSWORD},
+            {"email": "   ", "password": PASSWORD},
+            {"email": "ada@example.com", "password": ""},
+            {"email": ["ada@example.com"], "password": PASSWORD},
+            {"email": "ada@example.com", "password": 12345678},
+        ]
+        for body in bodies:
+            with self.subTest(body=body):
+                response = self.client.post("/api/auth/login", json=body)
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(
+                    response.get_json(), {"error": "Email and password are required"}
+                )
+        self.cursor.execute.assert_not_called()
+
+    def test_non_json_body_is_rejected(self):
+        for kwargs in (
+            {"data": "email=ada@example.com&password=x"},
+            {"json": ["ada@example.com", PASSWORD]},
+        ):
+            with self.subTest(kwargs=kwargs):
+                response = self.client.post("/api/auth/login", **kwargs)
+                self.assertEqual(response.status_code, 400)
+        self.cursor.execute.assert_not_called()
+
+    def test_too_long_fields_are_rejected(self):
+        response = self.client.post(
+            "/api/auth/login",
+            json={"email": "a" * 300 + "@example.com", "password": PASSWORD},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.cursor.execute.assert_not_called()
+
+    def test_database_error_returns_json_500(self):
+        error = psycopg.OperationalError("connection refused")
+        with mock.patch.object(backend, "get_db_connection", side_effect=error):
+            response = self.login(USER_ROW)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.get_json(), {"error": "Unable to sign in right now"})
+
+    def test_login_is_disabled_without_secret_key(self):
+        with mock.patch.dict(backend.app.config, {"SECRET_KEY": None}):
+            response = self.login(USER_ROW)
+
+        self.assertEqual(response.status_code, 503)
+        self.cursor.execute.assert_not_called()
+
+    def test_remember_me_sets_a_persistent_cookie(self):
+        self.login(USER_ROW)
+        self.assertIsNone(self.client.get_cookie(SESSION_COOKIE).expires)
+
+        self.login(USER_ROW, remember=True)
+        self.assertIsNotNone(self.client.get_cookie(SESSION_COOKIE).expires)
+
+
+class SessionTests(AuthTestCase):
+    def test_me_requires_login(self):
+        response = self.client.get("/api/auth/me")
+
+        self.assertEqual(response.status_code, 401)
+        self.cursor.execute.assert_not_called()
+
+    def test_me_returns_the_signed_in_user(self):
+        self.login(OWNER_ROW)
+        self.set_stored_user(OWNER_ROW)
+
+        response = self.client.get("/api/auth/me")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {"user": {"id": 2, "email": "owner@example.com", "role": "owner"}},
+        )
+        self.assertEqual(self.cursor.execute.call_args.args[1], (2,))
+
+    def test_role_is_read_from_the_database_on_each_request(self):
+        self.login(OWNER_ROW)
+        # The account is demoted after signing in.
+        self.set_stored_user((2, "owner@example.com", "user"))
+
+        response = self.client.get("/api/auth/me")
+
+        self.assertEqual(response.get_json()["user"]["role"], "user")
+
+    def test_deleted_account_ends_the_session(self):
+        self.login(USER_ROW)
+        self.set_stored_user(None)
+
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+
+    def test_forged_cookie_is_rejected(self):
+        self.client.set_cookie(SESSION_COOKIE, '{"user_id": 2}')
+
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+        self.cursor.execute.assert_not_called()
+
+    def test_cookie_signed_with_another_key_is_rejected(self):
+        self.login(OWNER_ROW)
+        with mock.patch.dict(backend.app.config, {"SECRET_KEY": "other-secret"}):
+            response = self.client.get("/api/auth/me")
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_logout_ends_the_session(self):
+        self.login(USER_ROW)
+        self.set_stored_user(USER_ROW)
+
+        response = self.client.post("/api/auth/logout")
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+
+    def test_session_lookup_error_returns_json_500(self):
+        self.login(USER_ROW)
+        error = psycopg.OperationalError("connection refused")
+        with mock.patch.object(backend, "get_db_connection", side_effect=error):
+            response = self.client.get("/api/auth/me")
+
+        self.assertEqual(response.status_code, 500)
+
+
+class OwnerAuthorizationTests(AuthTestCase):
+    """login_required(role="owner") protects owner-only views."""
+
+    def call_owner_view(self, user_id=None):
+        view = backend.login_required(role="owner")(
+            lambda: backend.jsonify({"ok": True})
+        )
+        with backend.app.test_request_context():
+            if user_id is not None:
+                backend.session["user_id"] = user_id
+            return backend.app.make_response(view())
+
+    def test_anonymous_request_is_unauthorized(self):
+        self.assertEqual(self.call_owner_view().status_code, 401)
+
+    def test_user_account_is_forbidden(self):
+        self.set_stored_user(USER_ROW)
+
+        self.assertEqual(self.call_owner_view(user_id=1).status_code, 403)
+
+    def test_owner_account_is_allowed(self):
+        self.set_stored_user(OWNER_ROW)
+
+        response = self.call_owner_view(user_id=2)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"ok": True})
+
+    def test_owner_session_of_demoted_account_is_forbidden(self):
+        # The session says nothing about the role; the stored role decides.
+        self.set_stored_user((2, "owner@example.com", "user"))
+
+        self.assertEqual(self.call_owner_view(user_id=2).status_code, 403)
+
+    def test_non_integer_user_id_is_unauthorized(self):
+        self.assertEqual(self.call_owner_view(user_id="2").status_code, 401)
+        self.cursor.execute.assert_not_called()
+
+
+class UsersTableIntegrationTests(unittest.TestCase):
+    """Checks the migrated `users` table (read-only)."""
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            with backend.get_db_connection() as conn:
+                cls.columns = {
+                    row[0]
+                    for row in conn.execute(
+                        """
+                        SELECT column_name FROM information_schema.columns
+                        WHERE table_schema = 'public' AND table_name = 'users';
+                        """
+                    )
+                }
+        except (psycopg.Error, RuntimeError) as error:
+            raise unittest.SkipTest(f"Database not reachable: {error}")
+        if not cls.columns:
+            raise unittest.SkipTest("users table missing; run python manage.py migrate")
+
+    def test_users_table_has_expected_columns(self):
+        self.assertEqual(
+            self.columns,
+            {"id", "name", "email", "password_hash", "role", "created_at", "updated_at"},
+        )
+
+    def test_roles_are_limited_to_user_and_owner(self):
+        with backend.get_db_connection() as conn:
+            roles = conn.execute(
+                "SELECT DISTINCT role FROM users;"
+            ).fetchall()
+        self.assertLessEqual({row[0] for row in roles}, set(backend.ROLES))
+
+
 if __name__ == "__main__":
     unittest.main()

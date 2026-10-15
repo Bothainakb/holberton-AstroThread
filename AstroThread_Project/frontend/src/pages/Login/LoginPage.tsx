@@ -1,11 +1,19 @@
 import { useRef, useState, type FormEvent } from 'react'
+import { homePathFor, signIn, useAuth } from '../../auth/auth'
 import Icon from '../../components/Icon/Icon'
+import { navigate } from '../../router/router'
+import { ApiError } from '../../services/api'
 import './LoginPage.css'
 
 type Field = 'email' | 'password'
 type FieldErrors = Partial<Record<Field, string>>
 
-// Simple format check; the server will do the real validation once it exists.
+interface Notice {
+  kind: 'info' | 'error'
+  message: string
+}
+
+// Simple format check before sending; the server verifies the credentials.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function validate(email: string, password: string): FieldErrors {
@@ -15,22 +23,32 @@ function validate(email: string, password: string): FieldErrors {
   return errors
 }
 
-/** Shown instead of a fake sign-in: there is no authentication endpoint yet. */
-const NOT_CONNECTED = {
-  email:
-    "Sign-in isn't available yet. The authentication service hasn't been connected, so your details were not sent or checked.",
-  google:
-    "Google sign-in isn't available yet. The authentication service hasn't been connected.",
+/** Shown instead of a fake sign-in: Google sign-in has no backend support. */
+const GOOGLE_NOT_CONNECTED =
+  "Google sign-in isn't available yet. Sign in with your email and password instead."
+
+function loginErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return 'Incorrect email or password. Please try again.'
+    if (error.status === undefined || error.status >= 500) {
+      return `${error.message} Please try again in a moment.`
+    }
+    return error.message
+  }
+  return 'Something went wrong while signing in. Please try again.'
 }
 
 /** Figma "05-login-session"; field states follow "08-login-form-states". */
 function LoginPage() {
+  const auth = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [submitted, setSubmitted] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [notice, setNotice] = useState<Notice | null>(null)
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
 
@@ -43,36 +61,66 @@ function LoginPage() {
     if (submitted) setErrors(validate(next.email, next.password))
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (loading) return
     setSubmitted(true)
     const nextErrors = validate(email, password)
     setErrors(nextErrors)
+    setNotice(null)
 
     if (nextErrors.email) {
-      setNotice(null)
       emailRef.current?.focus()
-    } else if (nextErrors.password) {
-      setNotice(null)
+      return
+    }
+    if (nextErrors.password) {
       passwordRef.current?.focus()
-    } else {
-      setNotice(NOT_CONNECTED.email)
+      return
+    }
+
+    setLoading(true)
+    try {
+      const user = await signIn(email.trim(), password, remember)
+      // The destination comes from the role the server verified.
+      navigate(homePathFor(user.role))
+    } catch (error) {
+      setLoading(false)
+      setNotice({ kind: 'error', message: loginErrorMessage(error) })
+      if (error instanceof ApiError && error.status === 401) {
+        setPassword('')
+        passwordRef.current?.focus()
+      }
     }
   }
+
+  const signedInAs = auth.status === 'signed-in' && !loading ? auth.user : null
 
   return (
     <main className="login-page">
       <section className="login-page__inner container" aria-labelledby="login-title">
-        <form className="login-card" noValidate onSubmit={handleSubmit}>
+        <form className="login-card" noValidate onSubmit={handleSubmit} aria-busy={loading}>
           <h1 className="login-card__title" id="login-title">
             Welcome Back
           </h1>
           <p className="login-card__subtitle">Sign in to continue your research journey.</p>
 
-          {notice && (
+          {signedInAs && !notice && (
             <p className="login-notice" role="status">
               <Icon name="error" className="login-notice__icon" />
-              <span>{notice}</span>
+              <span>
+                You&apos;re signed in as {signedInAs.email}
+                {signedInAs.role === 'owner' ? ' (Owner)' : ''}. Signing in again switches accounts.
+              </span>
+            </p>
+          )}
+
+          {notice && (
+            <p
+              className={`login-notice${notice.kind === 'error' ? ' login-notice--error' : ''}`}
+              role={notice.kind === 'error' ? 'alert' : 'status'}
+            >
+              <Icon name="error" className="login-notice__icon" />
+              <span>{notice.message}</span>
             </p>
           )}
 
@@ -140,7 +188,13 @@ function LoginPage() {
 
           <div className="login-card__options">
             <label className="login-remember">
-              <input className="login-remember__box" type="checkbox" name="remember" />
+              <input
+                className="login-remember__box"
+                type="checkbox"
+                name="remember"
+                checked={remember}
+                onChange={(event) => setRemember(event.target.checked)}
+              />
               Remember me
             </label>
             {/* There is no password-reset screen or endpoint yet. */}
@@ -149,8 +203,13 @@ function LoginPage() {
             </a>
           </div>
 
-          <button type="submit" className="button button--primary login-card__submit">
-            Sign In
+          <button
+            type="submit"
+            className="button button--primary login-card__submit"
+            disabled={loading}
+          >
+            {loading && <span className="login-card__spinner" aria-hidden="true" />}
+            {loading ? 'Signing In…' : 'Sign In'}
           </button>
 
           <p className="login-card__signup">
@@ -170,7 +229,7 @@ function LoginPage() {
           <button
             type="button"
             className="login-google"
-            onClick={() => setNotice(NOT_CONNECTED.google)}
+            onClick={() => setNotice({ kind: 'info', message: GOOGLE_NOT_CONNECTED })}
           >
             <span className="login-google__badge" aria-hidden="true">
               G

@@ -72,6 +72,27 @@
   box-shadow: var(--glow-primary);
 }
 
+/* "Log out" is a <button>; match the Login link. */
+button.navbar__login {
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.navbar__login--pending {
+  visibility: hidden;
+}
+
+.navbar__role {
+  margin-left: -16px;
+  padding: 2px 10px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--color-accent);
+}
+
 /* Figma "05-login-session": the Login button is the active item on the Login page. */
 .navbar__login--active {
   border-color: var(--color-accent);
