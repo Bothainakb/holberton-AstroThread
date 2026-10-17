@@ -1,0 +1,333 @@
+/* Spacing follows the 1440px Figma frame "05-login-session"; field states
+   follow "08-login-form-states". */
+
+.login-page {
+  padding-block: 88px 122px;
+}
+
+.login-page__inner {
+  display: flex;
+  justify-content: center;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 100%);
+  padding: 38px 40px 40px;
+  border: 1px solid var(--color-surface-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.login-card__title {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 36px;
+  text-align: center;
+}
+
+.login-card__subtitle {
+  margin-top: 11px;
+  font-size: 16px;
+  line-height: 19px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* "Not connected" notice, laid out like the Figma success banner. */
+.login-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 23px;
+  padding: 11px 16px;
+  border: 1px solid rgb(56 189 248 / 50%);
+  border-radius: var(--radius-sm);
+  background: rgb(56 189 248 / 10%);
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--color-info);
+}
+
+/* Failed sign-in: same layout in the Figma error color. */
+.login-notice--error {
+  border-color: rgb(248 113 113 / 50%);
+  background: rgb(248 113 113 / 10%);
+  color: var(--color-error);
+}
+
+.login-notice__icon {
+  margin-top: 1.5px;
+}
+
+/* Fields */
+.login-field {
+  display: flex;
+  flex-direction: column;
+  margin-top: 23px;
+}
+
+.login-field + .login-field {
+  margin-top: 19px;
+}
+
+.login-field__label {
+  font-size: 14px;
+  line-height: 17px;
+}
+
+.login-field__control {
+  position: relative;
+}
+
+.login-field__input {
+  width: 100%;
+  height: 50px;
+  margin-top: 8px;
+  padding: 0 16px;
+  border: 1px solid var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: 16px;
+  color: var(--color-text);
+  transition: border-color 180ms ease;
+}
+
+.login-field__control .login-field__input {
+  display: block;
+}
+
+.login-field__input::placeholder {
+  color: var(--color-text-subtle);
+  opacity: 1;
+}
+
+/* Figma "INPUT FOCUS" state. */
+.login-field__input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+/* Figma "INVALID EMAIL" / "INVALID PASSWORD" states. */
+.login-field__input--invalid,
+.login-field__input--invalid:focus {
+  border-color: var(--color-error);
+}
+
+.login-field__input--password {
+  padding-right: 52px;
+}
+
+.login-field__toggle {
+  position: absolute;
+  top: calc(50% + 4px);
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+
+.login-field__toggle:hover,
+.login-field__toggle[aria-pressed='true'] {
+  color: var(--color-accent);
+}
+
+.login-field__error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding-left: 0.5px;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--color-error);
+}
+
+/* Remember me / Forgot password */
+.login-card__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 33px;
+}
+
+.login-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: 4px;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.login-remember__box {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1px solid var(--color-text-muted);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.login-remember__box:checked {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.login-remember__box:checked::after {
+  width: 5px;
+  height: 9px;
+  margin-top: -2px;
+  border: solid var(--color-bg);
+  border-width: 0 2px 2px 0;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.login-card__link,
+.login-card__signup-link {
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--color-accent);
+}
+
+.login-card__link:hover,
+.login-card__signup-link:hover {
+  text-decoration: underline;
+}
+
+.login-card__submit {
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  margin-top: 34px;
+  cursor: pointer;
+}
+
+.login-card__submit:disabled {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+  cursor: progress;
+}
+
+.login-card__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(255 255 255 / 35%);
+  border-top-color: var(--color-text);
+  border-radius: 50%;
+  animation: login-spin 700ms linear infinite;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-card__signup {
+  margin-top: 19px;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.login-card__signup-link {
+  margin-left: 14px;
+  font-weight: 700;
+}
+
+/* OR divider */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-top: 19px;
+}
+
+.login-divider__line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-surface-light);
+}
+
+.login-divider__text {
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--color-text-subtle);
+}
+
+/* Continue with Google */
+.login-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  height: 48px;
+  margin-top: 20px;
+  border: 1px solid var(--color-surface-light);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 180ms ease;
+}
+
+.login-google:hover {
+  border-color: var(--color-text-muted);
+}
+
+.login-google__badge {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-text-muted);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .login-page {
+    padding-block: 48px 72px;
+  }
+
+  .login-card {
+    padding: 32px 20px;
+  }
+
+  .login-card__title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+}
