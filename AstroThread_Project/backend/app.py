@@ -10,8 +10,9 @@ from flask import Flask, g, jsonify, request, session
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 
-load_dotenv()
+from pathlib import Path
 
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env", override=True)
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") or None
