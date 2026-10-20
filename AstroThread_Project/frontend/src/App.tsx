@@ -30,6 +30,8 @@ function resolvePage(pathname: string): Page {
   if (pathname === routes.researchThreads) return { name: 'research-threads' }
   if (pathname === routes.researchSearch) return { name: 'research-search' }
   if (pathname === routes.login) return { name: 'login' }
+  if (page.name === 'signup') return {'Create Account · AstroThread'}
+
   const threadId = matchThreadDetails(pathname)
   if (threadId) return { name: 'thread-details', threadId }
   // Unknown paths fall back to the Home page until more pages exist.
@@ -52,6 +54,8 @@ function activeNavHref(page: Page) {
   if (page.name === 'home') return routes.home
   if (page.name === 'research-search') return routes.researchSearch
   if (page.name === 'login') return routes.login
+  if (page.name === 'signup') return routes.signup
+
   return routes.researchThreads
 }
 
