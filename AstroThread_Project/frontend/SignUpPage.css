@@ -1,0 +1,192 @@
+.signup-page {
+  display: flex;
+  justify-content: center;
+  padding: 72px 20px;
+}
+
+.signup-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 40px;
+  background: #11162a;
+  border: 1px solid #1a2140;
+  border-radius: 12px;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.signup-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+}
+
+.signup-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.signup-subtitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #b8bdd6;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.signup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signup-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #ffffff;
+}
+
+.signup-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  background: #080b18;
+  border: 1px solid #777d99;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.signup-input::placeholder {
+  color: #8a90ac;
+}
+
+.signup-input:focus {
+  outline: none;
+  border-color: #22d3ee;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+}
+
+.signup-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error styling uses the design system's Error color (#F87171).
+   Match it to the Login form states (Figma screen 08) if those differ. */
+.signup-input--error,
+.signup-input--error:focus {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+}
+
+.signup-field-error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #f87171;
+}
+
+.signup-role-note {
+  margin: 0;
+  padding: 14px;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid #22d3ee;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #b8bdd6;
+}
+
+.signup-form-error {
+  margin: 0;
+  padding: 12px 14px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid #f87171;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #f87171;
+}
+
+.signup-submit {
+  height: 44px;
+  padding: 0 20px;
+  background: #6c63ff;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.signup-submit:hover:not(:disabled) {
+  background: #4b44c8;
+}
+
+.signup-submit:focus-visible {
+  outline: 2px solid #a8a3ff;
+  outline-offset: 2px;
+}
+
+.signup-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.signup-switch {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #b8bdd6;
+}
+
+.signup-switch-link {
+  font-weight: 600;
+  color: #22d3ee;
+  text-decoration: none;
+}
+
+.signup-switch-link:hover,
+.signup-switch-link:focus-visible {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .signup-page {
+    padding: 40px 16px;
+  }
+
+  .signup-card {
+    padding: 28px 20px;
+  }
+
+  .signup-title {
+    font-size: 26px;
+  }
+}
