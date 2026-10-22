@@ -3,7 +3,7 @@
 // displays: the backend checks the stored role on every protected request.
 import { useSyncExternalStore } from 'react'
 import { routes } from '../router/router'
-import { fetchCurrentUser, login, logout, type AuthUser, type Role } from '../services/api'
+import { fetchCurrentUser, login, logout, register, type AuthUser, type Role } from '../services/api'
 
 export type AuthState =
   | { status: 'loading' }
@@ -40,6 +40,12 @@ export async function restoreSession() {
 
 export async function signIn(email: string, password: string, remember: boolean) {
   const user = await login(email, password, remember)
+  setState({ status: 'signed-in', user })
+  return user
+}
+
+export async function signUp(name: string, email: string, password: string) {
+  const user = await register(name, email, password)
   setState({ status: 'signed-in', user })
   return user
 }
