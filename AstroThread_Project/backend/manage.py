@@ -21,13 +21,13 @@ from app import (
     EMAIL_PATTERN,
     MAX_EMAIL_LENGTH,
     MAX_PASSWORD_LENGTH,
+    MIN_PASSWORD_LENGTH,
     ROLES,
     get_db_connection,
     normalize_email,
 )
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-MIN_PASSWORD_LENGTH = 8
 
 
 def migrate(_args):

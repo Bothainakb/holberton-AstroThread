@@ -118,7 +118,9 @@ def get_threads():
 # Authentication configuration
 ROLES = ("user", "owner")
 MAX_EMAIL_LENGTH = 254
+MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 1024
+MAX_NAME_LENGTH = 100
 INVALID_CREDENTIALS = "Invalid email or password"
 EMAIL_PATTERN = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 
@@ -260,6 +262,85 @@ def login():
     session.permanent = data.get("remember") is True
 
     return jsonify({"user": user_to_json(row)})
+
+
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+    """Creates a standard User account and signs it in.
+
+    The role is always "user": owners are promoted with manage.py set-role.
+    """
+    if not app.secret_key:
+        app.logger.error("SECRET_KEY is not set, so sign-up is disabled")
+        return jsonify(
+            {"error": "Sign-up is not available right now"}
+        ), 503
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(
+            {"error": "Request body must be a JSON object"}
+        ), 400
+
+    email = data.get("email")
+    password = data.get("password")
+    name = data.get("name")
+
+    if not isinstance(email, str) or not isinstance(password, str):
+        return jsonify({"error": "Email and password are required"}), 400
+
+    if name is not None and not isinstance(name, str):
+        return jsonify({"error": "Name must be text"}), 400
+
+    email = normalize_email(email)
+    name = name.strip() if name else ""
+
+    if len(email) > MAX_EMAIL_LENGTH or not EMAIL_PATTERN.fullmatch(email):
+        return jsonify({"error": "Enter a valid email address"}), 400
+
+    if not MIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
+        return jsonify(
+            {
+                "error": (
+                    f"Password must be {MIN_PASSWORD_LENGTH}-"
+                    f"{MAX_PASSWORD_LENGTH} characters"
+                )
+            }
+        ), 400
+
+    if len(name) > MAX_NAME_LENGTH:
+        return jsonify(
+            {"error": f"Name must be at most {MAX_NAME_LENGTH} characters"}
+        ), 400
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO users (name, email, password_hash, role)
+                    VALUES (%s, %s, %s, 'user')
+                    ON CONFLICT (lower(email)) DO NOTHING
+                    RETURNING id, email, role;
+                    """,
+                    (name or None, email, generate_password_hash(password)),
+                )
+                row = cur.fetchone()
+    except (psycopg.Error, RuntimeError):
+        app.logger.exception("Sign-up query failed")
+        return jsonify(
+            {"error": "Unable to create your account right now"}
+        ), 500
+
+    if row is None:
+        return jsonify(
+            {"error": "An account with this email already exists"}
+        ), 409
+
+    session.clear()
+    session["user_id"] = row[0]
+
+    return jsonify({"user": user_to_json(row)}), 201
 
 
 @app.route("/api/auth/logout", methods=["POST"])

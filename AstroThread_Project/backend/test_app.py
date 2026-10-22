@@ -396,6 +396,76 @@ class LoginTests(AuthTestCase):
         self.assertIsNotNone(self.client.get_cookie(SESSION_COOKIE).expires)
 
 
+class RegisterTests(AuthTestCase):
+    def register(self, created_row=(3, "new@example.com", "user"), **body):
+        """Signs up; the database returns `created_row` (None = email taken)."""
+        self.cursor.fetchone.return_value = created_row
+        payload = {"email": "new@example.com", "password": PASSWORD, **body}
+        return self.client.post("/api/auth/register", json=payload)
+
+    def test_register_creates_user_and_signs_in(self):
+        response = self.register(name="Ada")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.get_json(),
+            {"user": {"id": 3, "email": "new@example.com", "role": "user"}},
+        )
+        self.assertIsNotNone(self.client.get_cookie(SESSION_COOKIE))
+        self.set_stored_user((3, "new@example.com", "user"))
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 200)
+
+    def test_password_is_stored_hashed(self):
+        self.register()
+
+        params = self.cursor.execute.call_args.args[1]
+        self.assertNotIn(PASSWORD, params)
+        self.assertTrue(backend.check_password_hash(params[2], PASSWORD))
+
+    def test_email_is_normalized_and_role_cannot_be_chosen(self):
+        self.register(email="  New@Example.COM ", role="owner")
+
+        sql, params = self.cursor.execute.call_args.args
+        self.assertEqual(params[1], "new@example.com")
+        self.assertIn("'user'", sql)
+        self.assertNotIn("owner", params)
+
+    def test_existing_email_is_rejected(self):
+        response = self.register(created_row=None)
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIsNone(self.client.get_cookie(SESSION_COOKIE))
+
+    def test_invalid_fields_are_rejected_without_querying(self):
+        cases = [
+            {"email": "not-an-email"},
+            {"email": ""},
+            {"password": "short"},
+            {"password": "x" * (backend.MAX_PASSWORD_LENGTH + 1)},
+            {"email": None},
+            {"name": 42},
+            {"name": "x" * (backend.MAX_NAME_LENGTH + 1)},
+        ]
+        for body in cases:
+            with self.subTest(body=body):
+                self.assertEqual(self.register(**body).status_code, 400)
+        self.cursor.execute.assert_not_called()
+
+    def test_database_error_returns_json_500(self):
+        error = psycopg.OperationalError("connection refused")
+        with mock.patch.object(backend, "get_db_connection", side_effect=error):
+            response = self.register()
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn("error", response.get_json())
+
+    def test_register_is_disabled_without_secret_key(self):
+        with mock.patch.dict(backend.app.config, {"SECRET_KEY": None}):
+            response = self.register()
+
+        self.assertEqual(response.status_code, 503)
+
+
 class SessionTests(AuthTestCase):
     def test_me_requires_login(self):
         response = self.client.get("/api/auth/me")
