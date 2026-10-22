@@ -6,26 +6,17 @@ Run from the backend folder (uses the database in backend/.env):
     python manage.py create-user EMAIL [--name NAME] [--role user|owner]
     python manage.py set-role EMAIL user|owner
 
-Passwords are typed at a hidden prompt, never passed as arguments, so they do
-not end up in shell history. Existing accounts are never overwritten.
+There are no passwords: people sign in with a code emailed to them. Existing
+accounts are never overwritten.
 """
 import argparse
-import getpass
 import sys
 from pathlib import Path
 
 import psycopg
-from werkzeug.security import generate_password_hash
 
-from app import (
-    EMAIL_PATTERN,
-    MAX_EMAIL_LENGTH,
-    MAX_PASSWORD_LENGTH,
-    MIN_PASSWORD_LENGTH,
-    ROLES,
-    get_db_connection,
-    normalize_email,
-)
+from app.api.v1.auth import ROLES, normalize_email, valid_email
+from app.persistence.database import get_db_connection
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
@@ -39,35 +30,23 @@ def migrate(_args):
             print(f"Applied {path.name}")
 
 
-def valid_email(value):
+def email_argument(value):
     email = normalize_email(value)
-    if len(email) > MAX_EMAIL_LENGTH or not EMAIL_PATTERN.fullmatch(email):
+    if not valid_email(email):
         raise argparse.ArgumentTypeError(f"not a valid email address: {value!r}")
     return email
 
 
-def prompt_password():
-    password = getpass.getpass("Password: ")
-    if not MIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
-        sys.exit(
-            f"Password must be {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters."
-        )
-    if getpass.getpass("Repeat password: ") != password:
-        sys.exit("Passwords do not match.")
-    return password
-
-
 def create_user(args):
-    password = prompt_password()
     with get_db_connection() as conn:
         row = conn.execute(
             """
-            INSERT INTO users (name, email, password_hash, role)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO users (name, email, role)
+            VALUES (%s, %s, %s)
             ON CONFLICT (lower(email)) DO NOTHING
             RETURNING id;
             """,
-            (args.name, args.email, generate_password_hash(password), args.role),
+            (args.name, args.email, args.role),
         ).fetchone()
     if row is None:
         sys.exit(f"An account for {args.email} already exists; nothing was changed.")
@@ -98,13 +77,13 @@ def main(argv=None):
     )
 
     create = commands.add_parser("create-user", help="add an account")
-    create.add_argument("email", type=valid_email)
+    create.add_argument("email", type=email_argument)
     create.add_argument("--name")
     create.add_argument("--role", choices=ROLES, default="user")
     create.set_defaults(run=create_user)
 
     role = commands.add_parser("set-role", help="promote or demote an account")
-    role.add_argument("email", type=valid_email)
+    role.add_argument("email", type=email_argument)
     role.add_argument("role", choices=ROLES)
     role.set_defaults(run=set_role)
 

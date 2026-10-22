@@ -15,7 +15,6 @@ import { researchThreads } from './data/threads'
 import HomePage from './pages/Home/HomePage'
 import LoginPage from './pages/Login/LoginPage'
 import ResearchSearchPage from './pages/ResearchSearch/ResearchSearchPage'
-import SignUpPage from './pages/SignUp/SignUpPage'
 import ResearchThreadsPage from './pages/ResearchThreads/ResearchThreadsPage'
 import ThreadDetailsPage from './pages/ThreadDetails/ThreadDetailsPage'
 import { matchThreadDetails, routes, usePathname } from './router/router'
@@ -102,8 +101,10 @@ function App() {
       {page.name === 'home' && <HomePage />}
       {page.name === 'research-threads' && <ResearchThreadsPage />}
       {page.name === 'research-search' && <ResearchSearchPage />}
-      {page.name === 'login' && <LoginPage />}
-      {page.name === 'sign-up' && <SignUpPage />}
+      {/* One page for both: the key resets the form when switching. */}
+      {(page.name === 'login' || page.name === 'sign-up') && (
+        <LoginPage key={page.name} mode={page.name} />
+      )}
       {/* The key resets the selected stage when switching between threads. */}
       {page.name === 'thread-details' && (
         <ThreadDetailsPage key={page.threadId} threadId={page.threadId} />
