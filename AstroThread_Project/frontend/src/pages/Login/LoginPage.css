@@ -221,6 +221,21 @@
   text-decoration: underline;
 }
 
+/* "Resend code" and "Use a different email" are buttons styled as links. */
+.login-card__link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.login-card__link-button:disabled {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  cursor: default;
+}
+
 .login-card__submit {
   gap: 10px;
   width: 100%;
