@@ -1,74 +1,154 @@
-/* Vertical spacing follows the 1440px Figma frame "01-home". */
+/*
+ * Figma "01-Home" (1440 x 900): the brand heading, the search bar and the topic
+ * chips sit in a 640px column whose top is 240px from the top of the screen;
+ * the footer starts at 692px. While a search is active the hero shrinks and
+ * the results appear below it.
+ */
 
 .home-hero,
-.home-threads,
-.home-latest,
-.home-data {
+.home-threads {
   scroll-margin-top: 24px;
 }
 
-/* Hero */
+/* Hero. 76px minimal header + 164px = the 240px offset of the Figma column. */
 .home-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 112px;
+  padding-block: 164px 240px;
   text-align: center;
 }
 
-.home-hero__label {
-  padding: 0 19px;
+.home-hero--searching {
+  padding-block: 72px 0;
 }
 
-.home-hero__title {
-  margin-top: 13px;
-  font-size: 48px;
-  font-weight: 700;
-  line-height: 58px;
+/* Brand heading: the original logo mark (112 x 56) and a 30px tracked wordmark. */
+.home-hero__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 56px;
 }
 
-.home-hero__description {
-  max-width: 620px;
-  margin-top: 18px;
-  font-size: 18px;
-  line-height: 27px;
-  color: var(--color-text-secondary);
+.home-hero__brand-mark {
+  width: 112px;
+  height: auto;
+}
+
+.home-hero__brand-text {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 36px;
+  color: var(--color-logo-text);
 }
 
 .home-hero__search {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-top: 29px;
+  margin-top: 28px;
   scroll-margin-top: 120px;
 }
 
-.home-hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 28px;
+/* Figma search bar: 640 x 56 light pill with a soft shadow and a violet button. */
+.home-hero__search .search-bar {
+  max-width: 640px;
 }
 
+.home-hero__search .search-bar__input {
+  height: 56px;
+  padding-left: 56px;
+  border: 0;
+  border-radius: 28px;
+  background: #f8fafc;
+  box-shadow: 0 6px 12px rgb(0 0 0 / 25%);
+  font-size: 17px;
+  color: #0b1630;
+}
+
+.home-hero__search .search-bar__input::placeholder {
+  color: #475569;
+}
+
+.home-hero__search .search-bar__input:focus {
+  box-shadow:
+    0 6px 12px rgb(0 0 0 / 25%),
+    0 0 0 2px var(--color-accent);
+}
+
+.home-hero__search .search-bar__icon {
+  left: 20px;
+  width: 22px;
+  height: 22px;
+}
+
+.home-hero__search .search-bar__clear {
+  color: #475569;
+}
+
+.home-hero__search .search-bar__clear:hover {
+  background: #e2e8f0;
+  color: #0b1630;
+}
+
+.home-hero__search .search-bar__submit {
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  background: var(--color-primary);
+}
+
+.home-hero__search .search-bar__submit:hover {
+  background: var(--color-primary-dark);
+}
+
+/* "Try:" and the topic chips: 44px outlined pills, 10px apart. */
 .home-hero__popular {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: 28px;
 }
 
 .home-hero__popular-label {
   font-size: 14px;
-  color: var(--color-text-subtle);
+  color: var(--color-text-muted);
 }
 
-/* Research Threads */
+/* Figma chips have a real 1px border on top of the 18px padding. */
+.home-hero__popular .tag {
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--color-border-control);
+  border-radius: 22px;
+  background: rgb(58 63 143 / 25%);
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.home-hero__popular .tag:hover {
+  border-color: var(--color-accent);
+  box-shadow: none;
+}
+
+.home-hero__popular .tag--pressed,
+.home-hero__popular .tag--pressed:hover {
+  border-color: var(--color-accent);
+  background: rgb(34 211 238 / 14%);
+  box-shadow: none;
+  color: var(--color-accent);
+}
+
+/* Search results */
 .home-threads {
-  margin-top: 190px;
-  scroll-margin-top: 24px;
+  padding-block: 64px 96px;
 }
 
 .home-threads__grid {
@@ -83,17 +163,17 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-height: 160px;
   justify-content: center;
+  min-height: 160px;
   margin-top: 32px;
   padding: 32px;
-  border: 1px solid var(--color-surface-light);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
 }
 
 .home-threads__status--error {
-  border-color: rgb(248 113 113 / 40%);
+  border-color: rgb(252 165 165 / 45%);
 }
 
 .home-threads__status-title {
@@ -119,50 +199,6 @@
   cursor: pointer;
 }
 
-/* Latest Discoveries */
-.home-latest {
-  padding-top: 159px;
-}
-
-.home-latest__timeline {
-  margin-top: 36px;
-}
-
-/* Data */
-.home-data {
-  display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(0, 662px);
-  align-items: center;
-  gap: 48px;
-  padding-block: 161px 83px;
-}
-
-.home-data__content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.home-data__title {
-  max-width: 320px;
-  margin-top: 14px;
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 36px;
-}
-
-.home-data__description {
-  max-width: 420px;
-  margin-top: 16px;
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--color-text-secondary);
-}
-
-.home-data__button {
-  margin-top: 17px;
-}
-
 @media (max-width: 1080px) {
   .home-threads__grid {
     gap: 16px;
@@ -170,58 +206,72 @@
 }
 
 @media (max-width: 900px) {
+  .home-hero {
+    padding-block: 120px 160px;
+  }
+
   .home-threads__grid {
     grid-template-columns: 1fr;
-  }
-
-  .home-hero {
-    padding-top: 80px;
-  }
-
-  .home-threads {
-    margin-top: 120px;
-  }
-
-  .home-latest {
-    padding-top: 100px;
-  }
-
-  .home-data {
-    grid-template-columns: 1fr;
-    padding-block: 100px 72px;
   }
 }
 
 @media (max-width: 640px) {
   .home-hero {
-    padding-top: 56px;
+    padding-block: 72px 96px;
   }
 
-  .home-hero__title {
-    font-size: 36px;
-    line-height: 44px;
+  .home-hero--searching {
+    padding-block: 40px 0;
   }
 
-  .home-hero__description {
+  .home-hero__brand {
+    gap: 12px;
+    height: auto;
+  }
+
+  .home-hero__brand-mark {
+    width: 72px;
+  }
+
+  .home-hero__brand-text {
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  /* Narrow bar: room for the Search button, plus the clear button only once
+     there is text, so the placeholder stays readable. */
+  .home-hero__search .search-bar--with-submit .search-bar__input {
+    height: 52px;
+    padding-right: 96px;
+    padding-left: 46px;
     font-size: 16px;
-    line-height: 24px;
+  }
+
+  .home-hero__search .search-bar--with-submit .search-bar__input:not(:placeholder-shown) {
+    padding-right: 132px;
+  }
+
+  .home-hero__search .search-bar__icon {
+    left: 16px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .home-hero__search .search-bar__clear {
+    right: 92px;
+  }
+
+  .home-hero__search .search-bar__submit {
+    height: 40px;
+    padding: 0 16px;
+  }
+
+  .home-hero__popular .tag {
+    height: 40px;
+    padding: 0 14px;
   }
 
   .home-threads {
-    margin-top: 88px;
-  }
-
-  .home-latest {
-    padding-top: 80px;
-  }
-
-  .home-data {
-    gap: 32px;
-    padding-block: 80px 56px;
-  }
-
-  .home-data__title {
-    font-size: 26px;
-    line-height: 32px;
+    padding-block: 48px 72px;
   }
 }

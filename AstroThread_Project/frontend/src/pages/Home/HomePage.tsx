@@ -1,20 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import logoMark from '../../assets/logo.svg'
 import Button from '../../components/Button/Button'
-import DataChart from '../../components/DataChart/DataChart'
 import ResearchThreadCard, {
   type ResearchThreadCardData,
 } from '../../components/ResearchThreadCard/ResearchThreadCard'
 import SearchBar from '../../components/SearchBar/SearchBar'
 import SectionHeader from '../../components/SectionHeader/SectionHeader'
 import Tag from '../../components/Tag/Tag'
-import Timeline from '../../components/Timeline/Timeline'
-import {
-  HOME_THREAD_LIMIT,
-  blackHoleMassData,
-  blackHoleTimeline,
-  popularTopics,
-  toHomeThread,
-} from '../../data/home'
+import { HOME_THREAD_LIMIT, popularTopics, toHomeThread } from '../../data/home'
 import { replaceSearchParam, routes, useSearchParam } from '../../router/router'
 import { ApiError, fetchThreads } from '../../services/api'
 import './HomePage.css'
@@ -167,9 +160,15 @@ function HomePage() {
     return () => window.clearTimeout(timer)
   }, [input])
 
-  // Smooth scrolling (and its reduced-motion opt-out) comes from index.css.
+  // The results section only renders once a query is set, so scroll after that
+  // render. Smooth scrolling (and its reduced-motion opt-out) comes from index.css.
+  const [scrollRequest, setScrollRequest] = useState(0)
+  useEffect(() => {
+    if (scrollRequest) threadsRef.current?.scrollIntoView()
+  }, [scrollRequest])
+
   function showResults() {
-    threadsRef.current?.scrollIntoView()
+    setScrollRequest((value) => value + 1)
   }
 
   function handleInputChange(value: string) {
@@ -199,36 +198,31 @@ function HomePage() {
 
   return (
     <main className="home">
-      <section className="home-hero container" aria-labelledby="home-hero-title">
-        <Tag className="home-hero__label">Astronomy &amp; Physics Research</Tag>
-        <h1 className="home-hero__title" id="home-hero-title">
-          Explore the Universe
+      <section
+        className={`home-hero container${query ? ' home-hero--searching' : ''}`}
+        aria-labelledby="home-hero-title"
+      >
+        {/* Figma "01-Home": the brand mark and wordmark are the page heading. */}
+        <h1 className="home-hero__brand" id="home-hero-title">
+          <img className="home-hero__brand-mark" src={logoMark} alt="" width={112} height={57} />
+          <span className="home-hero__brand-text">ASTROTHREAD</span>
         </h1>
-        <p className="home-hero__description">
-          Explore the evolution of scientific discoveries. Follow research threads that connect
-          ideas, observations and discoveries over time.
-        </p>
 
         <div className="home-hero__search" id="search">
           <SearchBar
             id={SEARCH_INPUT_ID}
+            placeholder="Search scientific research"
             value={input}
             onChange={handleInputChange}
             onSearch={handleSearch}
             clearable
             maxLength={MAX_QUERY_LENGTH}
+            submitLabel="Search"
           />
         </div>
 
-        <div className="home-hero__actions">
-          <Button href={routes.researchThreads}>Explore Research</Button>
-          <Button variant="secondary" href="#latest-discoveries">
-            View Timeline
-          </Button>
-        </div>
-
         <div className="home-hero__popular" role="group" aria-label="Popular topics">
-          <span className="home-hero__popular-label">Popular:</span>
+          <span className="home-hero__popular-label">Try:</span>
           {popularTopics.map((topic) => (
             <Tag
               key={topic}
@@ -241,56 +235,26 @@ function HomePage() {
         </div>
       </section>
 
-      <section
-        ref={threadsRef}
-        className="home-threads container"
-        aria-labelledby="research-threads"
-      >
-        <SectionHeader
-          id="research-threads"
-          title="Research Threads"
-          subtitle={
-            query
-              ? `Results for "${query}" in titles, categories and descriptions.`
-              : 'Research connects ideas, observations, and discoveries.'
-          }
-          action={
-            <Button variant="secondary" href={routes.researchThreads}>
-              View all threads
-            </Button>
-          }
-        />
-        <HomeThreads query={query} onClearSearch={clearSearch} />
-      </section>
-
-      <section className="home-latest container" aria-labelledby="latest-discoveries">
-        <SectionHeader
-          id="latest-discoveries"
-          title="Latest Discoveries"
-          subtitle="Black Holes thread: from the first observation to the latest research."
-        />
-        <div className="home-latest__timeline">
-          <Timeline events={blackHoleTimeline} />
-        </div>
-      </section>
-
-      <section className="home-data container" aria-labelledby="home-data-title">
-        <div className="home-data__content">
-          <Tag>Data</Tag>
-          <h2 className="home-data__title" id="home-data-title">
-            See the data behind every discovery
-          </h2>
-          <p className="home-data__description">
-            Each research thread includes the measurements and trends that shaped it, shown in
-            clear charts.
-          </p>
-          <Button className="home-data__button" href={routes.researchThreads}>
-            Explore Research
-          </Button>
-        </div>
-
-        <DataChart title="Black Hole Mass" note="Illustrative data" data={blackHoleMassData} />
-      </section>
+      {/* Figma "01-Home" shows only the search; results appear once a search is active. */}
+      {query && (
+        <section
+          ref={threadsRef}
+          className="home-threads container"
+          aria-labelledby="research-threads"
+        >
+          <SectionHeader
+            id="research-threads"
+            title="Research Threads"
+            subtitle={`Results for "${query}" in titles, categories and descriptions.`}
+            action={
+              <Button variant="secondary" href={routes.researchThreads}>
+                View all threads
+              </Button>
+            }
+          />
+          <HomeThreads query={query} onClearSearch={clearSearch} />
+        </section>
+      )}
     </main>
   )
 }
