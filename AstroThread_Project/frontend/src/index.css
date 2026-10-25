@@ -1,29 +1,41 @@
-/* Design tokens from the AstroThread Figma design system. */
+/*
+ * Design tokens from the approved Figma screens ("Cosmic Blue"): the values of
+ * the prototype the 11 frames were built from (--at-* variables).
+ */
 :root {
-  /* Primary */
-  --color-primary: #6c63ff;
-  --color-primary-dark: #4b44c8;
-  --color-primary-light: #a8a3ff;
+  /* Primary (buttons): --at-button, --at-button-hover, --at-button-border */
+  --color-primary: #4c1d95;
+  --color-primary-dark: #5b21b6;
+  --color-primary-active: #3b0f7a;
+  --color-primary-light: #a78bfa;
 
   /* Accent */
   --color-accent: #22d3ee;
+  --color-accent-hover: #67e8f9;
 
   /* Backgrounds */
-  --color-bg: #080b18;
-  --color-surface: #11162a;
-  --color-surface-light: #1a2140;
+  --color-bg: #172a4f;
+  --color-glow: rgb(58 63 143 / 50%);
+  --color-surface: #1e3560;
+  --color-surface-raised: #27406e;
+  --color-surface-inset: #12223f;
+  --color-surface-light: #2c4573;
+
+  /* Borders */
+  --color-border: #2c4573;
+  --color-border-control: #8193b2;
 
   /* Text */
-  --color-text: #ffffff;
-  --color-text-secondary: #b8bdd6;
-  --color-text-muted: #777d99;
-  --color-text-subtle: #8a90ac;
+  --color-text: #f8fafc;
+  --color-text-secondary: #dce3ee;
+  --color-text-muted: #a8b6cc;
+  --color-text-subtle: #a8b6cc;
   --color-logo-text: #bcd0e4;
 
   /* Status */
   --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
+  --color-warning: #fbbf24;
+  --color-error: #fca5a5;
   --color-info: #38bdf8;
 
   /* Radii */
@@ -36,7 +48,7 @@
   --shadow-md: 0 4px 12px rgb(0 0 0 / 25%);
   --shadow-lg: 0 8px 24px rgb(0 0 0 / 30%);
   --glow-cyan: 0 0 24px rgb(34 211 238 / 30%);
-  --glow-primary: 0 0 24px rgb(108 99 255 / 30%);
+  --glow-primary: 0 0 24px rgb(167 139 250 / 30%);
 
   /* Layout */
   --container-width: 1152px;

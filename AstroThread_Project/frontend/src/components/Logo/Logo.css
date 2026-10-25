@@ -1,31 +1,21 @@
+/* Figma header and footer logo: 60px mark, 12px gap, tracked wordmark. */
 .logo {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
-}
-
-.logo--header {
-  gap: 45px;
-}
-
-.logo--footer {
-  gap: 14px;
+  gap: 12px;
 }
 
 .logo__mark {
-  width: 56.5625px;
-  height: 28.7629px;
+  width: 60px;
+  height: auto;
 }
 
 .logo__text {
   font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   color: var(--color-logo-text);
-}
-
-@media (max-width: 900px) {
-  .logo--header {
-    gap: 14px;
-  }
 }
 
 @media (max-width: 520px) {
@@ -35,7 +25,6 @@
 
   .logo--header .logo__mark {
     width: 44px;
-    height: auto;
   }
 
   .logo--header .logo__text {
