@@ -636,6 +636,92 @@ class OwnerAuthorizationTests(AuthTestCase):
         self.cursor.execute.assert_not_called()
 
 
+class RollbackConnection:
+    """One real connection whose work is rolled back, so tests leave no rows."""
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def __call__(self):
+        return self
+
+    def __enter__(self):
+        return self.conn
+
+    def __exit__(self, *exc):
+        return False
+
+
+class CodeSignInIntegrationTests(unittest.TestCase):
+    """Signs up, out and back in with codes against the real tables, then rolls back."""
+
+    def setUp(self):
+        try:
+            conn = backend.get_db_connection()
+        except (psycopg.Error, RuntimeError) as error:
+            self.skipTest(f"Database not reachable: {error}")
+        self.addCleanup(conn.close)
+        self.addCleanup(conn.rollback)
+        has_codes_table = conn.execute(
+            "SELECT to_regclass('public.login_codes');"
+        ).fetchone()[0]
+        if has_codes_table is None:
+            self.skipTest("login_codes table missing; run python manage.py migrate")
+
+        for patcher in (
+            mock.patch.object(auth, "get_db_connection", RollbackConnection(conn)),
+            mock.patch.dict(backend.app.config, {"SECRET_KEY": "test-secret"}),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        mailer = mock.patch.object(auth, "send_code_email")
+        self.send_code_email = mailer.start()
+        self.addCleanup(mailer.stop)
+
+        self.client = backend.app.test_client()
+        self.email = "integration-test@example.test"
+
+    def emailed_code(self, purpose):
+        response = self.client.post(
+            "/api/auth/request-code", json={"email": self.email, "purpose": purpose}
+        )
+        self.assertEqual(response.status_code, 200, response.get_json())
+        return self.send_code_email.call_args.args[1]
+
+    def verify(self, code, **extra):
+        return self.client.post(
+            "/api/auth/verify-code", json={"email": self.email, "code": code, **extra}
+        )
+
+    def test_sign_up_sign_out_and_sign_back_in(self):
+        code = self.emailed_code("signup")
+        wrong = f"{(int(code) + 1) % 1_000_000:06d}"
+        self.assertEqual(self.verify(wrong).status_code, 401)
+
+        response = self.verify(code, name="Integration Test")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.get_json()["user"]["role"], "user")
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 200)
+        # Each code works once.
+        self.assertEqual(self.verify(code).status_code, 400)
+
+        self.assertEqual(self.client.post("/api/auth/logout").status_code, 204)
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+
+        # The sign-up code was used, so a login code can be sent right away.
+        response = self.verify(self.emailed_code("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["user"]["email"], self.email)
+
+    def test_login_with_unknown_email_sends_no_code(self):
+        response = self.client.post(
+            "/api/auth/request-code", json={"email": self.email, "purpose": "login"}
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.send_code_email.assert_not_called()
+
+
 class UsersTableIntegrationTests(unittest.TestCase):
     """Checks the migrated `users` table (read-only)."""
 

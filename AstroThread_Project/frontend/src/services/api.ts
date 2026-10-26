@@ -156,6 +156,20 @@ export async function verifyCode(
   return readAuthUser(await readJson(response))
 }
 
+/**
+ * POST /api/auth/register: creates a standard user account. The server signs
+ * the new account in with the same HttpOnly session cookie as login.
+ */
+export async function register(name: string, email: string, password: string): Promise<AuthUser> {
+  const response = await send('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password }),
+  })
+  if (!response.ok) throw await authError(response)
+  return readAuthUser(await readJson(response))
+}
+
 /** GET /api/auth/me: the signed-in account, or null when there is no valid session. */
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
   const response = await send('/api/auth/me')

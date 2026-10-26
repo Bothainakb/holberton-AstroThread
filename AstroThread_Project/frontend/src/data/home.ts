@@ -18,14 +18,13 @@ export const popularTopics = [
   'Exoplanets',
   'Dark Matter',
   'Gravitational Waves',
-  'Quantum Physics',
 ]
 
 /** Number of thread cards in the Home page grid (one row of three). */
 export const HOME_THREAD_LIMIT = 3
 
 /** "Black Holes" -> "black-holes", the id used by the Thread Details routes. */
-function slugify(title: string) {
+export function slugify(title: string) {
   return title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

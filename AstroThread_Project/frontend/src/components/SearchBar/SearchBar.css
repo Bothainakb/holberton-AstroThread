@@ -22,7 +22,7 @@
   width: 100%;
   height: 48px;
   padding: 0 16px 0 50px;
-  border: 1px solid var(--color-text-muted);
+  border: 1px solid var(--color-border-control);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   font-size: 16px;
@@ -77,4 +77,38 @@
 .search-bar__clear:hover {
   background: var(--color-surface-light);
   color: var(--color-text);
+}
+
+/* Optional submit button inside the bar (search bars with `submitLabel` only). */
+.search-bar--with-submit .search-bar__input {
+  padding-right: 116px;
+}
+
+.search-bar--with-submit.search-bar--clearable .search-bar__input {
+  padding-right: 156px;
+}
+
+.search-bar--with-submit .search-bar__clear {
+  right: 112px;
+}
+
+.search-bar__submit {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  height: calc(100% - 12px);
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 180ms ease;
+}
+
+.search-bar__submit:hover {
+  background: var(--color-primary-dark);
 }
