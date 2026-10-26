@@ -16,7 +16,6 @@ import HomePage from './pages/Home/HomePage'
 import LoginPage from './pages/Login/LoginPage'
 import ResearchSearchPage from './pages/ResearchSearch/ResearchSearchPage'
 import ResearchThreadsPage from './pages/ResearchThreads/ResearchThreadsPage'
-import SignUpPage from './pages/SignUp/SignUpPage'
 import ThreadDetailsPage from './pages/ThreadDetails/ThreadDetailsPage'
 import { matchThreadDetails, routes, usePathname } from './router/router'
 import './App.css'
@@ -56,7 +55,6 @@ function pageTitle(page: Page) {
 function activeNavHref(page: Page) {
   if (page.name === 'home') return routes.home
   if (page.name === 'research-search') return routes.researchSearch
-  // Create Account is reached from Login, so Login stays highlighted.
   if (page.name === 'login' || page.name === 'sign-up') return routes.login
   return routes.researchThreads
 }
@@ -93,7 +91,6 @@ function App() {
           glow="thread-details"
         />
       )}
-      {/* Create Account shares the Login card, so it shares its star field too. */}
       {(page.name === 'login' || page.name === 'sign-up') && (
         <StarField stars={loginStars} twinkles={[]} canvas={LOGIN_CANVAS} glow="login" />
       )}
@@ -104,8 +101,10 @@ function App() {
       {page.name === 'home' && <HomePage />}
       {page.name === 'research-threads' && <ResearchThreadsPage />}
       {page.name === 'research-search' && <ResearchSearchPage />}
-      {page.name === 'login' && <LoginPage />}
-      {page.name === 'sign-up' && <SignUpPage />}
+      {/* One page for both: the key resets the form when switching. */}
+      {(page.name === 'login' || page.name === 'sign-up') && (
+        <LoginPage key={page.name} mode={page.name} />
+      )}
       {/* The key resets the selected stage when switching between threads. */}
       {page.name === 'thread-details' && (
         <ThreadDetailsPage key={page.threadId} threadId={page.threadId} />

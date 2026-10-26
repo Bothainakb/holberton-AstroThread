@@ -119,12 +119,38 @@ function readAuthUser(data: unknown): AuthUser {
   throw new ApiError('The server returned the account in an unexpected format.')
 }
 
-/** POST /api/auth/login; the server sets an HttpOnly session cookie on success. */
-export async function login(email: string, password: string, remember: boolean): Promise<AuthUser> {
-  const response = await send('/api/auth/login', {
+/** "login" needs an existing account; "signup" needs an email with no account yet. */
+export type CodePurpose = 'login' | 'signup'
+
+/** POST /api/auth/request-code: emails a 6-digit sign-in code. */
+export async function requestCode(email: string, purpose: CodePurpose): Promise<void> {
+  const response = await send('/api/auth/request-code', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, remember }),
+    body: JSON.stringify({ email, purpose }),
+  })
+  if (!response.ok) throw await authError(response)
+}
+
+export interface VerifyCodeOptions {
+  /** Saved only when the code was requested for a sign-up. */
+  name?: string
+  remember?: boolean
+}
+
+/**
+ * POST /api/auth/verify-code: checks the emailed code (creating the account
+ * for a sign-up); the server sets an HttpOnly session cookie on success.
+ */
+export async function verifyCode(
+  email: string,
+  code: string,
+  { name = '', remember = false }: VerifyCodeOptions = {},
+): Promise<AuthUser> {
+  const response = await send('/api/auth/verify-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code, name, remember }),
   })
   if (!response.ok) throw await authError(response)
   return readAuthUser(await readJson(response))
