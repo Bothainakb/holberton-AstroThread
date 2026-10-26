@@ -25,10 +25,14 @@ CORS(app)
 from app.api.v1.auth import auth_bp
 from app.api.v1.static import static_bp
 from app.api.v1.threads import threads_bp
+from app.api.v1.profile import profile_bp
+from app.api.v1.bookmarks import bookmarks_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(static_bp)
 app.register_blueprint(threads_bp)
+app.register_blueprint(profile_bp)
+app.register_blueprint(bookmarks_bp)
 
 
 if __name__ == "__main__":

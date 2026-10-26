@@ -114,8 +114,13 @@ def get_threads():
 
 # Sign-in with email codes: app/api/v1/auth.py
 from app.api.v1.auth import auth_bp  # noqa: E402
+from app.api.v1.bookmarks import bookmarks_bp  # noqa: E402
+from app.api.v1.profile import profile_bp  # noqa: E402
 
 app.register_blueprint(auth_bp)
+# User Profile page: app/api/v1/profile.py and bookmarks.py
+app.register_blueprint(profile_bp)
+app.register_blueprint(bookmarks_bp)
 
 
 if __name__ == "__main__":
