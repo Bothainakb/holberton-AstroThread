@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { homePathFor, signIn, useAuth } from '../../auth/auth'
 import Icon from '../../components/Icon/Icon'
-import { navigate } from '../../router/router'
+import Link from '../../router/Link'
+import { navigate, routes } from '../../router/router'
 import { ApiError } from '../../services/api'
 import './LoginPage.css'
 
@@ -214,10 +215,9 @@ function LoginPage() {
 
           <p className="login-card__signup">
             Don&apos;t have an account?
-            {/* The Create Account page (Figma "09-sign-up") is not built yet. */}
-            <a className="login-card__signup-link" href="#">
+            <Link className="login-card__signup-link" href={routes.signUp}>
               Create Account
-            </a>
+            </Link>
           </p>
 
           <div className="login-divider" aria-hidden="true">
