@@ -120,6 +120,9 @@ ROLES = ("user", "owner")
 MAX_EMAIL_LENGTH = 254
 MAX_PASSWORD_LENGTH = 1024
 INVALID_CREDENTIALS = "Invalid email or password"
+MAX_NAME_LENGTH = 100
+MIN_PASSWORD_LENGTH = 8
+EMAIL_TAKEN = "An account with this email already exists"
 EMAIL_PATTERN = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 
 DUMMY_PASSWORD_HASH = generate_password_hash(
@@ -260,6 +263,89 @@ def login():
     session.permanent = data.get("remember") is True
 
     return jsonify({"user": user_to_json(row)})
+
+
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+    """Creates a standard `user` account and signs it in with a session cookie."""
+    if not app.secret_key:
+        app.logger.error("SECRET_KEY is not set, so sign-up is disabled")
+        return jsonify(
+            {"error": "Sign-up is not available right now"}
+        ), 503
+
+    # JSON only: a cross-site form cannot send it without a CORS preflight.
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(
+            {"error": "Request body must be a JSON object"}
+        ), 400
+
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+
+    if (
+        not isinstance(name, str)
+        or not isinstance(email, str)
+        or not isinstance(password, str)
+        or not name.strip()
+        or not email.strip()
+        or not password
+    ):
+        return jsonify(
+            {"error": "Name, email and password are required"}
+        ), 400
+
+    name = name.strip()
+    email = normalize_email(email)
+
+    if len(name) > MAX_NAME_LENGTH:
+        return jsonify(
+            {"error": f"Name must be at most {MAX_NAME_LENGTH} characters"}
+        ), 400
+
+    if len(email) > MAX_EMAIL_LENGTH or not EMAIL_PATTERN.fullmatch(email):
+        return jsonify({"error": "Enter a valid email address"}), 400
+
+    if not MIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
+        return jsonify(
+            {
+                "error": (
+                    f"Password must be {MIN_PASSWORD_LENGTH}-"
+                    f"{MAX_PASSWORD_LENGTH} characters"
+                )
+            }
+        ), 400
+
+    # The role is fixed: owner access is only granted with manage.py set-role.
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO users (name, email, password_hash, role)
+                    VALUES (%s, %s, %s, 'user')
+                    ON CONFLICT (lower(email)) DO NOTHING
+                    RETURNING id, email, role;
+                    """,
+                    (name, email, generate_password_hash(password)),
+                )
+                row = cur.fetchone()
+    except (psycopg.Error, RuntimeError):
+        app.logger.exception("Registration query failed")
+        return jsonify(
+            {"error": "Unable to create your account right now"}
+        ), 500
+
+    if row is None:
+        return jsonify({"error": EMAIL_TAKEN}), 409
+
+    session.clear()
+    session["user_id"] = row[0]
+    session.permanent = False
+
+    return jsonify({"user": user_to_json(row)}), 201
 
 
 @app.route("/api/auth/logout", methods=["POST"])
