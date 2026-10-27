@@ -1,7 +1,7 @@
 
 import psycopg
 from flask import Blueprint, current_app, jsonify, request
-
+from app.services.thread_service import get_thread_details
 from app.persistence.database import get_db_connection
 
 threads_bp = Blueprint("threads_v1", __name__)
@@ -10,6 +10,18 @@ REGEX_SPECIAL_CHARS = set("\\.^$*+?()[]{}|")
 MAX_QUERY_LENGTH = 100
 
 
+
+@threads_bp.route("/api/threads/<slug>", methods=["GET"])
+def get_thread(slug):
+    try:
+        details = get_thread_details(slug)
+    except (psycopg.Error, RuntimeError):
+        current_app.logger.exception("Thread details query failed")
+        return jsonify({"error": "Unable to retrieve this research thread"}), 500
+
+    if details is None:
+        return jsonify({"error": "Research thread not found"}), 404
+    return jsonify(details)
 def word_start_pattern(text):
     """Match text literally at the start of a PostgreSQL word."""
     escaped = "".join(
