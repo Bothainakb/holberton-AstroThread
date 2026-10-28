@@ -130,7 +130,7 @@ function ThreadDetailsPage({ threadId }: ThreadDetailsPageProps) {
 
       <RelatedPapers papers={detail?.papers} paperCount={thread.paperCount} />
       <EvidenceSection evidence={detail?.evidence} />
-      <NasaMediaSection nasa={detail?.nasa} />
+      <NasaMediaSection threadId={thread.id} nasa={detail?.nasa} />
       <LatestDevelopment latest={detail?.latest} />
 
       <StageNavigation
