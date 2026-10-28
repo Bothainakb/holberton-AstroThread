@@ -7,14 +7,22 @@
  */
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
 
-/** A research thread as stored in the `research_threads` table. */
+/** A research thread as returned by GET /api/threads. */
 export interface ApiThread {
   id: number
   title: string
   category: string
   description: string
+  /** URL name used by the Thread Details page, e.g. "black-holes". */
+  slug?: string | null
+  /** Papers saved for this thread (cached from OpenAlex). */
+  paperCount?: number
+  /** Stages that have content, out of totalStages. */
+  completedStages?: number
+  totalStages?: number
+  /** When the thread was added, as an ISO date string. */
+  updatedAt?: string | null
 }
-
 export class ApiError extends Error {
   readonly status?: number
 
