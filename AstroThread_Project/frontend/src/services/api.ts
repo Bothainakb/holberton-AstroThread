@@ -165,3 +165,40 @@ export async function logout(): Promise<void> {
   const response = await send('/api/auth/logout', { method: 'POST' })
   if (!response.ok) throw await authError(response)
 }
+/** One image from NASA's Image and Video Library. */
+export interface NasaImage {
+  title: string
+  description: string
+  imageUrl: string | null
+}
+
+function isNasaImage(value: unknown): value is NasaImage {
+  if (typeof value !== 'object' || value === null) return false
+  const item = value as Record<string, unknown>
+  return (
+    typeof item.title === 'string' &&
+    typeof item.description === 'string' &&
+    (typeof item.imageUrl === 'string' || item.imageUrl === null || item.imageUrl === undefined)
+  )
+}
+
+/** NASA images for one thread, from GET /api/threads/<slug>. */
+export async function fetchNasaImages(slug: string, signal?: AbortSignal): Promise<NasaImage[]> {
+  const data = await getJson(`/api/threads/${encodeURIComponent(slug)}`, signal)
+  const nasa = typeof data === 'object' && data !== null ? (data as { nasa?: unknown }).nasa : null
+  if (typeof nasa !== 'object' || nasa === null) {
+    throw new ApiError('The server returned NASA media in an unexpected format.')
+  }
+
+  const { media, error } = nasa as { media?: unknown; error?: unknown }
+  if (typeof error === 'string') throw new ApiError(error)
+  if (!Array.isArray(media) || !media.every(isNasaImage)) {
+    throw new ApiError('The server returned NASA media in an unexpected format.')
+  }
+
+  // Only show images served over https.
+  return media.map((item) => ({
+    ...item,
+    imageUrl: item.imageUrl?.startsWith('https://') ? item.imageUrl : null,
+  }))
+}
