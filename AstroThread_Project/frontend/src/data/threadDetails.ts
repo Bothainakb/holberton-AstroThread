@@ -29,10 +29,16 @@ export interface DetailStage {
 }
 
 export interface RelatedPaper {
-  year: number
+  /** Database id; sample papers from the design have none. */
+  id?: number
+  year: number | null
   title: string
   authors: string
-  summary: string
+  summary?: string
+  /** Link to the paper (DOI or arXiv), when known. */
+  url?: string
+  /** A hand-picked sample from the database, labelled on the card. */
+  illustrative?: boolean
 }
 
 export interface EvidenceStat {

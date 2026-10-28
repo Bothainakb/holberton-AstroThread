@@ -1,4 +1,5 @@
-// Minimal client-side routing on top of the History API, so the app does not
+
+ // Minimal client-side routing on top of the History API, so the app does not
 // need a routing dependency for its handful of pages.
 import { useSyncExternalStore } from 'react'
 
@@ -8,6 +9,7 @@ export const routes = {
   researchSearch: '/research-search',
   login: '/login',
   signUp: '/signup',
+  aiAssistant: '/ai-assistant',
 } as const
 
 /** Path of a thread's details page, e.g. "/research-threads/black-holes". */

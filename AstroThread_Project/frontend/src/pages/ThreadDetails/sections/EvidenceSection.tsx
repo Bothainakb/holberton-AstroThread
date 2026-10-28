@@ -1,7 +1,9 @@
 import DataChart, { type ChartGeometry } from '../../../components/DataChart/DataChart'
 import PlaceholderPanel from '../../../components/PlaceholderPanel/PlaceholderPanel'
 import Tag from '../../../components/Tag/Tag'
+import type { ChartPoint } from '../../../data/home'
 import type { ThreadDetail } from '../../../data/threadDetails'
+import type { ApiTimelineEvent } from '../../../services/api'
 
 // Plot geometry of "Observations over time" in Figma pixels.
 const EVIDENCE_CHART: ChartGeometry = {
@@ -14,11 +16,65 @@ const EVIDENCE_CHART: ChartGeometry = {
   gridLines: [8.1, 53.2, 98.2, 143.3],
 }
 
-interface EvidenceSectionProps {
-  evidence?: ThreadDetail['evidence']
+/** Data from GET /api/threads/:id; replaces the design sample when set. */
+export interface LiveEvidence {
+  /** A chart with verified points, or null when the database has none. */
+  chart: { title: string; note: string | null; points: ChartPoint[] } | null
+  timeline: ApiTimelineEvent[]
 }
 
-function EvidenceSection({ evidence }: EvidenceSectionProps) {
+interface EvidenceSectionProps {
+  evidence?: ThreadDetail['evidence']
+  live?: LiveEvidence
+}
+
+function LiveEvidenceGrid({ live }: { live: LiveEvidence }) {
+  return (
+    <div className="details-evidence__grid">
+      {live.chart ? (
+        <DataChart
+          className="data-chart--evidence"
+          title={live.chart.title}
+          note={live.chart.note ?? undefined}
+          data={live.chart.points}
+          geometry={EVIDENCE_CHART}
+        />
+      ) : (
+        <PlaceholderPanel title="No verified measurements yet">
+          There is no verified dataset for this thread in the AstroThread database yet, so no
+          chart is shown.
+        </PlaceholderPanel>
+      )}
+
+      <div className="details-evidence__side">
+        <div className="details-discovery">
+          <p className="details-discovery__label">KEY DISCOVERIES</p>
+          {live.timeline.length > 0 ? (
+            <ol className="details-timeline">
+              {live.timeline.map((event) => (
+                <li className="details-timeline__item" key={event.id}>
+                  <span className="details-timeline__year">{event.year}</span>
+                  <div>
+                    <h3 className="details-timeline__title">{event.title}</h3>
+                    {event.description && (
+                      <p className="details-timeline__text">{event.description}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="details-discovery__text">
+              No discoveries have been added to this thread yet.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EvidenceSection({ evidence, live }: EvidenceSectionProps) {
   return (
     <section
       className="details-band details-evidence"
@@ -40,7 +96,9 @@ function EvidenceSection({ evidence }: EvidenceSectionProps) {
           </p>
         </div>
 
-        {evidence ? (
+        {live ? (
+          <LiveEvidenceGrid live={live} />
+        ) : evidence ? (
           <div className="details-evidence__grid">
             <DataChart
               className="data-chart--evidence"

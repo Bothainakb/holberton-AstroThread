@@ -1,12 +1,15 @@
+
 import { useState } from 'react'
 import Button from '../../components/Button/Button'
 import Tag from '../../components/Tag/Tag'
 import ThreadStages from '../../components/ThreadStages/ThreadStages'
 import type { IconName } from '../../components/Icon/Icon'
-import { stageIcons, threadDetails } from '../../data/threadDetails'
-import { researchThreads, threadStages } from '../../data/threads'
+import type { ChartPoint } from '../../data/home'
+import { stageIcons, threadDetails, type RelatedPaper } from '../../data/threadDetails'
+import { researchThreads, threadStages, type ResearchThread } from '../../data/threads'
 import { routes } from '../../router/router'
-import EvidenceSection from './sections/EvidenceSection'
+import type { ApiThreadDetails } from '../../services/api'
+import EvidenceSection, { type LiveEvidence } from './sections/EvidenceSection'
 import LatestDevelopment from './sections/LatestDevelopment'
 import NasaMediaSection from './sections/NasaMediaSection'
 import RelatedPapers from './sections/RelatedPapers'
@@ -14,42 +17,128 @@ import StageNavigation from './sections/StageNavigation'
 import StagePanel from './sections/StagePanel'
 import ThreadHero from './sections/ThreadHero'
 import { scrollToSection } from './scrollToSection'
+import { useNasaMedia } from './useNasaMedia'
+import { useThreadDetails, type ThreadDetailsState } from './useThreadDetails'
 import './ThreadDetailsPage.css'
 
 interface ThreadDetailsPageProps {
   threadId: string
 }
 
-// Figma prototype: each stage step scrolls to the section that covers it.
 const STAGE_SECTION_IDS = [
-  'stage-content', // 1 Origin -> the stage panel
-  'related-papers', // 2 Research
-  'evidence', // 3 Discoveries
-  'evidence', // 4 Data
-  'latest-developments', // 5 Latest Developments
+  'stage-content',
+  'related-papers',
+  'evidence',
+  'evidence',
+  'latest-developments',
 ]
 
-function ThreadDetailsPage({ threadId }: ThreadDetailsPageProps) {
-  const [stageNumber, setStageNumber] = useState(1)
-  const thread = researchThreads.find((item) => item.id === threadId)
+function isChartPoint(value: unknown): value is ChartPoint {
+  if (typeof value !== 'object' || value === null) return false
+  const point = value as Record<string, unknown>
+  return typeof point.year === 'number' && typeof point.value === 'number'
+}
 
-  if (!thread) {
+function liveChart(details: ApiThreadDetails): LiveEvidence['chart'] {
+  for (const chart of details.charts) {
+    const dataset = chart.dataset as { points?: unknown } | null
+    const points = dataset?.points
+
+    if (Array.isArray(points) && points.length > 1 && points.every(isChartPoint)) {
+      const values = points.map((point) => point.value)
+      const min = Math.min(...values)
+      const max = Math.max(...values)
+      const range = max - min
+
+      const normalizedPoints: ChartPoint[] = points.map((point) => ({
+        year: point.year,
+        value: range === 0 ? 0.5 : 0.15 + ((point.value - min) / range) * 0.7,
+      }))
+
+      return {
+        title: chart.title,
+        note: chart.note,
+        points: normalizedPoints,
+      }
+    }
+  }
+
+  return null
+}
+
+function livePapers(details: ApiThreadDetails): RelatedPaper[] {
+  return details.papers.map((paper) => ({
+    id: paper.id,
+    year: paper.year,
+    title: paper.title,
+    authors: paper.authors ?? 'Unknown authors',
+    url: paper.url ?? undefined,
+    illustrative: paper.illustrative,
+  }))
+}
+
+interface DetailsStatusProps {
+  state: ThreadDetailsState
+  hasSample: boolean
+  onRetry: () => void
+}
+
+function DetailsStatus({ state, hasSample, onRetry }: DetailsStatusProps) {
+  const fallback = hasSample
+    ? 'The sections below show sample content from the design, not data from the database.'
+    : 'The sections below show what is still to be added.'
+
+  if (state.status === 'loading') {
     return (
-      <main className="details-page">
-        <section className="details-missing container" aria-labelledby="missing-title">
-          <h1 className="details-missing__title" id="missing-title">
-            Thread not found
-          </h1>
-          <p className="details-missing__text">This research thread does not exist.</p>
-          <Button href={routes.researchThreads}>Back to Research Threads</Button>
-        </section>
-      </main>
+      <p className="details-sample-note container" role="status">
+        Loading thread details…
+      </p>
     )
   }
 
-  // Only Black Holes has detail content in Figma; other threads fall back to
-  // their list data and labeled placeholders.
+  if (state.status === 'ready') {
+    return (
+      <p className="details-sample-note container" role="note">
+        Thread information, timeline and papers come from the AstroThread database, and
+        images from the NASA Image and Video Library. The stage-by-stage guide comes from the
+        design.
+      </p>
+    )
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className="details-status-banner container" role="alert">
+        <p>
+          Thread details could not be loaded: {state.message} {fallback}
+        </p>
+        <button type="button" className="button button--secondary" onClick={onRetry}>
+          Try again
+        </button>
+      </div>
+    )
+  }
+
+  const reason =
+    state.status === 'unavailable'
+      ? 'Thread details are not connected on this server yet.'
+      : 'This thread is not in the AstroThread database yet.'
+
+  return (
+    <p className="details-sample-note container" role="note">
+      {reason} {fallback}
+    </p>
+  )
+}
+
+function ThreadDetailsContent({ thread }: { thread: ResearchThread }) {
+  const [stageNumber, setStageNumber] = useState(1)
+  const { state, retry } = useThreadDetails(thread.title)
+  const live = state.status === 'ready' ? state.details : null
+  const nasa = useNasaMedia(live ? live.thread.id : null)
+
   const detail = threadDetails[thread.id]
+  const sample = live || state.status === 'loading' ? undefined : detail
   const stages = detail
     ? detail.stages
     : threadStages.map((stage, index) => ({
@@ -61,31 +150,53 @@ function ThreadDetailsPage({ threadId }: ThreadDetailsPageProps) {
   const stage = stages[stageNumber - 1]
   const icons = stages.map((item) => `stage-${item.icon}` as IconName)
 
-  // Previous / Next switch the stage panel.
   function goToStage(number: number) {
     setStageNumber(Math.min(Math.max(number, 1), stages.length))
     requestAnimationFrame(() => scrollToSection('stage-content'))
   }
 
-  // Stage steps scroll to their section; Origin also shows the Origin panel.
   function handleStepSelect(number: number) {
     if (number === 1) setStageNumber(1)
     requestAnimationFrame(() => scrollToSection(STAGE_SECTION_IDS[number - 1]))
   }
 
+  const hero = live
+    ? {
+        intro: live.thread.description,
+        categories: [live.thread.category],
+        paperCount: live.papers.length,
+        updatedLabel: null,
+      }
+    : state.status === 'loading'
+      ? {
+          intro: thread.description,
+          categories: [thread.category],
+          paperCount: null,
+          updatedLabel: null,
+        }
+      : {
+          intro: detail?.intro ?? thread.description,
+          categories: detail?.categories ?? [thread.category],
+          paperCount: thread.paperCount,
+          updatedLabel: thread.updatedLabel,
+        }
+
   return (
-    <main className="details-page">
+    <main className="details-page" aria-busy={state.status === 'loading'}>
       <ThreadHero
         thread={thread}
         headline={detail?.headline ?? thread.title}
-        intro={detail?.intro ?? thread.description}
-        categories={detail?.categories ?? [thread.category]}
+        intro={hero.intro}
+        categories={hero.categories}
+        paperCount={hero.paperCount}
+        updatedLabel={hero.updatedLabel}
         onStartJourney={() => {
-          // Figma prototype: start the journey at the stage-by-stage overview.
           setStageNumber(1)
           requestAnimationFrame(() => scrollToSection('follow-the-thread'))
         }}
       />
+
+      <DetailsStatus state={state} hasSample={Boolean(detail)} onRetry={retry} />
 
       <section
         className="details-band details-journey"
@@ -112,7 +223,10 @@ function ThreadDetailsPage({ threadId }: ThreadDetailsPageProps) {
           <div className="details-journey__stages">
             <ThreadStages
               className="thread-stages--details"
-              stages={stages.map((item) => ({ title: item.title, description: item.summary }))}
+              stages={stages.map((item) => ({
+                title: item.title,
+                description: item.summary,
+              }))}
               currentStage={stageNumber}
               icons={icons}
               onSelect={handleStepSelect}
@@ -128,10 +242,40 @@ function ThreadDetailsPage({ threadId }: ThreadDetailsPageProps) {
         content={stage.content}
       />
 
-      <RelatedPapers papers={detail?.papers} paperCount={thread.paperCount} />
-      <EvidenceSection evidence={detail?.evidence} />
-      <NasaMediaSection threadId={thread.id} nasa={detail?.nasa} />
-      <LatestDevelopment latest={detail?.latest} />
+      {live ? (
+        <>
+          <RelatedPapers
+            papers={livePapers(live)}
+            emptyText="No papers have been linked to this thread in the database yet."
+          />
+
+          <EvidenceSection live={{ chart: liveChart(live), timeline: live.timeline }} />
+
+          <NasaMediaSection live={nasa.state} onRetry={nasa.retry} />
+
+          <LatestDevelopment
+            latest={
+              live.latest
+                ? {
+                    day: '',
+                    year: String(live.latest.year),
+                    title: live.latest.title,
+                    text: live.latest.description ?? '',
+                  }
+                : undefined
+            }
+          />
+        </>
+      ) : (
+        state.status !== 'loading' && (
+          <>
+            <RelatedPapers papers={sample?.papers} paperCount={thread.paperCount} />
+            <EvidenceSection evidence={sample?.evidence} />
+            <NasaMediaSection nasa={sample?.nasa} />
+            <LatestDevelopment latest={sample?.latest} />
+          </>
+        )
+      )}
 
       <StageNavigation
         stageNumber={stageNumber}
@@ -140,6 +284,26 @@ function ThreadDetailsPage({ threadId }: ThreadDetailsPageProps) {
       />
     </main>
   )
+}
+
+function ThreadDetailsPage({ threadId }: ThreadDetailsPageProps) {
+  const thread = researchThreads.find((item) => item.id === threadId)
+
+  if (!thread) {
+    return (
+      <main className="details-page">
+        <section className="details-missing container" aria-labelledby="missing-title">
+          <h1 className="details-missing__title" id="missing-title">
+            Thread not found
+          </h1>
+          <p className="details-missing__text">This research thread does not exist.</p>
+          <Button href={routes.researchThreads}>Back to Research Threads</Button>
+        </section>
+      </main>
+    )
+  }
+
+  return <ThreadDetailsContent thread={thread} />
 }
 
 export default ThreadDetailsPage

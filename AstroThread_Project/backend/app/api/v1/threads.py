@@ -2,7 +2,7 @@ import psycopg
 from flask import Blueprint, current_app, jsonify, request
 
 from app.persistence.database import get_db_connection
-from app.services.thread_service import get_thread_details
+from app.services.thread_service import get_thread_details_by_slug
 
 threads_bp = Blueprint("threads_v1", __name__)
 
@@ -10,8 +10,6 @@ REGEX_SPECIAL_CHARS = set("\\.^$*+?()[]{}|")
 MAX_QUERY_LENGTH = 100
 TOTAL_STAGES = 5
 
-# One query for the list and the search; {where} is only ever "" or SEARCH_WHERE,
-# never user input. The search text itself is always passed as %(pattern)s.
 THREAD_LIST_SQL = """
     SELECT t.id, t.slug, t.title, t.category, t.description, t.created_at,
            (SELECT COUNT(*) FROM thread_papers tp WHERE tp.thread_id = t.id) AS paper_count,
@@ -54,7 +52,7 @@ def thread_to_json(row):
 
 @threads_bp.route("/api/threads", methods=["GET"])
 def get_threads():
-    """All research threads, newest first; ?q= searches title, category and description."""
+    """Return research threads, optionally filtered by search query."""
     query = request.args.get("q", "").strip()
 
     if len(query) > MAX_QUERY_LENGTH:
@@ -83,13 +81,14 @@ def get_threads():
 
 @threads_bp.route("/api/threads/<slug>", methods=["GET"])
 def get_thread(slug):
-    """Everything the Thread Details page needs for one thread."""
+    """Return details for a research thread by slug."""
     try:
-        details = get_thread_details(slug)
+        details = get_thread_details_by_slug(slug)
     except (psycopg.Error, RuntimeError):
         current_app.logger.exception("Thread details query failed")
         return jsonify({"error": "Unable to retrieve this research thread"}), 500
 
     if details is None:
         return jsonify({"error": "Research thread not found"}), 404
+
     return jsonify(details)
