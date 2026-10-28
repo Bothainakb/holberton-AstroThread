@@ -37,7 +37,7 @@ export function slugify(title: string) {
  */
 export function toHomeThread(thread: ApiThread): ResearchThreadCardData {
   return {
-    id: slugify(thread.title) || String(thread.id),
+    id: thread.slug ?? (slugify(thread.title) || String(thread.id)),
     title: thread.title,
     category: thread.category,
     description: thread.description,
