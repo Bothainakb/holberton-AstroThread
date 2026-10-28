@@ -1,38 +1,57 @@
 import { useEffect, useMemo, useState } from 'react'
 import Button from '../../components/Button/Button'
 import FilterChip from '../../components/FilterChip/FilterChip'
-import ResearchThreadCard from '../../components/ResearchThreadCard/ResearchThreadCard'
+import ResearchThreadCard, {
+  type ResearchThreadCardData,
+} from '../../components/ResearchThreadCard/ResearchThreadCard'
 import SearchBar from '../../components/SearchBar/SearchBar'
 import Tag from '../../components/Tag/Tag'
 import ThreadStages from '../../components/ThreadStages/ThreadStages'
-import {
-  previewCurrentStage,
-  threadStages,
-  type ResearchThread,
-} from '../../data/threads'
+import { previewCurrentStage, threadStages } from '../../data/threads'
 import { fetchThreads, type ApiThread } from '../../services/api'
 import { threadDetailsPath } from '../../router/router'
 import './ResearchThreadsPage.css'
+import '../ResearchSearch/ResearchSearchPage.css' // for the No Results styles
 
 const ALL_TOPICS = 'all'
 
-function mapApiThread(thread: ApiThread): ResearchThread {
+const TOPIC_SLUGS = [
+  'black-holes',
+  'dark-matter',
+  'exoplanets',
+  'gravitational-waves',
+  'neutron-stars',
+  'expanding-universe',
+]
+
+function updatedLabel(iso?: string | null) {
+  if (!iso) return undefined
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+  if (days <= 0) return 'Updated today'
+  if (days < 7) return `Updated ${days} ${days === 1 ? 'day' : 'days'} ago`
+  const weeks = Math.floor(days / 7)
+  if (weeks < 5) return `Updated ${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`
+  return `Updated ${new Date(iso).toLocaleDateString()}`
+}
+
+function mapApiThread(thread: ApiThread): ResearchThreadCardData {
+  const stagesDone = thread.completedStages || undefined
   return {
-    id: String(thread.id),
+    id: thread.slug ?? String(thread.id),
     title: thread.title,
     category: thread.category,
     description: thread.description,
-    paperCount: 0,
-    completedStages: 0,
-    totalStages: 5,
-    updatedLabel: '',
+    paperCount: thread.paperCount || undefined, // hide "0 papers"
+    completedStages: stagesDone, // hide "0 / 5"
+    totalStages: stagesDone ? (thread.totalStages ?? 5) : undefined,
+    updatedLabel: updatedLabel(thread.updatedAt),
   }
 }
 
 function ResearchThreadsPage() {
   const [query, setQuery] = useState('')
   const [topic, setTopic] = useState(ALL_TOPICS)
-  const [threads, setThreads] = useState<ResearchThread[]>([])
+  const [threads, setThreads] = useState<ResearchThreadCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -54,15 +73,13 @@ function ResearchThreadsPage() {
     void loadThreads()
   }, [])
 
+  function clearSearch() {
+    setQuery('')
+    setTopic(ALL_TOPICS)
+  }
+
   const topicFilters = useMemo(
-    () => threads.filter((thread) => [
-      'black-holes',
-      'dark-matter',
-      'exoplanets',
-      'gravitational-waves',
-      'neutron-stars',
-      'expanding-universe',
-    ].includes(thread.id)),
+    () => threads.filter((thread) => TOPIC_SLUGS.includes(thread.id)),
     [threads],
   )
 
@@ -78,7 +95,6 @@ function ResearchThreadsPage() {
       )
     })
   }, [threads, query, topic])
-
 
   return (
     <main className="threads-page">
@@ -134,9 +150,13 @@ function ResearchThreadsPage() {
         ) : error ? (
           <div role="alert">
             <p>{error}</p>
-           <button type="button" onClick={() => void loadThreads()}>
-  Try Again
-</button>
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => void loadThreads()}
+            >
+              Try Again
+            </button>
           </div>
         ) : visibleThreads.length > 0 ? (
           <div className="threads-list__grid">
@@ -145,9 +165,23 @@ function ResearchThreadsPage() {
             ))}
           </div>
         ) : (
-          <p className="threads-list__empty">
-            No threads match your search.
-          </p>
+          <div className="search-empty">
+            <h3 className="search-empty__title">No research found</h3>
+            <p className="search-empty__text">
+              {query.trim() ? `Nothing matches "${query.trim()}". ` : ''}
+              Try a different keyword, such as a topic like "black holes" or a category like
+              "cosmology".
+            </p>
+            <div className="search-empty__actions">
+              <button
+                type="button"
+                className="button button--secondary search-empty__clear"
+                onClick={clearSearch}
+              >
+                Clear search
+              </button>
+            </div>
+          </div>
         )}
       </section>
 
