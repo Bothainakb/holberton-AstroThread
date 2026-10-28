@@ -1,4 +1,4 @@
-iimport { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import PlaceholderPanel from '../../../components/PlaceholderPanel/PlaceholderPanel'
 import Tag from '../../../components/Tag/Tag'
 import type { ThreadDetail } from '../../../data/threadDetails'
