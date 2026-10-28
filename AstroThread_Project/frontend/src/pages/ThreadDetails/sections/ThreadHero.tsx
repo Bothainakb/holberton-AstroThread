@@ -10,10 +10,22 @@ interface ThreadHeroProps {
   headline: string
   intro: string
   categories: string[]
+  /** Papers shown for the thread; null hides the count. */
+  paperCount: number | null
+  /** "Updated 2 days ago" from the design data; null when it is not known. */
+  updatedLabel: string | null
   onStartJourney: () => void
 }
 
-function ThreadHero({ thread, headline, intro, categories, onStartJourney }: ThreadHeroProps) {
+function ThreadHero({
+  thread,
+  headline,
+  intro,
+  categories,
+  paperCount,
+  updatedLabel,
+  onStartJourney,
+}: ThreadHeroProps) {
   return (
     <section className="details-hero container" aria-labelledby="details-title">
       <nav className="details-breadcrumb" aria-label="Breadcrumb">
@@ -46,19 +58,21 @@ function ThreadHero({ thread, headline, intro, categories, onStartJourney }: Thr
           <p className="details-hero__intro">{intro}</p>
 
           <ul className="details-hero__meta">
-            <li>
-              <span className="details-hero__meta-icon">
-                <Icon name="papers" />
-              </span>
-              {thread.paperCount} papers
-            </li>
+            {paperCount !== null && (
+              <li>
+                <span className="details-hero__meta-icon">
+                  <Icon name="papers" />
+                </span>
+                {paperCount} {paperCount === 1 ? 'paper' : 'papers'}
+              </li>
+            )}
             <li>
               <span className="details-hero__meta-icon">
                 <Icon name="stages" />
               </span>
               {thread.totalStages} research stages
             </li>
-            <li className="details-hero__meta-updated">{thread.updatedLabel}</li>
+            {updatedLabel && <li className="details-hero__meta-updated">{updatedLabel}</li>}
           </ul>
         </div>
 
@@ -66,16 +80,21 @@ function ThreadHero({ thread, headline, intro, categories, onStartJourney }: Thr
           <button type="button" className="button button--primary" onClick={onStartJourney}>
             Start Research Journey
           </button>
-          {/* Bookmarking needs user accounts, which are not connected yet. */}
-          <button type="button" className="details-icon-button" aria-label="Bookmark thread">
+          {/* No bookmark endpoint exists yet, so saving is disabled rather than faked. */}
+          <button
+            type="button"
+            className="details-icon-button"
+            aria-label="Bookmark thread (not available yet)"
+            title="Saving threads is not available yet"
+            disabled
+          >
             <Icon name="bookmark" />
           </button>
         </div>
       </div>
 
       <div className="details-hero__links">
-        {/* The AI Assistant page is not built yet. */}
-        <Button variant="secondary" href="#">
+        <Button variant="secondary" href={routes.aiAssistant}>
           Ask the AI Assistant
         </Button>
         <Button variant="secondary" href="#nasa-media">

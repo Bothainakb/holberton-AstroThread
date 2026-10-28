@@ -1,4 +1,3 @@
-import Icon from '../../../components/Icon/Icon'
 import PlaceholderPanel from '../../../components/PlaceholderPanel/PlaceholderPanel'
 import Tag from '../../../components/Tag/Tag'
 import type { ThreadDetail } from '../../../data/threadDetails'
@@ -24,17 +23,17 @@ function LatestDevelopment({ latest }: LatestDevelopmentProps) {
       {latest ? (
         <article className="latest-card">
           <p className="latest-card__date">
-            <span className="latest-card__day">{latest.day}</span>
+            {latest.day && <span className="latest-card__day">{latest.day}</span>}
             <span className="latest-card__year">{latest.year}</span>
           </p>
           <div className="latest-card__body">
             <Tag>Most recent</Tag>
             <h3 className="latest-card__title">{latest.title}</h3>
-            <p className="latest-card__text">{latest.text}</p>
-            <a className="latest-card__link" href="#">
-              Explore Development
-              <Icon name="arrow-right" />
-            </a>
+            {latest.text && <p className="latest-card__text">{latest.text}</p>}
+            {/* No article page or source link exists for developments yet. */}
+            <span className="details-unavailable latest-card__unavailable">
+              Full story not available yet
+            </span>
           </div>
         </article>
       ) : (

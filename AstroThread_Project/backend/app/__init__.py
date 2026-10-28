@@ -362,6 +362,21 @@ def current_user():
     return jsonify({"user": g.user})
 
 
+# Profile and Thread Details routes. The profile routes use login_required and
+# MAX_NAME_LENGTH from this module, so they are imported only after both are
+# defined. GET /api/threads/<id> and its /nasa-media are public, like
+# GET /api/threads.
+from app.api.v1.bookmarks import bookmarks_bp  # noqa: E402
+from app.api.v1.nasa_media import nasa_media_bp  # noqa: E402
+from app.api.v1.profile import profile_bp  # noqa: E402
+from app.api.v1.thread_details import thread_details_bp  # noqa: E402
+
+app.register_blueprint(profile_bp)
+app.register_blueprint(bookmarks_bp)
+app.register_blueprint(thread_details_bp)
+app.register_blueprint(nasa_media_bp)
+
+
 if __name__ == "__main__":
     app.run(
         debug=True,
