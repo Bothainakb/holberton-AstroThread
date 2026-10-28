@@ -3,6 +3,7 @@ import os
 import re
 from datetime import timedelta
 from functools import wraps
+from pathlib import Path
 
 import psycopg
 from dotenv import load_dotenv
@@ -10,9 +11,9 @@ from flask import Flask, g, jsonify, request, session
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from pathlib import Path
+from app.persistence.database import get_db_connection
 
-load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env", override=True)
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") or None
