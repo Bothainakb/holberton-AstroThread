@@ -1,4 +1,5 @@
-// Minimal client-side routing on top of the History API, so the app does not
+
+ // Minimal client-side routing on top of the History API, so the app does not
 // need a routing dependency for its handful of pages.
 import { useSyncExternalStore } from 'react'
 
@@ -8,6 +9,7 @@ export const routes = {
   researchSearch: '/research-search',
   login: '/login',
   signUp: '/signup',
+  aiAssistant: '/ai-assistant',
 } as const
 
 /** Path of a thread's details page, e.g. "/research-threads/black-holes". */
@@ -19,6 +21,22 @@ export function threadDetailsPath(threadId: string) {
 export function matchThreadDetails(pathname: string) {
   const match = pathname.match(/^\/research-threads\/([^/]+)$/)
   return match ? decodeURIComponent(match[1]) : null
+}
+
+/**
+ * Where to go after signing in, from a "?next=" value. Only a Thread Details
+ * path on this site is accepted ("/research-threads/black-holes"), so the
+ * parameter can never send someone to another site or an unexpected page.
+ */
+export function safeReturnPath(value: string | null | undefined): string | null {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
+  return matchThreadDetails(value) ? value : null
+}
+
+/** "/login?next=..." (or the sign-up page) that returns to `path` afterwards. */
+export function withReturnPath(page: string, path: string | null | undefined) {
+  const next = safeReturnPath(path)
+  return next ? `${page}?${new URLSearchParams({ next })}` : page
 }
 
 const NAVIGATE_EVENT = 'astrothread:navigate'
@@ -57,6 +75,14 @@ export function replaceSearchParam(name: string, value: string) {
   const url = new URL(window.location.href)
   if (value) url.searchParams.set(name, value)
   else url.searchParams.delete(name)
+  if (url.href === window.location.href) return
+  window.history.replaceState(window.history.state, '', url)
+  window.dispatchEvent(new Event(NAVIGATE_EVENT))
+}
+
+/** Changes the URL path without adding a history entry (e.g. to a canonical address). */
+export function replacePath(to: string) {
+  const url = new URL(to, window.location.href)
   if (url.href === window.location.href) return
   window.history.replaceState(window.history.state, '', url)
   window.dispatchEvent(new Event(NAVIGATE_EVENT))

@@ -1,0 +1,94 @@
+/* Sourced charts on Thread Details; the card itself comes from .data-chart. */
+.measured-chart__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.measured-chart__units {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.measured-chart__plot {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 20px;
+  overflow: visible;
+}
+
+.measured-chart__grid {
+  stroke: var(--color-surface-light);
+  stroke-width: 1;
+}
+
+.measured-chart__axis {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+}
+
+.measured-chart__tick {
+  font-size: 12px;
+  fill: var(--color-text-muted);
+}
+
+.measured-chart__category {
+  font-weight: 600;
+  fill: var(--color-text-secondary);
+}
+
+.measured-chart__axis-title {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--color-text-secondary);
+}
+
+.measured-chart__value {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
+.measured-chart__bar {
+  fill: var(--color-accent);
+}
+
+.measured-chart__bar:hover,
+.measured-chart__dot:hover {
+  fill: var(--color-accent-hover);
+}
+
+.measured-chart__dot {
+  fill: var(--color-accent);
+  fill-opacity: 0.7;
+}
+
+.measured-chart__line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.measured-chart__point {
+  fill: var(--color-accent);
+}
+
+.measured-chart__note,
+.measured-chart__source {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-text-muted);
+}
+
+.measured-chart__source {
+  margin-top: 6px;
+}
+
+.measured-chart__source a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
