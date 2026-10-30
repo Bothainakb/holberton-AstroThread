@@ -32,17 +32,6 @@ export const researchThreads: ResearchThread[] = [
     updatedLabel: 'Updated 2 days ago',
   },
   {
-    id: 'gravitational-waves',
-    title: 'Gravitational Waves',
-    category: 'Physics',
-    paperCount: 96,
-    description:
-      'Ripples in spacetime from colliding black holes and neutron stars, first detected directly in 2015.',
-    completedStages: 4,
-    totalStages: 5,
-    updatedLabel: 'Updated 4 days ago',
-  },
-  {
     id: 'exoplanets',
     title: 'Exoplanets',
     category: 'Astronomy',
@@ -63,28 +52,6 @@ export const researchThreads: ResearchThread[] = [
     completedStages: 3,
     totalStages: 5,
     updatedLabel: 'Updated 1 week ago',
-  },
-  {
-    id: 'neutron-stars',
-    title: 'Neutron Stars',
-    category: 'Astrophysics',
-    paperCount: 74,
-    description:
-      'Ultra-dense remnants of supernovae: pulsars, magnetars and the mergers that forge heavy elements.',
-    completedStages: 4,
-    totalStages: 5,
-    updatedLabel: 'Updated 1 week ago',
-  },
-  {
-    id: 'expanding-universe',
-    title: 'The Expanding Universe',
-    category: 'Cosmology',
-    paperCount: 110,
-    description:
-      "From Hubble's law to dark energy: how we learned that space itself is stretching, and speeding up.",
-    completedStages: 5,
-    totalStages: 5,
-    updatedLabel: 'Updated 2 weeks ago',
   },
 ]
 

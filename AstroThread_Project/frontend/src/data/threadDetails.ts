@@ -29,10 +29,18 @@ export interface DetailStage {
 }
 
 export interface RelatedPaper {
-  year: number
+  /** Database id; sample papers from the design have none. */
+  id?: number
+  year: number | null
   title: string
   authors: string
-  summary: string
+  summary?: string
+  /** Shown instead of the summary when it is known to be missing (e.g. OpenAlex has no abstract). */
+  missingSummary?: string
+  /** Link to the paper (DOI or arXiv), when known. */
+  url?: string
+  /** A hand-picked sample from the database, labelled on the card. */
+  illustrative?: boolean
 }
 
 export interface EvidenceStat {

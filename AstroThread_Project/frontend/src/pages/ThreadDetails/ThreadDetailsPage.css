@@ -47,7 +47,7 @@
 /* Full-width tinted bands ("Follow the thread", "From research to evidence") */
 .details-band {
   border-top: 1px solid var(--color-surface-light);
-  background: rgb(10 14 29 / 70%);
+  background: rgb(18 34 63 / 70%);
 }
 
 /* Square icon button (bookmark, back) */
@@ -73,6 +73,143 @@
 .details-icon-button:hover,
 .details-breadcrumb__back:hover {
   border-color: var(--color-primary);
+}
+
+/* Saved thread: cyan, with a filled bookmark (ThreadHero BookmarkIcon). */
+.details-icon-button--saved,
+.details-icon-button--saved:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.details-icon-button[aria-busy='true'] {
+  cursor: progress;
+}
+
+.details-bookmark-notice__text {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-secondary);
+}
+
+.details-bookmark-notice__text--error {
+  color: var(--color-error);
+}
+
+.details-bookmark-notice__text a {
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Threads outside the database, or while the saved state loads. */
+.details-icon-button:disabled {
+  border-color: var(--color-surface-light);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Label for an action that has no backend yet, in place of a dead link. */
+.details-unavailable {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+/* Where the content comes from (database, design sample), under the hero. */
+.details-sample-note {
+  margin-top: 24px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* Thread details could not be loaded: message and "Try again". */
+.details-status-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-top: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-error);
+}
+
+.details-status-banner .button {
+  cursor: pointer;
+}
+
+/* Note between a section heading and its content (e.g. illustrative papers). */
+.details-section-note {
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* "Key discoveries": the thread's timeline from the database. */
+.details-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.details-timeline__item {
+  display: flex;
+  gap: 16px;
+}
+
+.details-timeline__year {
+  flex-shrink: 0;
+  min-width: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.details-timeline__title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.details-timeline__text {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* Link to a discovery's source, in the accent style of the page's other links. */
+.details-timeline__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.details-timeline__source .icon {
+  transition: transform 180ms ease;
+}
+
+.details-timeline__source:hover .icon {
+  transform: translateX(3px);
 }
 
 /* Hero */
@@ -504,6 +641,75 @@
   line-height: 18px;
   color: var(--color-text-subtle);
 }
+.nasa-card__image--photo {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+}
+
+.nasa-card__text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.details-nasa__status {
+  margin-top: 32px;
+  color: var(--color-text-secondary);
+}
+
+/* Live NASA images: up to six cards, three per row (two, then one, below). */
+.details-nasa__grid--live {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.nasa-card--live {
+  display: flex;
+  flex-direction: column;
+}
+
+.nasa-card__photo {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: var(--color-surface-light);
+}
+
+.nasa-card--live .nasa-card__caption {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.nasa-card__meta {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-text-muted);
+}
+
+.nasa-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-top: auto;
+  padding-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.nasa-card__link .icon {
+  transition: transform 180ms ease;
+}
+
+.nasa-card__link:hover .icon {
+  transform: translateX(3px);
+}
 
 .nasa-data {
   padding: 24px;
@@ -608,6 +814,10 @@
 
 .latest-card__link:hover .icon {
   transform: translateX(3px);
+}
+
+.latest-card__unavailable {
+  margin-top: 18px;
 }
 
 /* Stage navigation */

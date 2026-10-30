@@ -22,6 +22,19 @@
   justify-content: space-between;
 }
 
+.paper-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Hand-picked sample papers (migration 005), not a curated list. */
+.paper-card__illustrative {
+  border: 1px dashed var(--color-warning);
+  background: transparent;
+  color: var(--color-warning);
+}
+
 /* 44px hit area around the small Figma bookmark icon. */
 .paper-card__bookmark {
   display: grid;
@@ -40,6 +53,13 @@
 
 .paper-card__bookmark:hover {
   color: var(--color-accent);
+}
+
+/* Bookmarking is not connected yet. */
+.paper-card__bookmark:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Figma draws this bookmark at 8.3 x 13.3px. */
@@ -70,6 +90,11 @@
   color: var(--color-text-secondary);
 }
 
+.paper-card__summary--missing {
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
 .paper-card__footer {
   margin-top: auto;
   padding-top: 21px;
@@ -84,6 +109,14 @@
   font-weight: 700;
   color: var(--color-accent);
   white-space: nowrap;
+}
+
+.paper-card__unavailable {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
 }
 
 .paper-card__link .icon {

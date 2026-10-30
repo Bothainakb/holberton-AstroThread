@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { homePathFor, signUp } from '../../auth/auth'
 import Icon from '../../components/Icon/Icon'
 import Link from '../../router/Link'
-import { navigate, routes } from '../../router/router'
+import { navigate, routes, safeReturnPath, useSearchParam, withReturnPath } from '../../router/router'
 import { ApiError } from '../../services/api'
 // The card, fields and notices are the same as on the Login page.
 import '../Login/LoginPage.css'
@@ -71,6 +71,7 @@ const fieldConfig: Record<
 
 /** Figma "09-sign-up" (screen 03-Sign-Up). */
 function SignUpPage() {
+  const returnTo = safeReturnPath(useSearchParam('next'))
   const [values, setValues] = useState<Values>({ name: '', email: '', password: '', confirm: '' })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [submitted, setSubmitted] = useState(false)
@@ -104,7 +105,8 @@ function SignUpPage() {
     try {
       // The server creates a User account and signs it in with the session cookie.
       const user = await signUp(values.name.trim(), values.email.trim(), values.password)
-      navigate(homePathFor(user.role))
+      // Back to the thread that asked for sign-in, else the role's home page.
+      navigate(returnTo ?? homePathFor(user.role))
     } catch (error) {
       setLoading(false)
       setNotice(signUpErrorMessage(error))
@@ -183,7 +185,7 @@ function SignUpPage() {
 
           <p className="login-card__signup">
             Already have an account?
-            <Link className="login-card__signup-link" href={routes.login}>
+            <Link className="login-card__signup-link" href={withReturnPath(routes.login, returnTo)}>
               Sign In
             </Link>
           </p>

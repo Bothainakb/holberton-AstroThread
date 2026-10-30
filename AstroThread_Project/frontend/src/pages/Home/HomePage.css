@@ -159,6 +159,22 @@
 }
 
 /* Loading, empty and error states share the grid's position. */
+/* Design-only threads that match a search, after the database results. */
+.home-threads__previews {
+  margin-top: 32px;
+}
+
+.home-threads__previews:first-child {
+  margin-top: 0;
+}
+
+.home-threads__preview-note {
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-muted);
+}
+
 .home-threads__status {
   display: flex;
   flex-direction: column;

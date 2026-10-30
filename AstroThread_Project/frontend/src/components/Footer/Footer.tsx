@@ -6,7 +6,6 @@ import './Footer.css'
 const footerLinks = [
   { label: 'Home', href: routes.home },
   { label: 'Research Threads', href: routes.researchThreads },
-  { label: 'Search', href: routes.researchSearch },
   { label: 'Profile', href: '#' },
 ]
 

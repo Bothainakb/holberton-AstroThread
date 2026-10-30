@@ -3,17 +3,81 @@ import Icon from '../../../components/Icon/Icon'
 import Tag from '../../../components/Tag/Tag'
 import type { ResearchThread } from '../../../data/threads'
 import Link from '../../../router/Link'
-import { routes } from '../../../router/router'
+import { routes, threadDetailsPath, withReturnPath } from '../../../router/router'
+import type { BookmarkNotice, BookmarkState } from '../useThreadBookmark'
 
 interface ThreadHeroProps {
   thread: ResearchThread
   headline: string
   intro: string
   categories: string[]
+  /** Papers shown for the thread; null hides the count. */
+  paperCount: number | null
+  /** "Updated 2 days ago" from the design data; null when it is not known. */
+  updatedLabel: string | null
   onStartJourney: () => void
+  /** Replaces "N research stages" when the thread has no stage content (design previews). */
+  stagesNote?: string
+  bookmark: { state: BookmarkState; notice: BookmarkNotice | null; onToggle: () => void }
 }
 
-function ThreadHero({ thread, headline, intro, categories, onStartJourney }: ThreadHeroProps) {
+/** The bookmark icon (same shape as icons/thread/bookmark.svg), filled once saved. */
+function BookmarkIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="12" height="18" viewBox="-1 -1 12 18" aria-hidden="true">
+      <path
+        d="M0 0H10V16L5 12.4L0 16Z"
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function BookmarkButton({ state, onToggle }: { state: BookmarkState; onToggle: () => void }) {
+  const saved = state.status === 'ready' && state.saved
+  const label =
+    state.status === 'unavailable'
+      ? 'Save thread (not available for threads outside the AstroThread database)'
+      : state.status === 'ready'
+        ? saved
+          ? 'Remove from saved threads'
+          : 'Save thread'
+        : state.status === 'signed-out'
+          ? 'Save thread (sign in required)'
+          : state.status === 'error'
+            ? 'Saved status could not be loaded; try again'
+            : 'Save thread (loading)'
+
+  return (
+    <button
+      type="button"
+      className={['details-icon-button', saved && 'details-icon-button--saved'].filter(Boolean).join(' ')}
+      aria-label={label}
+      title={label}
+      aria-pressed={state.status === 'ready' ? saved : undefined}
+      aria-busy={state.status === 'loading' || (state.status === 'ready' && state.pending)}
+      disabled={state.status === 'unavailable' || state.status === 'loading'}
+      onClick={onToggle}
+    >
+      <BookmarkIcon filled={saved} />
+    </button>
+  )
+}
+
+function ThreadHero({
+  thread,
+  headline,
+  intro,
+  categories,
+  paperCount,
+  updatedLabel,
+  onStartJourney,
+  stagesNote,
+  bookmark,
+}: ThreadHeroProps) {
   return (
     <section className="details-hero container" aria-labelledby="details-title">
       <nav className="details-breadcrumb" aria-label="Breadcrumb">
@@ -46,19 +110,21 @@ function ThreadHero({ thread, headline, intro, categories, onStartJourney }: Thr
           <p className="details-hero__intro">{intro}</p>
 
           <ul className="details-hero__meta">
-            <li>
-              <span className="details-hero__meta-icon">
-                <Icon name="papers" />
-              </span>
-              {thread.paperCount} papers
-            </li>
+            {paperCount !== null && (
+              <li>
+                <span className="details-hero__meta-icon">
+                  <Icon name="papers" />
+                </span>
+                {paperCount} {paperCount === 1 ? 'paper' : 'papers'}
+              </li>
+            )}
             <li>
               <span className="details-hero__meta-icon">
                 <Icon name="stages" />
               </span>
-              {thread.totalStages} research stages
+              {stagesNote ?? `${thread.totalStages} research stages`}
             </li>
-            <li className="details-hero__meta-updated">{thread.updatedLabel}</li>
+            {updatedLabel && <li className="details-hero__meta-updated">{updatedLabel}</li>}
           </ul>
         </div>
 
@@ -66,16 +132,36 @@ function ThreadHero({ thread, headline, intro, categories, onStartJourney }: Thr
           <button type="button" className="button button--primary" onClick={onStartJourney}>
             Start Research Journey
           </button>
-          {/* Bookmarking needs user accounts, which are not connected yet. */}
-          <button type="button" className="details-icon-button" aria-label="Bookmark thread">
-            <Icon name="bookmark" />
-          </button>
+          <BookmarkButton state={bookmark.state} onToggle={bookmark.onToggle} />
         </div>
       </div>
 
+      {/* Polite for confirmations, assertive for the sign-in prompt and errors. */}
+      <div
+        className="details-bookmark-notice"
+        role={bookmark.notice && bookmark.notice.kind !== 'done' ? 'alert' : 'status'}
+      >
+        {bookmark.notice && (
+          <p
+            className={`details-bookmark-notice__text details-bookmark-notice__text--${bookmark.notice.kind}`}
+          >
+            {bookmark.notice.message}
+            {bookmark.notice.kind === 'sign-in' && (
+              <>
+                {' '}
+                <Link href={withReturnPath(routes.login, threadDetailsPath(thread.id))}>Sign in</Link> or{' '}
+                <Link href={withReturnPath(routes.signUp, threadDetailsPath(thread.id))}>
+                  create an account
+                </Link>
+                .
+              </>
+            )}
+          </p>
+        )}
+      </div>
+
       <div className="details-hero__links">
-        {/* The AI Assistant page is not built yet. */}
-        <Button variant="secondary" href="#">
+        <Button variant="secondary" href={routes.aiAssistant}>
           Ask the AI Assistant
         </Button>
         <Button variant="secondary" href="#nasa-media">
