@@ -35,6 +35,8 @@ export interface RelatedPaper {
   title: string
   authors: string
   summary?: string
+  /** Shown instead of the summary when it is known to be missing (e.g. OpenAlex has no abstract). */
+  missingSummary?: string
   /** Link to the paper (DOI or arXiv), when known. */
   url?: string
   /** A hand-picked sample from the database, labelled on the card. */

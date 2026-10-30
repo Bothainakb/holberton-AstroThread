@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import searchFieldIcon from '../../assets/icons/search-field.svg'
 import logoMark from '../../assets/logo.svg'
 import Button from '../../components/Button/Button'
 import ResearchThreadCard, {
@@ -7,7 +8,13 @@ import ResearchThreadCard, {
 import SearchBar from '../../components/SearchBar/SearchBar'
 import SectionHeader from '../../components/SectionHeader/SectionHeader'
 import Tag from '../../components/Tag/Tag'
-import { HOME_THREAD_LIMIT, popularTopics, toHomeThread } from '../../data/home'
+import {
+  HOME_THREAD_LIMIT,
+  popularTopics,
+  selectHomeThreads,
+  toHomeThread,
+} from '../../data/home'
+import { designOnlyMatches } from '../../data/threadSearch'
 import { replaceSearchParam, routes, useSearchParam } from '../../router/router'
 import { ApiError, fetchThreads } from '../../services/api'
 import './HomePage.css'
@@ -20,12 +27,18 @@ const MAX_QUERY_LENGTH = 100
 
 type ThreadsResult =
   | { status: 'error'; message: string }
-  | { status: 'success'; threads: ResearchThreadCardData[] }
+  | {
+      status: 'success'
+      threads: ResearchThreadCardData[]
+      /** Design-only threads (not in the database yet) that match the search. */
+      previews: ResearchThreadCardData[]
+    }
 
 /**
  * Loads the Home page threads from GET /api/threads, searching title, category
  * and description when `query` is set. Without a query only the first row of
- * threads is shown.
+ * threads is shown. A search also lists matching design-only threads (e.g.
+ * Dark Matter) that have no database record yet, kept apart as previews.
  */
 function useHomeThreads(query: string) {
   const [attempt, setAttempt] = useState(0)
@@ -37,10 +50,27 @@ function useHomeThreads(query: string) {
   useEffect(() => {
     const controller = new AbortController()
 
-    fetchThreads({ query, signal: controller.signal })
-      .then((threads) => {
-        const shown = query ? threads : threads.slice(0, HOME_THREAD_LIMIT)
-        setResult({ request, status: 'success', threads: shown.map(toHomeThread) })
+    // A search also needs every database thread, to know which design
+    // threads have no record (and so are previews, not duplicates).
+    Promise.all([
+      fetchThreads({ query, signal: controller.signal }),
+      query ? fetchThreads({ signal: controller.signal }) : Promise.resolve([]),
+    ])
+      .then(([threads, allThreads]) => {
+        const homeThreads = selectHomeThreads(threads)
+        const shown = query ? homeThreads : homeThreads.slice(0, HOME_THREAD_LIMIT)
+        const previews = query ? selectHomeThreads(designOnlyMatches(query, allThreads)) : []
+        setResult({
+          request,
+          status: 'success',
+          threads: shown.map(toHomeThread),
+          previews: previews.map(({ id, title, category, description }) => ({
+            id,
+            title,
+            category,
+            description,
+          })),
+        })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
@@ -94,7 +124,9 @@ function HomeThreads({ query, onClearSearch }: HomeThreadsProps) {
     )
   }
 
-  if (state.threads.length === 0) {
+  const { threads, previews } = state
+
+  if (threads.length === 0 && previews.length === 0) {
     if (query) {
       return (
         <div className="home-threads__status" role="status">
@@ -127,14 +159,30 @@ function HomeThreads({ query, onClearSearch }: HomeThreadsProps) {
     <>
       {query && (
         <p className="visually-hidden" role="status">
-          {resultLabel(state.threads.length)} for "{query}"
+          {resultLabel(threads.length + previews.length)} for "{query}"
         </p>
       )}
-      <div className="home-threads__grid">
-        {state.threads.map((thread) => (
-          <ResearchThreadCard key={thread.id} thread={thread} />
-        ))}
-      </div>
+      {threads.length > 0 && (
+        <div className="home-threads__grid">
+          {threads.map((thread) => (
+            <ResearchThreadCard key={thread.id} thread={thread} />
+          ))}
+        </div>
+      )}
+      {previews.length > 0 && (
+        <div className="home-threads__previews">
+          <p className="home-threads__preview-note">
+            Design {previews.length === 1 ? 'preview' : 'previews'}: not in the AstroThread
+            database yet, so {previews.length === 1 ? 'this thread has' : 'these threads have'} no
+            papers, NASA images or charts.
+          </p>
+          <div className="home-threads__grid">
+            {previews.map((thread) => (
+              <ResearchThreadCard key={thread.id} thread={thread} />
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -218,6 +266,7 @@ function HomePage() {
             clearable
             maxLength={MAX_QUERY_LENGTH}
             submitLabel="Search"
+            icon={{ src: searchFieldIcon, size: 22 }}
           />
         </div>
 

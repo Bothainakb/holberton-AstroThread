@@ -17,11 +17,23 @@ export const popularTopics = [
   'Black Holes',
   'Exoplanets',
   'Dark Matter',
-  'Gravitational Waves',
 ]
 
 /** Number of thread cards in the Home page grid (one row of three). */
 export const HOME_THREAD_LIMIT = 3
+
+/**
+ * The only threads the Home page shows, in display order. Other threads stay
+ * in the database and on the Research Threads page.
+ */
+export const HOME_THREAD_TITLES = ['Black Holes', 'Exoplanets', 'Dark Matter']
+
+/** Keeps the Home page threads, ordered as in HOME_THREAD_TITLES. */
+export function selectHomeThreads<T extends { title: string }>(threads: T[]) {
+  const order = HOME_THREAD_TITLES.map((title) => title.toLowerCase())
+  const rank = (thread: T) => order.indexOf(thread.title.trim().toLowerCase())
+  return threads.filter((thread) => rank(thread) !== -1).sort((a, b) => rank(a) - rank(b))
+}
 
 /** "Black Holes" -> "black-holes", the id used by the Thread Details routes. */
 export function slugify(title: string) {

@@ -30,10 +30,26 @@ MAX_DESCRIPTION_LENGTH = 280
 THREAD_SEARCHES = {
     "black holes": ("black hole", ("black hole", "blackhole")),
     "exoplanets": ("exoplanet", ("exoplanet",)),
-    "gravitational waves": ("gravitational wave", ("gravitational wave", "gravitational-wave")),
+    "dark matter": ("dark matter", ("dark matter",)),
 }
 
 TAG_PATTERN = re.compile(r"<[^>]+>")
+# Photos of people building, testing or shipping hardware, where the topic is
+# only part of a mission's name ("NICER Optics Lead ... installs one of NICER's
+# 56 X-ray concentrators"; "technicians prepare the Neutron star Interior
+# Composition Explorer ... payload"). Checked on the first sentence of the
+# description only, where these photos say what they show; science captions
+# start with the object or the observation instead.
+ENGINEERING_PHOTO = re.compile(
+    r"\b(?:install\w*|inspect\w*|assembl\w*|integrat\w*|technicians?|engineers?|team members?|optics lead"
+    r"|payload|clean (?:room|tent)|processing facility|optical bench|range-of-motion|epoxy)\b",
+    re.IGNORECASE,
+)
+# Two results whose shown descriptions (the shortened text on the card) share
+# at least this fraction of their words are near-duplicates ("Dark Matter Hairs
+# Around Jupiter" / "... Around Earth": 0.90; unrelated results stay below 0.3).
+NEAR_DUPLICATE_OVERLAP = 0.8
+WORD_PATTERN = re.compile(r"[a-z0-9]+")
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}")
 
 
@@ -158,6 +174,23 @@ def to_media_item(item):
     }
 
 
+def first_sentence(text):
+    return re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+
+
+def word_set(text):
+    return set(WORD_PATTERN.findall(text.lower()))
+
+
+def is_near_duplicate(words, kept):
+    """True when `words` overlaps one of the kept descriptions by NEAR_DUPLICATE_OVERLAP."""
+    for other in kept:
+        union = words | other
+        if union and len(words & other) / len(union) >= NEAR_DUPLICATE_OVERLAP:
+            return True
+    return False
+
+
 def relevant_items(payload, required_phrases):
     """Usable, de-duplicated results that mention the topic, tagged ones first."""
     collection = payload.get("collection") if isinstance(payload, dict) else None
@@ -166,17 +199,25 @@ def relevant_items(payload, required_phrases):
         raise NasaUnavailable("NASA sent a response in an unexpected format")
 
     tagged, mentioned = [], []
-    seen_titles = set()
+    seen_titles, seen_descriptions = set(), []
     for item in items:
         media = to_media_item(item)
         if media is None or media["title"].lower() in seen_titles:
             continue
+        description = clean_text(item["data"][0].get("description"))
+        if ENGINEERING_PHOTO.search(first_sentence(description)):
+            continue
         keywords = " ".join(keywords_of(item["data"][0]))
-        text = f"{media['title']} {clean_text(item['data'][0].get('description'))}".lower()
+        text = f"{media['title']} {description}".lower()
         is_tagged = any(phrase in keywords for phrase in required_phrases)
         if required_phrases and not is_tagged and not any(phrase in text for phrase in required_phrases):
             continue
+        words = word_set(media["description"] or "")
+        if words and is_near_duplicate(words, seen_descriptions):
+            continue
         seen_titles.add(media["title"].lower())
+        if words:
+            seen_descriptions.append(words)
         (tagged if is_tagged else mentioned).append(media)
     return (tagged + mentioned)[:MAX_ITEMS]
 

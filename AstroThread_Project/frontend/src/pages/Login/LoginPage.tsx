@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { homePathFor, signIn, useAuth } from '../../auth/auth'
 import Icon from '../../components/Icon/Icon'
 import Link from '../../router/Link'
-import { navigate, routes } from '../../router/router'
+import { navigate, routes, safeReturnPath, useSearchParam, withReturnPath } from '../../router/router'
 import { ApiError } from '../../services/api'
 import './LoginPage.css'
 
@@ -41,6 +41,7 @@ function loginErrorMessage(error: unknown) {
 
 /** Figma "05-login-session"; field states follow "08-login-form-states". */
 function LoginPage() {
+  const returnTo = safeReturnPath(useSearchParam('next'))
   const auth = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -82,8 +83,9 @@ function LoginPage() {
     setLoading(true)
     try {
       const user = await signIn(email.trim(), password, remember)
-      // The destination comes from the role the server verified.
-      navigate(homePathFor(user.role))
+      // Back to the thread that asked for sign-in (e.g. to save it), else the
+      // destination for the role the server verified.
+      navigate(returnTo ?? homePathFor(user.role))
     } catch (error) {
       setLoading(false)
       setNotice({ kind: 'error', message: loginErrorMessage(error) })
@@ -215,7 +217,7 @@ function LoginPage() {
 
           <p className="login-card__signup">
             Don&apos;t have an account?
-            <Link className="login-card__signup-link" href={routes.signUp}>
+            <Link className="login-card__signup-link" href={withReturnPath(routes.signUp, returnTo)}>
               Create Account
             </Link>
           </p>

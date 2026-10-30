@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "tsc -p tsconfig.test.json && vite build --ssr tests/nasaMedia.test.tsx --outDir node_modules/.tmp/test-build --emptyOutDir --logLevel warn && node --test node_modules/.tmp/test-build/"
+    "test": "tsc -p tsconfig.test.json && vite build --ssr tests/all.test.ts --outDir node_modules/.tmp/test-build --emptyOutDir --logLevel warn && node --test node_modules/.tmp/test-build/"
   },
   "dependencies": {
     "react": "^19.2.8",

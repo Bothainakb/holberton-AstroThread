@@ -1,9 +1,12 @@
 import DataChart, { type ChartGeometry } from '../../../components/DataChart/DataChart'
+import Icon from '../../../components/Icon/Icon'
+import MeasuredChart from '../../../components/MeasuredChart/MeasuredChart'
 import PlaceholderPanel from '../../../components/PlaceholderPanel/PlaceholderPanel'
 import Tag from '../../../components/Tag/Tag'
 import type { ChartPoint } from '../../../data/home'
 import type { ThreadDetail } from '../../../data/threadDetails'
 import type { ApiTimelineEvent } from '../../../services/api'
+import { isHttpsUrl, type MeasuredChartData } from '../../../services/chartData'
 
 // Plot geometry of "Observations over time" in Figma pixels.
 const EVIDENCE_CHART: ChartGeometry = {
@@ -18,20 +21,30 @@ const EVIDENCE_CHART: ChartGeometry = {
 
 /** Data from GET /api/threads/:id; replaces the design sample when set. */
 export interface LiveEvidence {
-  /** A chart with verified points, or null when the database has none. */
-  chart: { title: string; note: string | null; points: ChartPoint[] } | null
+  /**
+   * A sourced chart (migration 006), else an older chart without a source
+   * (drawn as before, with its own note), else null when the database has none.
+   */
+  chart:
+    | { kind: 'measured'; data: MeasuredChartData }
+    | { kind: 'illustrative'; title: string; note: string | null; points: ChartPoint[] }
+    | null
   timeline: ApiTimelineEvent[]
 }
 
 interface EvidenceSectionProps {
   evidence?: ThreadDetail['evidence']
   live?: LiveEvidence
+  /** Text for the empty state (no evidence and no live data). */
+  emptyText?: string
 }
 
 function LiveEvidenceGrid({ live }: { live: LiveEvidence }) {
   return (
     <div className="details-evidence__grid">
-      {live.chart ? (
+      {live.chart?.kind === 'measured' ? (
+        <MeasuredChart className="data-chart--evidence" chart={live.chart.data} />
+      ) : live.chart ? (
         <DataChart
           className="data-chart--evidence"
           title={live.chart.title}
@@ -59,6 +72,18 @@ function LiveEvidenceGrid({ live }: { live: LiveEvidence }) {
                     {event.description && (
                       <p className="details-timeline__text">{event.description}</p>
                     )}
+                    {isHttpsUrl(event.source_url) && (
+                      <a
+                        className="details-timeline__source"
+                        href={event.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Source for "${event.title}": ${event.source_name || 'original source'} (opens in a new tab)`}
+                      >
+                        Source: {event.source_name || 'original source'}
+                        <Icon name="arrow-right" />
+                      </a>
+                    )}
                   </div>
                 </li>
               ))}
@@ -74,7 +99,11 @@ function LiveEvidenceGrid({ live }: { live: LiveEvidence }) {
   )
 }
 
-function EvidenceSection({ evidence, live }: EvidenceSectionProps) {
+function EvidenceSection({
+  evidence,
+  live,
+  emptyText = 'Charts and key measurements for this thread have not been added yet.',
+}: EvidenceSectionProps) {
   return (
     <section
       className="details-band details-evidence"
@@ -133,7 +162,7 @@ function EvidenceSection({ evidence, live }: EvidenceSectionProps) {
           </div>
         ) : (
           <PlaceholderPanel className="details-section-placeholder" title="Data and observations">
-            Charts and key measurements for this thread have not been added yet.
+            {emptyText}
           </PlaceholderPanel>
         )}
       </div>

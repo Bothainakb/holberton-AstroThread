@@ -43,7 +43,13 @@ function PaperCard({ paper }: PaperCardProps) {
 
       <h3 className="paper-card__title">{paper.title}</h3>
       <p className="paper-card__authors">{paper.authors}</p>
-      {paper.summary && <p className="paper-card__summary">{paper.summary}</p>}
+      {paper.summary ? (
+        <p className="paper-card__summary">{paper.summary}</p>
+      ) : (
+        paper.missingSummary && (
+          <p className="paper-card__summary paper-card__summary--missing">{paper.missingSummary}</p>
+        )
+      )}
 
       <div className="paper-card__footer">
         {link ? (

@@ -15,7 +15,7 @@ from unittest import mock
 import psycopg
 
 import app as backend
-from app.api.v1 import thread_details
+from app.api.v1 import thread_details, threads
 from app.persistence.database import get_db_connection
 from app.services import thread_service
 
@@ -60,9 +60,30 @@ class ThreadDetailsApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.get_json(), {"error": "Research thread not found"})
 
-    def test_non_numeric_id_is_not_routed(self):
-        self.assertEqual(self.client.get("/api/threads/black-holes").status_code, 404)
+    def test_slug_goes_to_the_slug_route_not_the_id_route(self):
+        slug_details = {"threadId": "black-holes", "title": "Black Holes"}
+        with mock.patch.object(threads, "get_thread_details_by_slug", return_value=slug_details) as by_slug:
+            response = self.client.get("/api/threads/black-holes")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), slug_details)
+        by_slug.assert_called_once_with("black-holes")
         self.get_details.assert_not_called()
+
+    def test_unknown_slug_returns_json_404(self):
+        with mock.patch.object(threads, "get_thread_details_by_slug", return_value=None):
+            response = self.client.get("/api/threads/no-such-thread")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_json(), {"error": "Research thread not found"})
+
+    def test_slug_database_error_returns_json_500(self):
+        error = psycopg.OperationalError("connection lost")
+        with mock.patch.object(threads, "get_thread_details_by_slug", side_effect=error):
+            response = self.client.get("/api/threads/black-holes")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.get_json(), {"error": "Unable to retrieve this research thread"})
 
     def test_database_error_returns_json_500(self):
         self.get_details.side_effect = psycopg.OperationalError("connection lost")
@@ -103,6 +124,61 @@ class ThreadDetailsDatabaseTests(unittest.TestCase):
             "VALUES ('Details Test Thread', 'Physics', 'Test description') RETURNING id;"
         )
         self.thread_id = self.cur.fetchone()[0]
+
+    def test_developments_are_returned_newest_first(self):
+        self.cur.execute(
+            "INSERT INTO latest_developments (thread_id, event_date, title, text) VALUES "
+            "(%(t)s, '2019-04-10', 'Older', 'a'), (%(t)s, '2025-09-10', 'Newer', 'b');",
+            {"t": self.thread_id},
+        )
+        developments = thread_service.get_thread_details(self.cur, self.thread_id)["developments"]
+        self.assertEqual([item["title"] for item in developments], ["Newer", "Older"])
+        self.assertEqual(developments[0]["date"], "2025-09-10")
+        self.assertEqual(
+            set(developments[0]), {"id", "date", "title", "text", "source_name", "source_url"}
+        )
+
+    def test_library_threads_have_their_own_sourced_developments(self):
+        # Migration 008: at least three per topic, each with an https source,
+        # and no development shared between topics.
+        seen_titles = set()
+        for slug in ("black-holes", "exoplanets", "dark-matter"):
+            with self.subTest(slug=slug):
+                self.cur.execute("SELECT min(id) FROM research_threads WHERE slug = %s;", (slug,))
+                thread_id = self.cur.fetchone()[0]
+                if thread_id is None:
+                    self.skipTest("run python manage.py migrate first")
+                developments = thread_service.get_thread_details(self.cur, thread_id)["developments"]
+                self.assertGreaterEqual(len(developments), 3)
+                dates = [item["date"] for item in developments]
+                self.assertEqual(dates, sorted(dates, reverse=True))
+                for item in developments:
+                    self.assertTrue(item["source_url"].startswith("https://"), item["title"])
+                    self.assertTrue(item["source_name"] and item["text"])
+                    self.assertNotIn(item["title"], seen_titles)
+                    seen_titles.add(item["title"])
+
+    def test_library_threads_have_sourced_key_discoveries(self):
+        # Migration 009: at least three per topic, oldest first, each with an
+        # https source, and none repeated in that topic's Latest Developments
+        # (Black Holes keeps its existing 2019 image record, also a development).
+        for slug in ("black-holes", "exoplanets", "dark-matter"):
+            with self.subTest(slug=slug):
+                self.cur.execute("SELECT min(id) FROM research_threads WHERE slug = %s;", (slug,))
+                thread_id = self.cur.fetchone()[0]
+                if thread_id is None:
+                    self.skipTest("run python manage.py migrate first")
+                details = thread_service.get_thread_details(self.cur, thread_id)
+                discoveries = details["timeline"]
+                self.assertGreaterEqual(len(discoveries), 3)
+                years = [item["year"] for item in discoveries]
+                self.assertEqual(years, sorted(years))
+                for item in discoveries:
+                    self.assertTrue(item["source_url"].startswith("https://"), item["title"])
+                    self.assertTrue(item["source_name"] and item["description"])
+                if slug != "black-holes":
+                    developments = {item["title"].lower() for item in details["developments"]}
+                    self.assertFalse(developments & {item["title"].lower() for item in discoveries})
 
     def test_unknown_thread_is_none(self):
         self.cur.execute("SELECT COALESCE(MAX(id), 0) + 1000 FROM research_threads;")
@@ -203,13 +279,25 @@ class MigrationSeedTests(unittest.TestCase):
 
     def test_without_black_holes_nothing_is_added(self):
         self.migrate()
-        self.add_thread("Exoplanets")
+        extra = self.add_thread("Exoplanets")
         self.migrate()
 
+        # The Black Holes sample (005) adds nothing without a Black Holes thread.
         self.assertEqual(
-            [self.count(t) for t in ("timeline_events", "research_papers", "thread_papers", "chart_data")],
-            [0, 0, 0, 0],
+            [self.count(t) for t in ("timeline_events", "research_papers", "thread_papers")][1:],
+            [0, 0],
         )
+        # Key discoveries (009) attach by slug to the seeded Exoplanets (4) and
+        # Dark Matter (3) threads only: none to the extra untitled-slug thread.
+        self.assertEqual(self.count("timeline_events", "thread_id = %s", (extra,)), 0)
+        self.assertEqual(self.count("timeline_events"), 7)
+        self.assertEqual(self.count("timeline_events", "source_url IS NULL"), 0)
+        # Migration 006 only adds sourced charts (never illustrative ones),
+        # and re-running it adds nothing.
+        self.assertEqual(self.count("chart_data", "NOT (dataset ? 'source')"), 0)
+        charts = self.count("chart_data")
+        self.migrate()
+        self.assertEqual(self.count("chart_data"), charts)
 
     def test_seed_attaches_to_one_thread_and_reruns_safely(self):
         self.migrate()
@@ -229,7 +317,9 @@ class MigrationSeedTests(unittest.TestCase):
             [self.count(t) for t in ("timeline_events", "research_papers", "thread_papers")],
             after_first_run,
         )
-        self.assertEqual(after_first_run, [3, 4, 3])
+        # 3 Black Holes events (005) + 7 key discoveries for the seeded
+        # Exoplanets and Dark Matter threads (009).
+        self.assertEqual(after_first_run, [10, 4, 3])
         self.assertEqual(self.count("timeline_events", "thread_id = %s", (first,)), 3)
         self.assertEqual(self.count("thread_papers", "thread_id = %s", (second,)), 0)
         self.assertEqual(self.count("thread_papers", "paper_id = %s", (other,)), 0)
@@ -238,7 +328,17 @@ class MigrationSeedTests(unittest.TestCase):
             "JOIN research_papers p ON p.id = tp.paper_id ORDER BY p.publication_year;"
         ).fetchall()
         self.assertEqual(linked, [(title, year, True) for title, year in SEEDED_PAPERS])
-        self.assertEqual(self.count("chart_data"), 0)
+        # Charts: only sourced ones (migration 006), one per title, on the
+        # lowest-id thread with that title.
+        self.assertEqual(self.count("chart_data", "NOT (dataset ? 'source')"), 0)
+        black_holes = self.conn.execute(
+            "SELECT min(id) FROM research_threads WHERE title = 'Black Holes';"
+        ).fetchone()[0]
+        self.assertEqual(self.count("chart_data", "thread_id = %s", (black_holes,)), 1)
+        self.assertEqual(
+            self.count("chart_data", "thread_id IN (%s, %s) AND thread_id <> %s", (first, second, black_holes)),
+            0,
+        )
 
     def test_users_and_password_hash_are_untouched(self):
         self.migrate()

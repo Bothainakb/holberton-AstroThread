@@ -1,12 +1,15 @@
-import requests
 from psycopg.rows import dict_row
 
 from app.persistence.database import get_db_connection
-from app.services.external_apis import search_nasa_images, search_openalex_papers
+from app.services import nasa_service, openalex_service
 
 
 PAPERS_SQL = """
-    SELECT p.publication_year AS year, p.title, p.authors, p.summary, p.url
+    SELECT p.publication_year AS year,
+           p.title,
+           p.authors,
+           p.abstract AS summary,
+           p.url
     FROM research_papers p
     JOIN thread_papers tp ON tp.paper_id = p.id
     WHERE tp.thread_id = %s
@@ -33,7 +36,7 @@ def get_thread(cur, thread_id):
 def get_timeline(cur, thread_id):
     cur.execute(
         """
-        SELECT id, year, title, description
+        SELECT id, year, title, description, source_name, source_url
         FROM timeline_events
         WHERE thread_id = %s
         ORDER BY year, id;
@@ -41,7 +44,14 @@ def get_timeline(cur, thread_id):
         (thread_id,),
     )
     return [
-        {"id": row[0], "year": row[1], "title": row[2], "description": row[3]}
+        {
+            "id": row[0],
+            "year": row[1],
+            "title": row[2],
+            "description": row[3],
+            "source_name": row[4],
+            "source_url": row[5],
+        }
         for row in cur.fetchall()
     ]
 
@@ -63,6 +73,54 @@ def get_charts(cur, thread_id):
             "chart_type": row[2],
             "note": row[3],
             "dataset": row[4],
+        }
+        for row in cur.fetchall()
+    ]
+
+
+def get_stages(cur, thread_id):
+    """The thread's research stages in order (position 1-5)."""
+    cur.execute(
+        """
+        SELECT position, icon, title, summary, paragraphs, facts
+        FROM thread_stages
+        WHERE thread_id = %s
+        ORDER BY position;
+        """,
+        (thread_id,),
+    )
+    return [
+        {
+            "position": row[0],
+            "icon": row[1],
+            "title": row[2],
+            "summary": row[3],
+            "paragraphs": row[4],
+            "facts": row[5],
+        }
+        for row in cur.fetchall()
+    ]
+
+
+def get_developments(cur, thread_id):
+    """The thread's latest developments, newest first, with their sources."""
+    cur.execute(
+        """
+        SELECT id, event_date, title, text, source_name, source_url
+        FROM latest_developments
+        WHERE thread_id = %s
+        ORDER BY event_date DESC, id DESC;
+        """,
+        (thread_id,),
+    )
+    return [
+        {
+            "id": row[0],
+            "date": row[1].isoformat(),
+            "title": row[2],
+            "text": row[3],
+            "source_name": row[4],
+            "source_url": row[5],
         }
         for row in cur.fetchall()
     ]
@@ -103,6 +161,8 @@ def get_thread_details(cur, thread_id):
         "thread": thread,
         "timeline": timeline,
         "latest": timeline[-1] if timeline else None,
+        "stages": get_stages(cur, thread_id),
+        "developments": get_developments(cur, thread_id),
         "charts": get_charts(cur, thread_id),
         "papers": get_papers(cur, thread_id),
     }
@@ -164,14 +224,12 @@ def get_thread_details_by_slug(slug):
             if latest:
                 latest["date"] = latest.pop("event_date").isoformat()
 
-            papers, papers_error = _related_papers(conn, cur, thread)
+            cur.execute(PAPERS_SQL, (thread["id"],))
+            saved_papers = cur.fetchall()
 
-    try:
-        nasa_media = search_nasa_images(thread["title"])
-        nasa_error = None
-    except (requests.RequestException, KeyError, ValueError):
-        nasa_media = []
-        nasa_error = "NASA images are unavailable right now."
+    # The database connection is closed before waiting on OpenAlex or NASA.
+    papers, papers_error = _related_papers(thread, saved_papers)
+    nasa_media, nasa_error = _nasa_media(thread)
 
     return {
         "threadId": thread["slug"],
@@ -188,42 +246,38 @@ def get_thread_details_by_slug(slug):
     }
 
 
-def _related_papers(conn, cur, thread):
-    """Return cached papers or fetch and cache papers from OpenAlex."""
-    cur.execute(PAPERS_SQL, (thread["id"],))
-    saved = cur.fetchall()
+def _related_papers(thread, saved):
+    """The thread's saved papers, else the filtered OpenAlex search that
+    GET /api/threads/<id>/openalex-papers uses. Search results are never
+    written to the database: a GET must not change data."""
     if saved:
         return saved, None
 
     try:
-        found = search_openalex_papers(thread["title"])
-    except (requests.RequestException, ValueError):
+        found = openalex_service.search_thread_papers(thread["title"])["items"]
+    except openalex_service.OpenAlexUnavailable:
         return [], "Related papers are unavailable right now."
 
-    for paper in found:
-        cur.execute(
-            """
-            INSERT INTO research_papers
-                (openalex_id, title, authors, publication_year, summary, url)
-            VALUES
-                (%(openalex_id)s, %(title)s, %(authors)s,
-                 %(publication_year)s, %(summary)s, %(url)s)
-            ON CONFLICT (openalex_id)
-            DO UPDATE SET title = EXCLUDED.title
-            RETURNING id
-            """,
-            paper,
-        )
-        paper_id = cur.fetchone()["id"]
-        cur.execute(
-            """
-            INSERT INTO thread_papers (thread_id, paper_id)
-            VALUES (%s, %s)
-            ON CONFLICT DO NOTHING
-            """,
-            (thread["id"], paper_id),
-        )
+    return [
+        {
+            "year": paper["year"],
+            "title": paper["title"],
+            "authors": paper["authors"],
+            "summary": paper["summary"],
+            "url": paper["url"],
+        }
+        for paper in found
+    ], None
 
-    conn.commit()
-    cur.execute(PAPERS_SQL, (thread["id"],))
-    return cur.fetchall(), None
+
+def _nasa_media(thread):
+    """On-topic NASA images, from the same search as GET /api/threads/<id>/nasa-media."""
+    try:
+        items = nasa_service.search_thread_media(thread["title"])["items"]
+    except nasa_service.NasaUnavailable:
+        return [], "NASA images are unavailable right now."
+
+    return [
+        {"title": item["title"], "description": item["description"] or "", "imageUrl": item["image_url"]}
+        for item in items
+    ], None

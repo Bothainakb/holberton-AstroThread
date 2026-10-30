@@ -15,6 +15,8 @@ interface SearchBarProps {
   maxLength?: number
   /** Text of a submit button inside the bar (Figma "01-Home"); omitted, the bar has none. */
   submitLabel?: string
+  /** Icon inside the field; Figma "01-Home" uses a larger, darker one (22 x 22). */
+  icon?: { src: string; size: number }
 }
 
 /** Figma "Search Bar": search input for research topics and papers. */
@@ -28,6 +30,7 @@ function SearchBar({
   clearable = false,
   maxLength,
   submitLabel,
+  icon = { src: searchIcon, size: 17.25 },
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const showClear = clearable && Boolean(value)
@@ -59,7 +62,7 @@ function SearchBar({
       <label className="visually-hidden" htmlFor={id}>
         {placeholder.replace(/\.+$/, '')}
       </label>
-      <img className="search-bar__icon" src={searchIcon} alt="" width={17.25} height={17.25} />
+      <img className="search-bar__icon" src={icon.src} alt="" width={icon.size} height={icon.size} />
       <input
         ref={inputRef}
         id={id}

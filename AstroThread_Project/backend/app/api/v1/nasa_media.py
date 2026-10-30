@@ -13,6 +13,7 @@ from flask import Blueprint, current_app, jsonify
 from app.api.v1.helpers import error
 from app.persistence.database import get_db_connection
 from app.services import nasa_service, thread_service
+from app.services.design_threads import DESIGN_THREADS
 
 nasa_media_bp = Blueprint("nasa_media_v1", __name__)
 
@@ -34,13 +35,27 @@ def get_thread_nasa_media(thread_id):
         return error("Research thread not found", 404)
 
     # The database connection is closed before waiting on NASA.
+    return nasa_response(thread["title"], f"thread {thread_id}")
+
+
+@nasa_media_bp.route("/api/design-threads/<slug>/nasa-media", methods=["GET"])
+def get_design_thread_nasa_media(slug):
+    """NASA images for a design preview with no database record (DESIGN_THREADS only)."""
+    title = DESIGN_THREADS.get(slug)
+    if title is None:
+        return error("Research thread not found", 404)
+    return nasa_response(title, f"design thread {slug}")
+
+
+def nasa_response(title, label):
+    """The JSON answer for one NASA image search, or a 502/504 error."""
     try:
-        media = nasa_service.search_thread_media(thread["title"])
+        media = nasa_service.search_thread_media(title)
     except nasa_service.NasaTimeout:
-        current_app.logger.warning("NASA image search timed out for thread %s", thread_id)
+        current_app.logger.warning("NASA image search timed out for %s", label)
         return error("NASA did not respond in time. Please try again.", 504)
     except nasa_service.NasaUnavailable as exc:
-        current_app.logger.warning("NASA image search failed for thread %s: %s", thread_id, exc)
+        current_app.logger.warning("NASA image search failed for %s: %s", label, exc)
         return error("NASA images are unavailable right now. Please try again later.", 502)
 
     response = jsonify(media)

@@ -90,6 +90,11 @@
   color: var(--color-text-secondary);
 }
 
+.paper-card__summary--missing {
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
 .paper-card__footer {
   margin-top: auto;
   padding-top: 21px;

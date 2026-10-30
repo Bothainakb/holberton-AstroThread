@@ -1,6 +1,7 @@
 // Client for the AstroThread Flask API (backend/app.py).
 
 import { parseNasaMedia, type ApiNasaMedia } from './nasaMedia'
+import { parseOpenAlexPapers, type ApiOpenAlexPapers } from './openAlexPapers'
 
 /**
  * Base URL of the backend. By default requests go to this site's own /api,
@@ -373,6 +374,37 @@ export async function updateProfile(
   return data
 }
 
+// ----- Bookmarks (saved research threads) -----
+
+/** GET /api/bookmarks: the signed-in user's saved threads, newest first (401 when signed out). */
+export async function fetchBookmarks(signal?: AbortSignal): Promise<SavedThread[]> {
+  const response = await send('/api/bookmarks', { signal })
+
+  if (!response.ok) throw await missingRouteError(response)
+
+  const data = await readJson(response)
+
+  if (
+    !Array.isArray(data) ||
+    !data.every((item) => isRecord(item) && typeof item.id === 'number' && typeof item.title === 'string')
+  ) {
+    throw new ApiError('The server returned saved threads in an unexpected format.')
+  }
+
+  return data as SavedThread[]
+}
+
+/** POST /api/bookmarks: saves a thread for the signed-in user; saving it again is not an error. */
+export async function addBookmark(threadId: number): Promise<void> {
+  const response = await send('/api/bookmarks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ thread_id: threadId }),
+  })
+
+  if (!response.ok) throw await missingRouteError(response)
+}
+
 /** DELETE /api/bookmarks/:threadId. */
 export async function removeBookmark(threadId: number): Promise<void> {
   const response = await send(`/api/bookmarks/${threadId}`, {
@@ -389,6 +421,9 @@ export interface ApiTimelineEvent {
   year: number
   title: string
   description: string | null
+  /** The source of a key discovery (migration 009); missing from older servers. */
+  source_name?: string | null
+  source_url?: string | null
 }
 
 export interface ApiChart {
@@ -408,20 +443,84 @@ export interface ApiThreadPaper {
   illustrative: boolean
 }
 
+/** One of a thread's research stages, from the thread_stages table. */
+export interface ApiThreadStage {
+  position: number
+  icon: string
+  title: string
+  summary: string
+  paragraphs: string[]
+  facts: { label: string; title: string; text: string }[]
+}
+
+/** A recent development from latest_developments, with the page that announced it. */
+export interface ApiDevelopment {
+  id: number
+  /** "YYYY-MM-DD" */
+  date: string
+  title: string
+  text: string
+  source_name: string | null
+  /** An https link to the original source, or null. */
+  source_url: string | null
+}
+
 export interface ApiThreadDetails {
   thread: ApiThread
   timeline: ApiTimelineEvent[]
   latest: ApiTimelineEvent | null
+  /** Missing from servers older than migration 007's stages. */
+  stages?: ApiThreadStage[]
+  /** Newest first. Missing from servers older than migration 008. */
+  developments?: ApiDevelopment[]
   charts: ApiChart[]
   papers: ApiThreadPaper[]
+}
+
+function isApiDevelopment(value: unknown): value is ApiDevelopment {
+  if (!isRecord(value)) return false
+  const { id, date, title, text, source_name: sourceName, source_url: sourceUrl } = value
+  return (
+    typeof id === 'number' &&
+    typeof date === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+    typeof title === 'string' &&
+    typeof text === 'string' &&
+    (sourceName === null || typeof sourceName === 'string') &&
+    (sourceUrl === null || typeof sourceUrl === 'string')
+  )
+}
+
+function isApiThreadStage(value: unknown): value is ApiThreadStage {
+  if (!isRecord(value)) return false
+  const { position, icon, title, summary, paragraphs, facts } = value
+  return (
+    typeof position === 'number' &&
+    typeof icon === 'string' &&
+    typeof title === 'string' &&
+    typeof summary === 'string' &&
+    Array.isArray(paragraphs) &&
+    paragraphs.every((paragraph) => typeof paragraph === 'string') &&
+    Array.isArray(facts) &&
+    facts.every(
+      (fact) =>
+        isRecord(fact) &&
+        typeof fact.label === 'string' &&
+        typeof fact.title === 'string' &&
+        typeof fact.text === 'string',
+    )
+  )
 }
 
 function isApiThreadDetails(value: unknown): value is ApiThreadDetails {
   if (!isRecord(value) || !isApiThread(value.thread)) return false
 
-  const { timeline, latest, charts, papers } = value
+  const { timeline, latest, stages, developments, charts, papers } = value
 
   return (
+    (stages === undefined || (Array.isArray(stages) && stages.every(isApiThreadStage))) &&
+    (developments === undefined ||
+      (Array.isArray(developments) && developments.every(isApiDevelopment))) &&
     Array.isArray(timeline) &&
     timeline.every(
       (event) =>
@@ -459,6 +558,24 @@ export async function fetchThreadDetails(
   return data
 }
 
+/**
+ * PUT /api/profile/progress/:threadId: records that the signed-in user has
+ * opened `stage` (stages 1..stage count as completed; the server never lowers it).
+ */
+export async function saveThreadProgress(
+  threadId: number,
+  stageCount: number,
+  stage: number,
+): Promise<void> {
+  const response = await send(`/api/profile/progress/${threadId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stage_count: stageCount, current_stage: stage, completed_stage: stage }),
+  })
+
+  if (!response.ok) throw await missingRouteError(response)
+}
+
 // ----- NASA media -----
 
 /** GET /api/threads/:id/nasa-media. */
@@ -466,7 +583,16 @@ export async function fetchNasaMedia(
   threadId: number,
   signal?: AbortSignal,
 ): Promise<ApiNasaMedia> {
-  const response = await send(`/api/threads/${threadId}/nasa-media`, { signal })
+  return getNasaMedia(`/api/threads/${threadId}/nasa-media`, signal)
+}
+
+/** GET /api/design-threads/:slug/nasa-media: NASA images for a design preview (allowed slugs only). */
+export async function fetchDesignNasaMedia(slug: string, signal?: AbortSignal): Promise<ApiNasaMedia> {
+  return getNasaMedia(`/api/design-threads/${encodeURIComponent(slug)}/nasa-media`, signal)
+}
+
+async function getNasaMedia(path: string, signal?: AbortSignal): Promise<ApiNasaMedia> {
+  const response = await send(path, { signal })
 
   if (!response.ok) throw await missingRouteError(response)
 
@@ -477,4 +603,39 @@ export async function fetchNasaMedia(
   }
 
   return media
+}
+
+// ----- OpenAlex papers -----
+
+/** GET /api/threads/:id/openalex-papers: search results for threads with no papers. */
+export async function fetchOpenAlexPapers(
+  threadId: number,
+  signal?: AbortSignal,
+): Promise<ApiOpenAlexPapers> {
+  return getOpenAlexPapers(`/api/threads/${threadId}/openalex-papers`, signal)
+}
+
+/**
+ * GET /api/design-threads/:slug/openalex-papers: the same search for a design
+ * preview with no database record (only the slugs the backend allows).
+ */
+export async function fetchDesignOpenAlexPapers(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ApiOpenAlexPapers> {
+  return getOpenAlexPapers(`/api/design-threads/${encodeURIComponent(slug)}/openalex-papers`, signal)
+}
+
+async function getOpenAlexPapers(path: string, signal?: AbortSignal): Promise<ApiOpenAlexPapers> {
+  const response = await send(path, { signal })
+
+  if (!response.ok) throw await missingRouteError(response)
+
+  const papers = parseOpenAlexPapers(await readJson(response))
+
+  if (!papers) {
+    throw new ApiError('The server returned OpenAlex papers in an unexpected format.')
+  }
+
+  return papers
 }

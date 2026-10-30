@@ -7,6 +7,7 @@ backend/.env and is skipped if the database is not reachable.
 import os
 import re
 import unittest
+from datetime import datetime
 from unittest import mock
 
 import psycopg
@@ -72,7 +73,10 @@ class ThreadsQueryTests(unittest.TestCase):
         self.cursor = connection.__enter__.return_value.cursor.return_value
         self.cursor = self.cursor.__enter__.return_value
         self.cursor.fetchall.return_value = [
-            (1, "Black Holes", "Astrophysics", "Explore black holes."),
+            (
+                1, "black-holes", "Black Holes", "Astrophysics",
+                "Explore black holes.", datetime(2026, 10, 12, 19, 16), 3, 5, 2,
+            ),
         ]
         patcher = mock.patch.object(
             backend, "get_db_connection", return_value=connection
@@ -89,9 +93,14 @@ class ThreadsQueryTests(unittest.TestCase):
             [
                 {
                     "id": 1,
+                    "slug": "black-holes",
                     "title": "Black Holes",
                     "category": "Astrophysics",
                     "description": "Explore black holes.",
+                    "updatedAt": "2026-10-12T19:16:00",
+                    "paperCount": 3,
+                    "completedStages": 2,
+                    "totalStages": 5,
                 }
             ],
         )
@@ -101,7 +110,20 @@ class ThreadsQueryTests(unittest.TestCase):
 
         sql, params = self.cursor.execute.call_args.args
         self.assertIn("~*", sql)
-        self.assertEqual(params, {"pattern": "\\mC\\+\\+ \\(2\\.0\\)"})
+        self.assertEqual(params, {"user_id": None, "pattern": "\\mC\\+\\+ \\(2\\.0\\)"})
+
+    def test_visitors_get_no_progress_and_users_get_their_own(self):
+        self.client.get("/api/threads")
+        self.assertEqual(self.cursor.execute.call_args.args[1], {"user_id": None})
+
+        with mock.patch.dict(backend.app.config, {"SECRET_KEY": "test-secret"}):
+            with self.client.session_transaction() as saved:
+                saved["user_id"] = 7
+            self.client.get("/api/threads")
+
+        sql, params = self.cursor.execute.call_args.args
+        self.assertEqual(params, {"user_id": 7})
+        self.assertIn("thread_progress", sql)
 
     def test_too_long_search_is_rejected_without_querying(self):
         query = "a" * (backend.MAX_QUERY_LENGTH + 1)
@@ -120,8 +142,9 @@ class ThreadsQueryTests(unittest.TestCase):
     def test_blank_search_lists_all_threads(self):
         self.client.get("/api/threads", query_string={"q": "   "})
 
-        self.assertEqual(len(self.cursor.execute.call_args.args), 1)
-        self.assertNotIn("WHERE", self.cursor.execute.call_args.args[0])
+        sql, params = self.cursor.execute.call_args.args
+        self.assertNotIn("~*", sql)
+        self.assertNotIn("pattern", params)
 
 
 class WordStartPatternTests(unittest.TestCase):
@@ -161,11 +184,16 @@ class ThreadsIntegrationTests(unittest.TestCase):
         self.assertIsInstance(threads, list)
         for thread in threads:
             self.assertEqual(
-                set(thread), {"id", "title", "category", "description"}
+                set(thread),
+                {
+                    "id", "slug", "title", "category", "description",
+                    "updatedAt", "paperCount", "completedStages", "totalStages",
+                },
             )
             self.assertIsInstance(thread["id"], int)
-        ids = [thread["id"] for thread in threads]
-        self.assertEqual(ids, sorted(ids))
+        # Newest first; threads updated at the same time keep id order.
+        order = [(thread["updatedAt"] or "", -thread["id"]) for thread in threads]
+        self.assertEqual(order, sorted(order, reverse=True))
 
     def search(self, query):
         response = backend.app.test_client().get(
@@ -192,16 +220,25 @@ class ThreadsIntegrationTests(unittest.TestCase):
 
     def test_physics_matches_whole_word_not_astrophysics(self):
         # Black Holes has the category "Astrophysics", which must not match.
-        titles = self.titles("physics")
-        self.assertIn("Gravitational Waves", titles)
-        self.assertNotIn("Black Holes", titles)
-        self.assertEqual(self.search("PHYSICS"), self.search("physics"))
+        self.assertNotIn("Black Holes", self.titles("physics"))
+        self.assertIn("Black Holes", self.titles("astrophysics"))
+        self.assertEqual(self.search("ASTROPHYSICS"), self.search("astrophysics"))
 
     def test_partial_word_matches_while_typing(self):
         self.assertIn("Black Holes", self.titles("blac"))
 
-    def test_dark_matter_has_no_results(self):
-        self.assertEqual(self.search("Dark Matter"), [])
+    def test_dark_matter_is_found(self):
+        self.assertEqual(self.titles("Dark Matter"), ["Dark Matter"])
+
+    def test_removed_topics_are_not_listed(self):
+        titles = self.titles("")
+        for removed in ("Gravitational Waves", "Neutron Stars", "The Expanding Universe"):
+            self.assertNotIn(removed, titles)
+
+    def test_every_thread_has_five_stages(self):
+        for thread in self.search(""):
+            self.assertEqual(thread["totalStages"], 5, thread["title"])
+            self.assertTrue(0 <= thread["completedStages"] <= 5)
 
     def test_search_matches_title_category_and_description(self):
         threads = backend.app.test_client().get("/api/threads").get_json()

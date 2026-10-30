@@ -15,7 +15,8 @@ from urllib.error import HTTPError, URLError
 import psycopg
 
 import app as backend
-from app.api.v1 import nasa_media
+from app.api.v1 import nasa_media, openalex_papers
+from app.services import design_threads
 from app.services import nasa_service, thread_service
 
 THREAD = {"id": 1, "title": "Black Holes", "category": "Astrophysics", "description": "..."}
@@ -105,23 +106,67 @@ class NasaServiceTests(unittest.TestCase):
 
     def test_each_thread_searches_its_own_topic(self):
         self.assertEqual(nasa_service.search_terms("Exoplanets")[0], "exoplanet")
-        self.assertEqual(nasa_service.search_terms("Gravitational Waves")[0], "gravitational wave")
         self.assertEqual(nasa_service.search_terms("  black holes ")[0], "black hole")
+        self.assertEqual(nasa_service.search_terms("Dark Matter"), ("dark matter", ("dark matter",)))
+        # Topics removed from the library have no search of their own any more.
+        for removed in ("Gravitational Waves", "Neutron Stars", "The Expanding Universe"):
+            self.assertEqual(nasa_service.search_terms(removed), (removed, ()))
         # Unknown threads search for their title, unfiltered.
-        self.assertEqual(nasa_service.search_terms("Dark Matter"), ("Dark Matter", ()))
+        self.assertEqual(nasa_service.search_terms("Cosmic Rays"), ("Cosmic Rays", ()))
+
+    def test_engineering_photos_of_a_mission_are_dropped(self):
+        payload = search_payload(
+            nasa_item("GSFC_e000040", "Neutron star Interior Composition Explorer (NICER)",
+                      "NICER Optics Lead Takashi Okajima installs one of NICER's 56 X-ray concentrators. "
+                      "They will probe the interior of neutron stars."),
+            nasa_item("GSFC_e000045", "Neutron star Interior Composition Explorer (NICER) epoxy",
+                      "NICER team members apply epoxy to the X-ray concentrator mounts. Neutron star science."),
+            nasa_item("KSC_0068", "NICER Packaging",
+                      "Inside the Space Station Processing Facility, technicians prepare the Neutron star "
+                      "Interior Composition Explorer payload."),
+            nasa_item("PIA18845", "Beacons of X-ray Light Animation",
+                      "This image shows a neutron star -- the core of a star that exploded. "
+                      "The telescope was installed on the station in 2017."),
+        )
+        with respond_with(payload):
+            items = nasa_service.search_thread_media("Neutron Stars")["items"]
+
+        # Only the first sentence decides: the science image stays even though a
+        # later sentence mentions an installation.
+        self.assertEqual([item["nasa_id"] for item in items], ["PIA18845"])
+
+    def test_near_duplicate_images_are_dropped(self):
+        hairs = ('This illustration shows {} surrounded by filaments of dark matter called "hairs," which are '
+                 "proposed in a study in the Astrophysical Journal by Gary Prezeau of NASA's Jet Propulsion "
+                 "Laboratory. A hair is created when a stream of dark matter particles goes through the planet.")
+        payload = search_payload(
+            nasa_item("PIA20178", "Dark Matter Hairs Around Jupiter", hairs.format("Jupiter")),
+            nasa_item("PIA20176", "Dark Matter Hairs Around Earth", hairs.format("Earth")),
+            nasa_item("PIA26702", "Webb Data Reveals Dark Matter",
+                      "This image from NASA's James Webb Space Telescope, containing nearly 800,000 galaxies, "
+                      "is overlaid with a map of dark matter."),
+            nasa_item("PIA26703", "Dark Matter Revealed in Webb, Hubble Observations",
+                      "These images show the presence of dark matter in the same region of sky, created using "
+                      "data from Webb in 2026 and from Hubble in 2007."),
+        )
+        with respond_with(payload):
+            items = nasa_service.search_thread_media("Dark Matter")["items"]
+
+        # Same description but one word: dropped. Same subject, different image: kept.
+        self.assertEqual([item["nasa_id"] for item in items], ["PIA20178", "PIA26702", "PIA26703"])
 
     def test_off_topic_untitled_and_duplicate_results_are_dropped(self):
         payload = search_payload(
             nasa_item("PIA08257", "Encke Waves", "Density waves in Saturn's rings."),
-            nasa_item("PIA17995", "Detectors See Gravitational Waves", "BICEP2 detectors."),
-            nasa_item("KSC-2011-7033", "KSC-2011-7033", "Gravitational wave mission launch."),
+            nasa_item("PIA22085", "Black Hole With Jet", "An accretion disk and a jet of hot gas."),
+            nasa_item("KSC-2011-7033", "KSC-2011-7033", "Black hole mission launch."),
             nasa_item("GSFC_1", "Black Holes Collide", "Merging black holes emit gravitational waves."),
-            nasa_item("GSFC_2", "Black Holes Collide", "The same image archived twice: gravitational wave."),
+            nasa_item("GSFC_2", "Black Holes Collide", "The same image archived twice: black hole."),
         )
         with respond_with(payload):
-            items = nasa_service.search_thread_media("Gravitational Waves")["items"]
+            items = nasa_service.search_thread_media("Black Holes")["items"]
 
-        self.assertEqual([item["nasa_id"] for item in items], ["PIA17995", "GSFC_1"])
+        self.assertEqual([item["nasa_id"] for item in items], ["PIA22085", "GSFC_1"])
 
     def test_results_tagged_with_the_topic_come_first(self):
         payload = search_payload(
@@ -304,10 +349,48 @@ class NasaMediaRouteTests(unittest.TestCase):
                 response = getattr(self.client, method)("/api/threads/1/nasa-media")
                 self.assertEqual(response.status_code, 405)
 
+    def test_design_preview_route_searches_the_allowed_title(self):
+        for slug, title in design_threads.DESIGN_THREADS.items():
+            with self.subTest(slug=slug):
+                self.search.reset_mock()
+                response = self.client.get(f"/api/design-threads/{slug}/nasa-media")
+                self.assertEqual(response.status_code, 200)
+                self.search.assert_called_once_with(title)
+                self.assertIn("max-age=600", response.headers["Cache-Control"])
+        # A design preview has no database record to look up.
+        self.connect.assert_not_called()
+        self.get_thread.assert_not_called()
+
+    def test_design_preview_route_rejects_other_slugs_without_calling_nasa(self):
+        for slug in ("black-holes", "Dark-Matter", "dark-matter-x", "anything",
+                     "gravitational-waves", "neutron-stars", "expanding-universe"):
+            with self.subTest(slug=slug):
+                response = self.client.get(f"/api/design-threads/{slug}/nasa-media")
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(response.get_json(), {"error": "Research thread not found"})
+        self.search.assert_not_called()
+
+    def test_design_preview_route_reports_nasa_failures(self):
+        self.search.side_effect = nasa_service.NasaTimeout("slow")
+        self.assertEqual(self.client.get("/api/design-threads/dark-matter/nasa-media").status_code, 504)
+        self.search.side_effect = nasa_service.NasaUnavailable("HTTP 503")
+        response = self.client.get("/api/design-threads/dark-matter/nasa-media")
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn("503", response.get_json()["error"])
+
+    def test_design_previews_use_one_shared_list(self):
+        self.assertIs(nasa_media.DESIGN_THREADS, design_threads.DESIGN_THREADS)
+        self.assertIs(openalex_papers.DESIGN_THREADS, design_threads.DESIGN_THREADS)
+        self.assertEqual(set(design_threads.DESIGN_THREADS), {"dark-matter"})
+
+    def test_design_preview_titles_have_their_own_search_phrases(self):
+        self.assertEqual(nasa_service.search_terms("Dark Matter")[0], "dark matter")
+
     def test_thread_details_route_still_registered(self):
         rules = {rule.rule for rule in backend.app.url_map.iter_rules()}
         self.assertIn("/api/threads/<int:thread_id>", rules)
         self.assertIn("/api/threads/<int:thread_id>/nasa-media", rules)
+        self.assertIn("/api/design-threads/<slug>/nasa-media", rules)
 
 
 if __name__ == "__main__":
