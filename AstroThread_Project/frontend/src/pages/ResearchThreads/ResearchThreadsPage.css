@@ -61,6 +61,24 @@
   color: var(--color-text-subtle);
 }
 
+/* Design-only threads, after the database threads (as on Home). */
+.threads-list__grid + .threads-list__previews {
+  margin-top: 40px;
+}
+
+.threads-list__previews-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.threads-list__previews-note {
+  margin: 4px 0 16px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-muted);
+}
+
 .threads-list__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

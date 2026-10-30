@@ -8,10 +8,12 @@ interface StagePanelProps {
   title: string
   summary: string
   content?: StageContent
+  /** Text when the stage has no content; defaults to the database wording. */
+  emptyText?: string
 }
 
 /** Content of the selected stage; only Stage 1 (Origin) has content in Figma. */
-function StagePanel({ stageNumber, title, summary, content }: StagePanelProps) {
+function StagePanel({ stageNumber, title, summary, content, emptyText }: StagePanelProps) {
   const label = `Stage ${String(stageNumber).padStart(2, '0')}`
 
   return (
@@ -55,8 +57,12 @@ function StagePanel({ stageNumber, title, summary, content }: StagePanelProps) {
           </dl>
         ) : (
           <PlaceholderPanel title="Stage content coming soon">
-            The detailed {title} stage for this thread has not been written yet. It will come from
-            the research database once the backend is connected.
+            {emptyText ?? (
+              <>
+                The detailed {title} stage for this thread has not been written yet. It will come from
+                the research database once the backend is connected.
+              </>
+            )}
           </PlaceholderPanel>
         )}
       </div>

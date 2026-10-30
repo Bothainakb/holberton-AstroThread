@@ -69,44 +69,24 @@ def get_threads():
             }
         ), 400
 
+    # THREAD_LIST_SQL adds the slug, paper and stage counts the Research
+    # Threads cards show (imported with the blueprints at the end of the file).
+    # Signed-in users also get their own completed stages; visitors get 0.
+    user_id = session.get("user_id")
+    params = {"user_id": user_id if isinstance(user_id, int) else None}
+
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 if query:
-                    pattern = word_start_pattern(query)
-                    cur.execute(
-                        """
-                        SELECT id, title, category, description
-                        FROM research_threads
-                        WHERE title ~* %(pattern)s
-                           OR category ~* %(pattern)s
-                           OR description ~* %(pattern)s
-                        ORDER BY id;
-                        """,
-                        {"pattern": pattern},
-                    )
+                    params["pattern"] = word_start_pattern(query)
+                    cur.execute(THREAD_LIST_SQL.format(where=SEARCH_WHERE), params)
                 else:
-                    cur.execute(
-                        """
-                        SELECT id, title, category, description
-                        FROM research_threads
-                        ORDER BY id;
-                        """
-                    )
+                    cur.execute(THREAD_LIST_SQL.format(where=""), params)
 
                 rows = cur.fetchall()
 
-        threads = [
-            {
-                "id": row[0],
-                "title": row[1],
-                "category": row[2],
-                "description": row[3],
-            }
-            for row in rows
-        ]
-
-        return jsonify(threads)
+        return jsonify([thread_to_json(row) for row in rows])
 
     except (psycopg.Error, RuntimeError):
         app.logger.exception("Database query failed")
@@ -364,17 +344,27 @@ def current_user():
 
 # Profile and Thread Details routes. The profile routes use login_required and
 # MAX_NAME_LENGTH from this module, so they are imported only after both are
-# defined. GET /api/threads/<id> and its /nasa-media are public, like
-# GET /api/threads.
+# defined. GET /api/threads/<id>, its /nasa-media and /openalex-papers are public, like
+# GET /api/threads. GET /api/threads/<slug> (threads_bp) is the slug-based
+# details route; numeric ids still go to thread_details_bp (<int:> wins).
 from app.api.v1.bookmarks import bookmarks_bp  # noqa: E402
 from app.api.v1.nasa_media import nasa_media_bp  # noqa: E402
+from app.api.v1.openalex_papers import openalex_papers_bp  # noqa: E402
 from app.api.v1.profile import profile_bp  # noqa: E402
 from app.api.v1.thread_details import thread_details_bp  # noqa: E402
+from app.api.v1.threads import (  # noqa: E402
+    SEARCH_WHERE,
+    THREAD_LIST_SQL,
+    thread_to_json,
+    threads_bp,
+)
 
 app.register_blueprint(profile_bp)
 app.register_blueprint(bookmarks_bp)
 app.register_blueprint(thread_details_bp)
 app.register_blueprint(nasa_media_bp)
+app.register_blueprint(openalex_papers_bp)
+app.register_blueprint(threads_bp)
 
 
 if __name__ == "__main__":

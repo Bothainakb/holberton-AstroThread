@@ -2,15 +2,6 @@ import { useEffect } from 'react'
 import { restoreSession } from './auth/auth'
 import Footer from './components/Footer/Footer'
 import Navbar from './components/Navbar/Navbar'
-import StarField from './components/StarField/StarField'
-import {
-  LOGIN_CANVAS,
-  RESEARCH_THREADS_CANVAS,
-  THREAD_DETAILS_CANVAS,
-  loginStars,
-  researchThreadsStars,
-  threadDetailsStars,
-} from './data/stars'
 import { researchThreads } from './data/threads'
 import HomePage from './pages/Home/HomePage'
 import LoginPage from './pages/Login/LoginPage'
@@ -47,12 +38,13 @@ function pageTitle(page: Page) {
   if (page.name === 'sign-up') return 'Create Account · AstroThread'
   if (page.name === 'thread-details') {
     const thread = researchThreads.find((item) => item.id === page.threadId)
-    return `${thread ? thread.title : 'Thread not found'} · AstroThread`
+    // Database ids ("/research-threads/1") are replaced by the thread's slug once it loads.
+    return `${thread ? thread.title : 'Research Thread'} · AstroThread`
   }
   return 'AstroThread'
 }
 
-/** Navbar item to highlight; Search and Login are the icon and button, not text links. */
+/** Navbar item to highlight; Search has no navbar item and Login is the pill, not a text link. */
 function activeNavHref(page: Page) {
   if (page.name === 'home') return routes.home
   if (page.name === 'research-search') return routes.researchSearch
@@ -76,30 +68,11 @@ function App() {
 
   return (
     <div className="app">
-      {/* Research Search reuses the Research Threads star field and glow. */}
-      {(page.name === 'research-threads' || page.name === 'research-search') && (
-        <StarField
-          stars={researchThreadsStars}
-          twinkles={[]}
-          canvas={RESEARCH_THREADS_CANVAS}
-          glow="research-threads"
-        />
-      )}
-      {page.name === 'thread-details' && (
-        <StarField
-          stars={threadDetailsStars}
-          twinkles={[]}
-          canvas={THREAD_DETAILS_CANVAS}
-          glow="thread-details"
-        />
-      )}
-      {/* Create Account shares the Login card, so it shares its star field too. */}
-      {(page.name === 'login' || page.name === 'sign-up') && (
-        <StarField stars={loginStars} twinkles={[]} canvas={LOGIN_CANVAS} glow="login" />
-      )}
-      {page.name === 'home' && <StarField />}
-
-      <Navbar activeHref={activeNavHref(page)} />
+      {/* Figma "01-Home" has only the Sign In pill; the other frames have the full header. */}
+      <Navbar
+        activeHref={activeNavHref(page)}
+        variant={page.name === 'home' ? 'minimal' : 'full'}
+      />
 
       {page.name === 'home' && <HomePage />}
       {page.name === 'research-threads' && <ResearchThreadsPage />}

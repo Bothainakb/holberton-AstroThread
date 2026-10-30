@@ -1,5 +1,8 @@
 
 -- 005: seed the Research Threads from the Figma design. Re-runnable.
+-- The library keeps three topics (Black Holes, Exoplanets, Dark Matter; see
+-- 007), so Gravitational Waves, Neutron Stars and The Expanding Universe are
+-- no longer seeded.
 
 ALTER TABLE research_threads
 ADD COLUMN IF NOT EXISTS slug VARCHAR(100) UNIQUE;
@@ -15,13 +18,6 @@ SELECT
 FROM (
     VALUES
     (
-        'Gravitational Waves',
-        'Physics',
-        'Ripples in spacetime from colliding black holes and neutron stars, first detected directly in 2015.',
-        'gravitational-waves',
-        '4 days'
-    ),
-    (
         'Exoplanets',
         'Astronomy',
         'Planets orbiting other stars, found by transits and stellar wobble, and now studied for their atmospheres.',
@@ -34,20 +30,6 @@ FROM (
         'Invisible matter inferred from galaxy rotation and gravitational lensing. Its nature is still unknown.',
         'dark-matter',
         '7 days'
-    ),
-    (
-        'Neutron Stars',
-        'Astrophysics',
-        'Ultra-dense remnants of supernovae: pulsars, magnetars and the mergers that forge heavy elements.',
-        'neutron-stars',
-        '8 days'
-    ),
-    (
-        'The Expanding Universe',
-        'Cosmology',
-        'From Hubble''s law to dark energy: how we learned that space itself is stretching, and speeding up.',
-        'expanding-universe',
-        '14 days'
     )
 ) AS v(title, category, description, slug, age)
 WHERE NOT EXISTS (
