@@ -277,20 +277,32 @@ class MigrationSeedTests(unittest.TestCase):
             (title,),
         ).fetchone()[0]
 
-    def test_without_black_holes_nothing_is_added(self):
+    def black_holes_id(self):
+        return self.conn.execute(
+            "SELECT min(id) FROM research_threads WHERE title = 'Black Holes';"
+        ).fetchone()[0]
+
+    def test_fresh_database_gets_one_black_holes_thread(self):
         self.migrate()
         extra = self.add_thread("Exoplanets")
         self.migrate()
 
-        # The Black Holes sample (005) adds nothing without a Black Holes thread.
-        self.assertEqual(
-            [self.count(t) for t in ("timeline_events", "research_papers", "thread_papers")][1:],
-            [0, 0],
-        )
+        # 004 creates the Black Holes thread on a new database (it used to be
+        # missing, so its page could not be bookmarked), once, with its slug.
+        rows = self.conn.execute(
+            "SELECT id, slug FROM research_threads WHERE title = 'Black Holes';"
+        ).fetchall()
+        self.assertEqual(len(rows), 1)
+        black_holes, slug = rows[0]
+        self.assertEqual(slug, "black-holes")
+        self.assertEqual(self.count("thread_stages", "thread_id = %s", (black_holes,)), 5)
+        # Its sample (005) is attached to it: 3 events and 3 papers.
+        self.assertEqual(self.count("timeline_events", "thread_id = %s", (black_holes,)), 3)
+        self.assertEqual(self.count("thread_papers", "thread_id = %s", (black_holes,)), 3)
         # Key discoveries (009) attach by slug to the seeded Exoplanets (4) and
         # Dark Matter (3) threads only: none to the extra untitled-slug thread.
         self.assertEqual(self.count("timeline_events", "thread_id = %s", (extra,)), 0)
-        self.assertEqual(self.count("timeline_events"), 7)
+        self.assertEqual(self.count("timeline_events"), 10)
         self.assertEqual(self.count("timeline_events", "source_url IS NULL"), 0)
         # Migration 006 only adds sourced charts (never illustrative ones),
         # and re-running it adds nothing.
@@ -320,8 +332,14 @@ class MigrationSeedTests(unittest.TestCase):
         # 3 Black Holes events (005) + 7 key discoveries for the seeded
         # Exoplanets and Dark Matter threads (009).
         self.assertEqual(after_first_run, [10, 4, 3])
-        self.assertEqual(self.count("timeline_events", "thread_id = %s", (first,)), 3)
-        self.assertEqual(self.count("thread_papers", "thread_id = %s", (second,)), 0)
+        # The seed stays on the Black Holes thread 004 created, not on the
+        # later threads with the same title.
+        black_holes = self.black_holes_id()
+        self.assertLess(black_holes, first)
+        self.assertEqual(self.count("timeline_events", "thread_id = %s", (black_holes,)), 3)
+        for duplicate in (first, second):
+            self.assertEqual(self.count("timeline_events", "thread_id = %s", (duplicate,)), 0)
+            self.assertEqual(self.count("thread_papers", "thread_id = %s", (duplicate,)), 0)
         self.assertEqual(self.count("thread_papers", "paper_id = %s", (other,)), 0)
         linked = self.conn.execute(
             "SELECT p.title, p.publication_year, tp.is_illustrative FROM thread_papers tp "
@@ -331,9 +349,6 @@ class MigrationSeedTests(unittest.TestCase):
         # Charts: only sourced ones (migration 006), one per title, on the
         # lowest-id thread with that title.
         self.assertEqual(self.count("chart_data", "NOT (dataset ? 'source')"), 0)
-        black_holes = self.conn.execute(
-            "SELECT min(id) FROM research_threads WHERE title = 'Black Holes';"
-        ).fetchone()[0]
         self.assertEqual(self.count("chart_data", "thread_id = %s", (black_holes,)), 1)
         self.assertEqual(
             self.count("chart_data", "thread_id IN (%s, %s) AND thread_id <> %s", (first, second, black_holes)),
