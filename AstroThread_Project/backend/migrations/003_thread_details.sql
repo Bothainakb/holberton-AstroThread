@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS latest_developments (
 
 CREATE TABLE IF NOT EXISTS research_papers (
     id               SERIAL PRIMARY KEY,
-    openalex_id      VARCHAR(64) UNIQUE NOT NULL,
+    openalex_id      VARCHAR(64) UNIQUE,
     title            TEXT NOT NULL,
     authors          TEXT,
     publication_year INT,
@@ -40,3 +40,8 @@ CREATE TABLE IF NOT EXISTS thread_papers (
     paper_id  INT NOT NULL REFERENCES research_papers(id)  ON DELETE CASCADE,
     PRIMARY KEY (thread_id, paper_id)
 );
+
+-- Databases made before 003_create_profile_tables may already have
+-- research_papers from this file's older version; match the shared schema.
+ALTER TABLE research_papers ALTER COLUMN openalex_id DROP NOT NULL;
+ALTER TABLE research_papers ADD COLUMN IF NOT EXISTS abstract TEXT;
