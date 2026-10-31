@@ -18,6 +18,13 @@ SELECT
 FROM (
     VALUES
     (
+        'Black Holes',
+        'Astrophysics',
+        'Regions where gravity is so strong that nothing, not even light, can escape. Trace them from theory to the first image.',
+        'black-holes',
+        '2 days'
+    ),
+    (
         'Exoplanets',
         'Astronomy',
         'Planets orbiting other stars, found by transits and stellar wobble, and now studied for their atmospheres.',
