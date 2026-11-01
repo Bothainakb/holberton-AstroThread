@@ -52,6 +52,94 @@
   border-radius: 6px;
 }
 
+.navbar__icon-button--active {
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+/* Signed-in user menu (Figma "08-Profile" header). */
+.navbar__user {
+  position: relative;
+}
+
+.navbar__user-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 12px 0 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.navbar__user-button:hover,
+.navbar__user-button[aria-expanded='true'] {
+  border-color: var(--color-border-control);
+}
+
+.navbar__user-initials {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.navbar__user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navbar__user-chevron {
+  color: var(--color-text-secondary);
+}
+
+.navbar__user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.navbar__user-item {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-size: 14px;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.navbar__user-item:hover {
+  background: var(--color-surface-raised);
+}
+
+.navbar__user-item--danger {
+  color: var(--color-error);
+}
+
 /* Outlined cyan pill: "Login" in the header, "Sign In" on Home, or "Log out". */
 .navbar__login {
   display: inline-flex;

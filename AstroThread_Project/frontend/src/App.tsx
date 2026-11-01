@@ -5,6 +5,7 @@ import Navbar from './components/Navbar/Navbar'
 import { researchThreads } from './data/threads'
 import HomePage from './pages/Home/HomePage'
 import LoginPage from './pages/Login/LoginPage'
+import ProfilePage from './pages/Profile/ProfilePage'
 import ResearchSearchPage from './pages/ResearchSearch/ResearchSearchPage'
 import ResearchThreadsPage from './pages/ResearchThreads/ResearchThreadsPage'
 import SignUpPage from './pages/SignUp/SignUpPage'
@@ -18,6 +19,7 @@ type Page =
   | { name: 'research-search' }
   | { name: 'login' }
   | { name: 'sign-up' }
+  | { name: 'profile' }
   | { name: 'thread-details'; threadId: string }
 
 function resolvePage(pathname: string): Page {
@@ -25,6 +27,7 @@ function resolvePage(pathname: string): Page {
   if (pathname === routes.researchSearch) return { name: 'research-search' }
   if (pathname === routes.login) return { name: 'login' }
   if (pathname === routes.signUp) return { name: 'sign-up' }
+  if (pathname === routes.profile) return { name: 'profile' }
   const threadId = matchThreadDetails(pathname)
   if (threadId) return { name: 'thread-details', threadId }
   // Unknown paths fall back to the Home page until more pages exist.
@@ -36,6 +39,7 @@ function pageTitle(page: Page) {
   if (page.name === 'research-search') return 'Research Search · AstroThread'
   if (page.name === 'login') return 'Login · AstroThread'
   if (page.name === 'sign-up') return 'Create Account · AstroThread'
+  if (page.name === 'profile') return 'Profile · AstroThread'
   if (page.name === 'thread-details') {
     const thread = researchThreads.find((item) => item.id === page.threadId)
     // Database ids ("/research-threads/1") are replaced by the thread's slug once it loads.
@@ -50,6 +54,7 @@ function activeNavHref(page: Page) {
   if (page.name === 'research-search') return routes.researchSearch
   // Create Account is reached from Login, so Login stays highlighted.
   if (page.name === 'login' || page.name === 'sign-up') return routes.login
+  if (page.name === 'profile') return routes.profile
   return routes.researchThreads
 }
 
@@ -79,6 +84,7 @@ function App() {
       {page.name === 'research-search' && <ResearchSearchPage />}
       {page.name === 'login' && <LoginPage />}
       {page.name === 'sign-up' && <SignUpPage />}
+      {page.name === 'profile' && <ProfilePage />}
       {/* The key resets the selected stage when switching between threads. */}
       {page.name === 'thread-details' && (
         <ThreadDetailsPage key={page.threadId} threadId={page.threadId} />
