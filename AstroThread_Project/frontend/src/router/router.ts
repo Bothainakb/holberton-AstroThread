@@ -10,6 +10,7 @@ export const routes = {
   login: '/login',
   signUp: '/signup',
   aiAssistant: '/ai-assistant',
+  profile: '/profile',
 } as const
 
 /** Path of a thread's details page, e.g. "/research-threads/black-holes". */
@@ -25,12 +26,13 @@ export function matchThreadDetails(pathname: string) {
 
 /**
  * Where to go after signing in, from a "?next=" value. Only a Thread Details
- * path on this site is accepted ("/research-threads/black-holes"), so the
- * parameter can never send someone to another site or an unexpected page.
+ * path on this site ("/research-threads/black-holes") or the Profile page is
+ * accepted, so the parameter can never send someone to another site or an
+ * unexpected page.
  */
 export function safeReturnPath(value: string | null | undefined): string | null {
   if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
-  return matchThreadDetails(value) ? value : null
+  return matchThreadDetails(value) || value === routes.profile ? value : null
 }
 
 /** "/login?next=..." (or the sign-up page) that returns to `path` afterwards. */
