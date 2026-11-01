@@ -1,0 +1,147 @@
+/*
+ * Design tokens from the approved Figma screens ("Cosmic Blue"): the values of
+ * the prototype the 11 frames were built from (--at-* variables).
+ */
+:root {
+  /* Primary (buttons): --at-button, --at-button-hover, --at-button-border */
+  --color-primary: #4c1d95;
+  --color-primary-dark: #5b21b6;
+  --color-primary-active: #3b0f7a;
+  --color-primary-light: #a78bfa;
+
+  /* Accent */
+  --color-accent: #22d3ee;
+  --color-accent-hover: #67e8f9;
+
+  /* Backgrounds */
+  --color-bg: #172a4f;
+  --color-glow: rgb(58 63 143 / 50%);
+  --color-surface: #1e3560;
+  --color-surface-raised: #27406e;
+  --color-surface-inset: #12223f;
+  --color-surface-light: #2c4573;
+
+  /* Borders */
+  --color-border: #2c4573;
+  --color-border-control: #8193b2;
+
+  /* Text */
+  --color-text: #f8fafc;
+  --color-text-secondary: #dce3ee;
+  --color-text-muted: #a8b6cc;
+  --color-text-subtle: #a8b6cc;
+  --color-logo-text: #bcd0e4;
+
+  /* Status */
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-error: #fca5a5;
+  --color-info: #38bdf8;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 14px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgb(0 0 0 / 20%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 25%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 30%);
+  --glow-cyan: 0 0 24px rgb(34 211 238 / 30%);
+  --glow-primary: 0 0 24px rgb(167 139 250 / 30%);
+
+  /* Layout */
+  --container-width: 1152px;
+  --page-gutter: 24px;
+
+  font-family: Inter, 'Segoe UI', Arial, sans-serif;
+  font-size: 16px;
+  line-height: normal;
+  color: var(--color-text);
+  background: var(--color-bg);
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  color: var(--color-bg);
+  background: var(--color-accent);
+}
+
+.container {
+  width: min(var(--container-width), 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,164 @@
+/*
+ * Figma "02-Login" header: full width, 72px + 1px border, logo 24px from the
+ * left, links starting at x=567 (1440 frame), profile icon and an outlined
+ * cyan Login pill 24px from the right.
+ */
+.navbar {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--color-border);
+  background: rgb(23 42 79 / 60%);
+}
+
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  padding-inline: 24px;
+}
+
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  /* 567px - 24px padding - 234px logo = 309px at 1440. */
+  margin-left: clamp(32px, 21.46vw, 309px);
+}
+
+.navbar__link {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  transition: color 180ms ease;
+}
+
+.navbar__link:hover,
+.navbar__link--active {
+  color: var(--color-text);
+}
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-left: auto;
+}
+
+.navbar__icon-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+/* Outlined cyan pill: "Login" in the header, "Sign In" on Home, or "Log out". */
+.navbar__login {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 22px;
+  border: 1px solid var(--color-accent);
+  border-radius: 22px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent);
+  white-space: nowrap;
+  transition:
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.navbar__login:hover {
+  background: rgb(34 211 238 / 8%);
+  box-shadow: var(--glow-cyan);
+}
+
+/* "Log out" is a <button>; match the Login link. */
+button.navbar__login {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.navbar__login--pending {
+  visibility: hidden;
+}
+
+.navbar__role {
+  padding: 2px 10px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--color-accent);
+}
+
+/* Figma "01-Home": no bar, only the pill 16px from the top and 24px from the right. */
+.navbar--minimal {
+  border-bottom: 0;
+  background: none;
+}
+
+.navbar--minimal .navbar__inner {
+  justify-content: flex-end;
+  min-height: 76px;
+  padding-block: 16px;
+}
+
+@media (max-width: 1080px) {
+  .navbar__links {
+    gap: 24px;
+    margin-left: 40px;
+  }
+
+  .navbar__actions {
+    gap: 20px;
+  }
+}
+
+/* On narrow screens the links move to their own scrollable row. */
+@media (max-width: 900px) {
+  .navbar__inner {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding-top: 14px;
+  }
+
+  .navbar__links {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    padding-block: 10px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .navbar__links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navbar--minimal .navbar__inner {
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .navbar__inner {
+    padding-inline: 16px;
+  }
+
+  .navbar__actions {
+    gap: 12px;
+  }
+
+  .navbar__login {
+    height: 40px;
+    padding: 0 16px;
+  }
+
+  .navbar__link {
+    font-size: 15px;
+  }
+}
