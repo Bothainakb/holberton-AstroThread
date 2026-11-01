@@ -10,6 +10,10 @@ describe('safeReturnPath', () => {
     assert.equal(safeReturnPath('/research-threads/1'), '/research-threads/1')
   })
 
+  it('accepts the Profile page', () => {
+    assert.equal(safeReturnPath('/profile'), '/profile')
+  })
+
   it('rejects anything that could leave the site or open another page', () => {
     for (const value of [
       null,
@@ -22,7 +26,8 @@ describe('safeReturnPath', () => {
       'research-threads/black-holes',
       '/research-threads',
       '/research-threads/black-holes/extra',
-      '/profile',
+      '/profile/extra',
+      '/profile?x=1',
       '/login',
     ]) {
       assert.equal(safeReturnPath(value), null, String(value))
