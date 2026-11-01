@@ -286,6 +286,8 @@ export interface ProfileChanges {
   bio?: string | null
   avatar_url?: string | null
   email_notifications?: boolean
+  /** Only "en" is supported by the backend for now. */
+  language?: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
