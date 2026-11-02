@@ -13,6 +13,8 @@ threads_bp = Blueprint("threads_v1", __name__)
 
 # totalStages: the thread's rows in thread_stages. completedStages: how many of
 # them the signed-in user has completed (thread_progress), 0 for visitors.
+# openAlexPaperCount: papers its OpenAlex search found (migration 012), for
+# threads with none in thread_papers; null until it has been searched.
 THREAD_LIST_SQL = """
     SELECT t.id, t.slug, t.title, t.category, t.description, t.created_at,
            (SELECT COUNT(*) FROM thread_papers tp WHERE tp.thread_id = t.id) AS paper_count,
@@ -22,7 +24,8 @@ THREAD_LIST_SQL = """
                 FROM thread_progress p
                 WHERE p.thread_id = t.id AND p.user_id = %(user_id)s),
                0
-           ) AS stages_completed
+           ) AS stages_completed,
+           t.openalex_paper_count
     FROM research_threads t
     CROSS JOIN LATERAL (
         SELECT COUNT(*) AS stage_count FROM thread_stages ts WHERE ts.thread_id = t.id
@@ -49,6 +52,7 @@ def thread_to_json(row):
         "paperCount": row[6],
         "completedStages": row[8],
         "totalStages": row[7],
+        "openAlexPaperCount": row[9],
     }
 
 
