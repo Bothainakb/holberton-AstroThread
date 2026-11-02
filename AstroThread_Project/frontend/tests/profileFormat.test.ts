@@ -30,7 +30,7 @@ describe('names and initials', () => {
 
   it('names the role badge as in Figma', () => {
     assert.equal(roleBadge('user'), 'Research Explorer')
-    assert.equal(roleBadge('owner'), 'Owner')
+    assert.equal(roleBadge('owner'), 'Admin')
   })
 })
 

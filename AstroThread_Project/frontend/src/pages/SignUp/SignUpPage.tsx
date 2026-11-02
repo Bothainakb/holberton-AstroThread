@@ -169,7 +169,7 @@ function SignUpPage() {
           <p className="signup-role-note" role="note">
             <Icon name="error" className="signup-role-note__icon" />
             <span>
-              New accounts are created as standard <strong>User</strong> accounts. Owner access is
+              New accounts are created as standard <strong>User</strong> accounts. Admin access is
               assigned by the platform and cannot be chosen here.
             </span>
           </p>

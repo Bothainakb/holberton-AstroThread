@@ -1,8 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import userIcon from '../../assets/icons/user.svg'
 import { signOut, useAuth } from '../../auth/auth'
 import Link from '../../router/Link'
-import { navigate, routes, withReturnPath } from '../../router/router'
+import { navigate, routes } from '../../router/router'
 import type { AuthUser } from '../../services/api'
 import { initialsFor, shortName } from '../../services/profileFormat'
 import Logo from '../Logo/Logo'
@@ -16,7 +15,7 @@ interface NavLink {
 // Figma "02-Login" header order. Search is reached from the footer and pages.
 const navLinks: NavLink[] = [
   { label: 'Home', href: routes.home },
-  { label: 'Research Threads', href: routes.researchThreads },
+  { label: 'Browse Threads', href: routes.researchThreads },
   { label: 'Plans', href: '#' },
   { label: 'AI Assistant', href: '#' },
 ]
@@ -94,22 +93,8 @@ function Navbar({ activeHref = routes.home, variant = 'full' }: NavbarProps) {
         </nav>
 
         <div className="navbar__actions">
-          <Link
-            className={[
-              'navbar__icon-button',
-              activeHref === routes.profile && 'navbar__icon-button--active',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            href={user ? routes.profile : withReturnPath(routes.login, routes.profile)}
-            aria-label={user ? `Profile (signed in as ${user.email})` : 'Profile'}
-            aria-current={activeHref === routes.profile ? 'page' : undefined}
-            title={user ? `Signed in as ${user.email}` : undefined}
-          >
-            <img src={userIcon} alt="" width={16.7505} height={17.7502} />
-          </Link>
-          {/* Display only: owner access is checked by the backend. */}
-          {user?.role === 'owner' && <span className="navbar__role">Owner</span>}
+          {/* Display only: admin access (the `owner` role) is checked by the backend. */}
+          {user?.role === 'owner' && <span className="navbar__role">Admin</span>}
           {authControl}
         </div>
       </div>

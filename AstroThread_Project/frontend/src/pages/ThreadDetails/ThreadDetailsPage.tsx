@@ -17,17 +17,16 @@ import { researchThreads, threadStages, type ResearchThread } from '../../data/t
 import { replacePath, routes, threadDetailsPath } from '../../router/router'
 import { saveThreadProgress, type ApiThreadDetails, type ApiThreadStage } from '../../services/api'
 import { parseMeasuredChart } from '../../services/chartData'
-import EvidenceSection, { type LiveEvidence } from './sections/EvidenceSection'
-import LatestDevelopment from './sections/LatestDevelopment'
+import EvidenceSection, { EvidenceChart, type LiveEvidence } from './sections/EvidenceSection'
 import NasaMediaSection from './sections/NasaMediaSection'
 import RelatedPapers from './sections/RelatedPapers'
-import StageNavigation from './sections/StageNavigation'
 import StagePanel from './sections/StagePanel'
 import ThreadHero from './sections/ThreadHero'
 import { scrollToSection } from './scrollToSection'
 import { researchThreadFor, threadSlug } from './threadRoute'
 import { useDesignNasaMedia, useNasaMedia } from './useNasaMedia'
 import { DESIGN_PAPER_PREVIEWS, useDesignOpenAlexPapers, useOpenAlexPapers } from './useOpenAlexPapers'
+import { usePaperBookmarks } from './usePaperBookmarks'
 import { useThreadBookmark } from './useThreadBookmark'
 import { useThreadDetails, type ThreadDetailsState } from './useThreadDetails'
 import './ThreadDetailsPage.css'
@@ -35,14 +34,6 @@ import './ThreadDetailsPage.css'
 interface ThreadDetailsPageProps {
   threadId: string
 }
-
-const STAGE_SECTION_IDS = [
-  'stage-content',
-  'related-papers',
-  'evidence',
-  'evidence',
-  'latest-developments',
-]
 
 function isChartPoint(value: unknown): value is ChartPoint {
   if (typeof value !== 'object' || value === null) return false
@@ -186,6 +177,8 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
   const openAlex = useOpenAlexPapers(live && live.papers.length === 0 ? live.thread.id : null)
   // Only database threads can be saved.
   const bookmark = useThreadBookmark(live ? live.thread.id : null)
+  // Saving papers: database threads only (their papers and their OpenAlex papers).
+  const paperBookmarks = usePaperBookmarks(live ? live.thread.id : null)
   // Design previews with no database record: real papers from OpenAlex (by
   // slug) instead of the design's paper count, for the slugs the backend allows.
   const designPapersSlug =
@@ -211,6 +204,21 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
   const stage = stages[stageNumber - 1]
   const icons = stages.map((item) => `stage-${item.icon}` as IconName)
 
+  // Data & Discoveries is shown only in the Data stage: the chart under its
+  // text and each key discovery as a compact card next to its facts.
+  const dataStage =
+    live && stage.icon === 'data'
+      ? {
+          media: <EvidenceChart chart={liveChart(live)} />,
+          extraFacts: live.timeline.map((event) => ({
+            label: `KEY DISCOVERY · ${event.year}`,
+            title: event.title,
+            text: event.description ?? '',
+            source: { name: event.source_name, url: event.source_url },
+          })),
+        }
+      : {}
+
   /** Saves the signed-in user's progress when they open a database stage. */
   function recordStage(number: number) {
     if (!live?.stages?.length || auth.status !== 'signed-in') return
@@ -218,16 +226,12 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
     saveThreadProgress(live.thread.id, live.stages.length, number).catch(() => {})
   }
 
+  /** Opens a stage from the stage icons: shows its content and saves progress. */
   function goToStage(number: number) {
     const next = Math.min(Math.max(number, 1), stages.length)
     setStageNumber(next)
     recordStage(next)
     requestAnimationFrame(() => scrollToSection('stage-content'))
-  }
-
-  function handleStepSelect(number: number) {
-    if (number === 1) setStageNumber(1)
-    requestAnimationFrame(() => scrollToSection(STAGE_SECTION_IDS[number - 1]))
   }
 
   const hero = live
@@ -264,11 +268,6 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
         updatedLabel={hero.updatedLabel}
         bookmark={{ state: bookmark.state, notice: bookmark.notice, onToggle: bookmark.toggle }}
         stagesNote={designPapersSlug ? 'Stage guide not written yet' : undefined}
-        onStartJourney={() => {
-          setStageNumber(1)
-          recordStage(1)
-          requestAnimationFrame(() => scrollToSection('follow-the-thread'))
-        }}
       />
 
       <DetailsStatus
@@ -309,7 +308,7 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
               }))}
               currentStage={stageNumber}
               icons={icons}
-              onSelect={handleStepSelect}
+              onSelect={goToStage}
             />
           </div>
         </div>
@@ -320,6 +319,7 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
         title={stage.title}
         summary={stage.summary}
         content={stage.content}
+        {...dataStage}
         emptyText={
           designPapersSlug
             ? `This design preview has no ${stage.title} stage content yet. The five stages are the common outline of every thread; their written guide comes from the AstroThread database.`
@@ -333,25 +333,11 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
             papers={livePapers(live)}
             emptyText="No papers have been linked to this thread in the database yet."
             openAlex={{ state: openAlex.state, onRetry: openAlex.retry }}
+            bookmarks={paperBookmarks}
+            returnPath={threadDetailsPath(thread.id)}
           />
-
-          <EvidenceSection live={{ chart: liveChart(live), timeline: live.timeline }} />
 
           <NasaMediaSection live={nasa.state} onRetry={nasa.retry} />
-
-          <LatestDevelopment
-            developments={live.developments}
-            latest={
-              live.latest
-                ? {
-                    day: '',
-                    year: String(live.latest.year),
-                    title: live.latest.title,
-                    text: live.latest.description ?? '',
-                  }
-                : undefined
-            }
-          />
         </>
       ) : (
         state.status !== 'loading' && (
@@ -365,25 +351,17 @@ function ThreadDetailsContent({ thread, state, retry }: ThreadDetailsContentProp
                 />
                 <EvidenceSection emptyText="This design preview has no verified measurements or discovery timeline: those come from the AstroThread database, which has no record of this thread yet." />
                 <NasaMediaSection live={designNasa.state} onRetry={designNasa.retry} />
-                <LatestDevelopment emptyText="Latest developments are not available for this design preview: AstroThread has no reliable source for recent developments of threads outside its database, so none are shown." />
               </>
             ) : (
               <>
                 <RelatedPapers papers={sample?.papers} paperCount={thread.paperCount} />
                 <EvidenceSection evidence={sample?.evidence} />
                 <NasaMediaSection nasa={sample?.nasa} />
-                <LatestDevelopment latest={sample?.latest} />
               </>
             )}
           </>
         )
       )}
-
-      <StageNavigation
-        stageNumber={stageNumber}
-        stageTitles={stages.map((item) => item.title)}
-        onChange={goToStage}
-      />
     </main>
   )
 }
@@ -409,7 +387,7 @@ function MissingThread({ title, text, onRetry }: MissingThreadProps) {
             Try again
           </button>
         )}
-        <Button href={routes.researchThreads}>Back to Research Threads</Button>
+        <Button href={routes.home}>Back to Home</Button>
       </section>
     </main>
   )

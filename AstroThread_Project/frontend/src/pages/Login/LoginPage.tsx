@@ -24,10 +24,6 @@ function validate(email: string, password: string): FieldErrors {
   return errors
 }
 
-/** Shown instead of a fake sign-in: Google sign-in has no backend support. */
-const GOOGLE_NOT_CONNECTED =
-  "Google sign-in isn't available yet. Sign in with your email and password instead."
-
 function loginErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
     if (error.status === 401) return 'Incorrect email or password. Please try again.'
@@ -221,23 +217,6 @@ function LoginPage() {
               Create Account
             </Link>
           </p>
-
-          <div className="login-divider" aria-hidden="true">
-            <span className="login-divider__line" />
-            <span className="login-divider__text">OR</span>
-            <span className="login-divider__line" />
-          </div>
-
-          <button
-            type="button"
-            className="login-google"
-            onClick={() => setNotice({ kind: 'info', message: GOOGLE_NOT_CONNECTED })}
-          >
-            <span className="login-google__badge" aria-hidden="true">
-              G
-            </span>
-            Continue with Google
-          </button>
         </form>
       </section>
     </main>

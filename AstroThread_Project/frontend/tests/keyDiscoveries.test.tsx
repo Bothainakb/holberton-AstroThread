@@ -46,7 +46,9 @@ describe('Key discoveries', () => {
       assert.ok(html.includes(`href="${item.source_url}"`), item.source_url ?? '')
     }
     assert.match(html, /Source: Nature \(Wolszczan &amp; Frail, 1992\)/)
-    assert.equal((html.match(/target="_blank" rel="noopener noreferrer"/g) ?? []).length, 3)
+    // Source links open in the same tab.
+    assert.equal((html.match(/rel="noreferrer"/g) ?? []).length, 3)
+    assert.doesNotMatch(html, /target=/)
     assert.doesNotMatch(html, /No discoveries have been added to this thread yet/)
   })
 

@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import Button from '../../components/Button/Button'
 import FilterChip from '../../components/FilterChip/FilterChip'
+import { usePaperCounts } from '../../components/ResearchThreadCard/usePaperCounts'
 import ResearchThreadCard, {
   type ResearchThreadCardData,
 } from '../../components/ResearchThreadCard/ResearchThreadCard'
-import SearchBar from '../../components/SearchBar/SearchBar'
 import Tag from '../../components/Tag/Tag'
-import ThreadStages from '../../components/ThreadStages/ThreadStages'
-import { previewCurrentStage, threadStages } from '../../data/threads'
-import { databaseSlug, designOnlyThreads, matchesThread } from '../../data/threadSearch'
+import { databaseSlug, designOnlyThreads } from '../../data/threadSearch'
 import { fetchThreads, type ApiThread } from '../../services/api'
-import { threadDetailsPath } from '../../router/router'
 import './ResearchThreadsPage.css'
-import '../ResearchSearch/ResearchSearchPage.css' // for the No Results styles
+import '../ResearchSearch/ResearchSearchPage.css' // for the empty-state styles
 
 const ALL_TOPICS = 'all'
 
@@ -39,7 +35,7 @@ function mapApiThread(thread: ApiThread): ResearchThreadCardData {
     title: thread.title,
     category: thread.category,
     description: thread.description,
-    paperCount: thread.paperCount || undefined, // hide "0 papers"
+    // paperCount is added when rendering (usePaperCounts): the papers the thread's page lists.
     completedStages: totalStages ? Math.min(thread.completedStages ?? 0, totalStages) : undefined,
     totalStages, // no bar for a thread without stages
     updatedLabel: updatedLabel(thread.updatedAt),
@@ -47,9 +43,10 @@ function mapApiThread(thread: ApiThread): ResearchThreadCardData {
 }
 
 function ResearchThreadsPage() {
-  const [query, setQuery] = useState('')
   const [topic, setTopic] = useState(ALL_TOPICS)
   const [threads, setThreads] = useState<ResearchThreadCardData[]>([])
+  const [apiThreads, setApiThreads] = useState<ApiThread[]>([])
+  const paperCounts = usePaperCounts(apiThreads)
   // Design-only threads (no database record yet); only title, category and
   // description are shown, since their design paper counts and stages are not data.
   const [previews, setPreviews] = useState<ResearchThreadCardData[]>([])
@@ -63,6 +60,7 @@ function ResearchThreadsPage() {
     try {
       const data = await fetchThreads()
       setThreads(data.map(mapApiThread))
+      setApiThreads(data)
       setPreviews(
         designOnlyThreads(data).map(({ id, title, category, description }) => ({
           id,
@@ -82,10 +80,6 @@ function ResearchThreadsPage() {
     void loadThreads()
   }, [])
 
-  function clearSearch() {
-    setQuery('')
-    setTopic(ALL_TOPICS)
-  }
 
   const topicFilters = useMemo(
     () =>
@@ -95,12 +89,8 @@ function ResearchThreadsPage() {
     [threads, previews],
   )
 
-  // Same rules as the Home search: a word starting with the query, in the
-  // title, category or description.
-  const matches = (thread: ResearchThreadCardData) => {
-    if (topic !== ALL_TOPICS && thread.id !== topic) return false
-    return !query.trim() || matchesThread(thread, query)
-  }
+  // Searching happens on Home only; this page just filters by topic.
+  const matches = (thread: ResearchThreadCardData) => topic === ALL_TOPICS || thread.id === topic
   const visibleThreads = threads.filter(matches)
   const visiblePreviews = previews.filter(matches)
   const nothingVisible = visibleThreads.length === 0 && visiblePreviews.length === 0
@@ -110,21 +100,11 @@ function ResearchThreadsPage() {
       <section className="threads-intro container" aria-labelledby="threads-title">
         <Tag>Research library</Tag>
         <h1 className="threads-intro__title" id="threads-title">
-          Research Threads
+          Browse Threads
         </h1>
         <p className="threads-intro__subtitle">
           Explore scientific discoveries through connected research journeys.
         </p>
-
-        <div className="threads-intro__search" id="search">
-          <SearchBar
-            id="search-threads"
-            className="search-bar--wide"
-            placeholder="Search research topics and papers"
-            value={query}
-            onChange={setQuery}
-          />
-        </div>
 
         <div className="threads-intro__filters" role="group" aria-label="Filter by topic">
           <FilterChip active={topic === ALL_TOPICS} onClick={() => setTopic(ALL_TOPICS)}>
@@ -176,7 +156,10 @@ function ResearchThreadsPage() {
             {visibleThreads.length > 0 && (
               <div className="threads-list__grid">
                 {visibleThreads.map((thread) => (
-                  <ResearchThreadCard key={thread.id} thread={thread} />
+                  <ResearchThreadCard
+                    key={thread.id}
+                    thread={{ ...thread, paperCount: paperCounts.get(thread.id) }}
+                  />
                 ))}
               </div>
             )}
@@ -200,45 +183,21 @@ function ResearchThreadsPage() {
           </>
         ) : (
           <div className="search-empty">
-            <h3 className="search-empty__title">No research found</h3>
+            <h3 className="search-empty__title">No research threads here yet</h3>
             <p className="search-empty__text">
-              {query.trim() ? `Nothing matches "${query.trim()}". ` : ''}
-              Try a different keyword, such as a topic like "black holes" or a category like
-              "cosmology".
+              No thread matches this topic. Show all topics, or search from the Home page.
             </p>
             <div className="search-empty__actions">
               <button
                 type="button"
                 className="button button--secondary search-empty__clear"
-                onClick={clearSearch}
+                onClick={() => setTopic(ALL_TOPICS)}
               >
-                Clear search
+                Show all topics
               </button>
             </div>
           </div>
         )}
-      </section>
-
-      <section className="threads-journey" aria-labelledby="journey-title">
-        <div className="container">
-          <div className="threads-journey__header">
-            <div>
-              <Tag>Research journey</Tag>
-              <h2 className="threads-journey__title" id="journey-title">
-                How a thread unfolds
-              </h2>
-              <p className="threads-journey__description">
-                Every thread follows the same five stages, from the first idea to the latest
-                developments. Preview: Black Holes.
-              </p>
-            </div>
-            <Button href={threadDetailsPath('black-holes')}>Explore Thread</Button>
-          </div>
-
-          <div className="threads-journey__stages">
-            <ThreadStages stages={threadStages} currentStage={previewCurrentStage} />
-          </div>
-        </div>
       </section>
     </main>
   )

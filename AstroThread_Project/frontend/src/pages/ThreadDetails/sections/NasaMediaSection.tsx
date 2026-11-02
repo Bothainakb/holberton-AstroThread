@@ -5,6 +5,9 @@ import type { ThreadDetail } from '../../../data/threadDetails'
 import type { ApiNasaImage } from '../../../services/nasaMedia'
 import type { NasaMediaState } from '../useNasaMedia'
 
+/** Images shown per thread: the first ones, which the backend ranks most relevant first. */
+export const MAX_NASA_IMAGES = 3
+
 interface NasaMediaSectionProps {
   nasa?: ThreadDetail['nasa']
   live?: NasaMediaState
@@ -44,9 +47,8 @@ function NasaImageCard({ image }: { image: ApiNasaImage }) {
         <a
           className="nasa-card__link"
           href={image.source_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`View "${image.title}" on NASA's image library (opens in a new tab)`}
+          rel="noreferrer"
+          aria-label={`View "${image.title}" on NASA's image library`}
         >
           View on NASA
           <Icon name="arrow-right" />
@@ -104,7 +106,7 @@ function LiveNasaMedia({
   return (
     <>
       <div className="details-nasa__grid details-nasa__grid--live">
-        {state.media.items.map((image) => (
+        {state.media.items.slice(0, MAX_NASA_IMAGES).map((image) => (
           <NasaImageCard key={image.nasa_id} image={image} />
         ))}
       </div>

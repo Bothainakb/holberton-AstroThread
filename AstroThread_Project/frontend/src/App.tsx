@@ -6,7 +6,6 @@ import { researchThreads } from './data/threads'
 import HomePage from './pages/Home/HomePage'
 import LoginPage from './pages/Login/LoginPage'
 import ProfilePage from './pages/Profile/ProfilePage'
-import ResearchSearchPage from './pages/ResearchSearch/ResearchSearchPage'
 import ResearchThreadsPage from './pages/ResearchThreads/ResearchThreadsPage'
 import SignUpPage from './pages/SignUp/SignUpPage'
 import ThreadDetailsPage from './pages/ThreadDetails/ThreadDetailsPage'
@@ -16,7 +15,6 @@ import './App.css'
 type Page =
   | { name: 'home' }
   | { name: 'research-threads' }
-  | { name: 'research-search' }
   | { name: 'login' }
   | { name: 'sign-up' }
   | { name: 'profile' }
@@ -24,19 +22,18 @@ type Page =
 
 function resolvePage(pathname: string): Page {
   if (pathname === routes.researchThreads) return { name: 'research-threads' }
-  if (pathname === routes.researchSearch) return { name: 'research-search' }
   if (pathname === routes.login) return { name: 'login' }
   if (pathname === routes.signUp) return { name: 'sign-up' }
   if (pathname === routes.profile) return { name: 'profile' }
   const threadId = matchThreadDetails(pathname)
   if (threadId) return { name: 'thread-details', threadId }
-  // Unknown paths fall back to the Home page until more pages exist.
+  // Unknown paths fall back to the Home page until more pages exist. This
+  // includes the removed Research Search page (prepareStartUrl redirects it).
   return { name: 'home' }
 }
 
 function pageTitle(page: Page) {
-  if (page.name === 'research-threads') return 'Research Threads · AstroThread'
-  if (page.name === 'research-search') return 'Research Search · AstroThread'
+  if (page.name === 'research-threads') return 'Browse Threads · AstroThread'
   if (page.name === 'login') return 'Login · AstroThread'
   if (page.name === 'sign-up') return 'Create Account · AstroThread'
   if (page.name === 'profile') return 'Profile · AstroThread'
@@ -48,10 +45,9 @@ function pageTitle(page: Page) {
   return 'AstroThread'
 }
 
-/** Navbar item to highlight; Search has no navbar item and Login is the pill, not a text link. */
+/** Navbar item to highlight; Login is the pill, not a text link. */
 function activeNavHref(page: Page) {
   if (page.name === 'home') return routes.home
-  if (page.name === 'research-search') return routes.researchSearch
   // Create Account is reached from Login, so Login stays highlighted.
   if (page.name === 'login' || page.name === 'sign-up') return routes.login
   if (page.name === 'profile') return routes.profile
@@ -81,7 +77,6 @@ function App() {
 
       {page.name === 'home' && <HomePage />}
       {page.name === 'research-threads' && <ResearchThreadsPage />}
-      {page.name === 'research-search' && <ResearchSearchPage />}
       {page.name === 'login' && <LoginPage />}
       {page.name === 'sign-up' && <SignUpPage />}
       {page.name === 'profile' && <ProfilePage />}

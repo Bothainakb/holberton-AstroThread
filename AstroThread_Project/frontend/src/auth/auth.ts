@@ -60,9 +60,10 @@ export async function signOut() {
 }
 
 /**
- * Page opened after signing in, by verified role. There is no Owner Dashboard
- * yet, so owners land on the same page as users; point `owner` at the
- * dashboard route once it exists.
+ * Page opened after signing in, by verified role. There is no Admin Dashboard
+ * page yet (only its /api/owner/... endpoints), so owners (shown as "Admin")
+ * land on the same page as users; point `owner` at the dashboard route once
+ * it exists.
  */
 const HOME_PATH_BY_ROLE: Record<Role, string> = {
   user: routes.researchThreads,

@@ -21,6 +21,8 @@ export interface ApiThread {
   paperCount?: number
   completedStages?: number
   totalStages?: number
+  /** Papers the thread's OpenAlex search found (for threads with no papers of their own); null until searched. */
+  openAlexPaperCount?: number | null
 }
 
 export class ApiError extends Error {
@@ -412,6 +414,71 @@ export async function removeBookmark(threadId: number): Promise<void> {
   const response = await send(`/api/bookmarks/${threadId}`, {
     method: 'DELETE',
   })
+
+  if (!response.ok) throw await missingRouteError(response)
+}
+
+// ----- Paper bookmarks (saved research papers) -----
+
+export interface SavedPaper {
+  /** research_papers id; OpenAlex papers get one when first saved. */
+  paper_id: number
+  openalex_id: string | null
+  title: string
+  authors: string | null
+  year: number | null
+  url: string | null
+  /** The thread the paper was saved from; null if it was saved without one or deleted. */
+  thread: { id: number; slug: string | null; title: string } | null
+  saved_at: string | null
+}
+
+/** A paper to save: a database paper by id, or an OpenAlex paper by its OpenAlex id. */
+export type PaperRef = { paperId: number } | { openalexId: string }
+
+/** GET /api/bookmarks/papers: the signed-in user's saved papers, newest first (401 when signed out). */
+export async function fetchPaperBookmarks(signal?: AbortSignal): Promise<SavedPaper[]> {
+  const response = await send('/api/bookmarks/papers', { signal })
+
+  if (!response.ok) throw await missingRouteError(response)
+
+  const data = await readJson(response)
+
+  if (
+    !Array.isArray(data) ||
+    !data.every((item) => isRecord(item) && typeof item.paper_id === 'number' && typeof item.title === 'string')
+  ) {
+    throw new ApiError('The server returned saved papers in an unexpected format.')
+  }
+
+  return data as SavedPaper[]
+}
+
+/**
+ * POST /api/bookmarks/papers: saves a paper for the signed-in user (saving it
+ * again is not an error) and resolves with its paper id. An OpenAlex paper is
+ * sent by id only; the server looks up its details on OpenAlex.
+ */
+export async function addPaperBookmark(paper: PaperRef, threadId: number | null): Promise<number> {
+  const body = 'paperId' in paper ? { paper_id: paper.paperId } : { openalex_id: paper.openalexId }
+  const response = await send('/api/bookmarks/papers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(threadId === null ? body : { ...body, thread_id: threadId }),
+  })
+
+  if (!response.ok) throw await missingRouteError(response)
+
+  const data = await readJson(response)
+  if (!isRecord(data) || typeof data.paper_id !== 'number') {
+    throw new ApiError('The server answered in an unexpected format.')
+  }
+  return data.paper_id
+}
+
+/** DELETE /api/bookmarks/papers/:paperId. */
+export async function removePaperBookmark(paperId: number): Promise<void> {
+  const response = await send(`/api/bookmarks/papers/${paperId}`, { method: 'DELETE' })
 
   if (!response.ok) throw await missingRouteError(response)
 }

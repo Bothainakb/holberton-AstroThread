@@ -75,7 +75,6 @@ describe('ThreadHero bookmark button', () => {
         categories={['Astrophysics']}
         paperCount={3}
         updatedLabel={null}
-        onStartJourney={() => {}}
         bookmark={{ state, notice, onToggle: () => {} }}
       />,
     )
