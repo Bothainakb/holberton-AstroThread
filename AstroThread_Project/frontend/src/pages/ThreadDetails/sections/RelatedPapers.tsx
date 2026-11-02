@@ -1,8 +1,13 @@
-import PaperCard from '../../../components/PaperCard/PaperCard'
+import PaperCard, { type PaperCardBookmark } from '../../../components/PaperCard/PaperCard'
 import PlaceholderPanel from '../../../components/PlaceholderPanel/PlaceholderPanel'
 import type { RelatedPaper } from '../../../data/threadDetails'
+import Link from '../../../router/Link'
+import { routes, withReturnPath } from '../../../router/router'
+import type { PaperRef } from '../../../services/api'
 import { quotedPhrases } from '../../../services/openAlexPapers'
+import { MAX_PAPERS } from '../../../services/paperCounts'
 import type { OpenAlexPapersState } from '../useOpenAlexPapers'
+import type { PaperBookmarks } from '../usePaperBookmarks'
 
 interface RelatedPapersProps {
   papers?: RelatedPaper[]
@@ -12,19 +17,59 @@ interface RelatedPapersProps {
   emptyText?: string
   /** OpenAlex search results, used only while `papers` is empty. */
   openAlex?: { state: OpenAlexPapersState; onRetry: () => void }
+  /** Saving papers (database threads only); the page to return to after signing in. */
+  bookmarks?: PaperBookmarks
+  returnPath?: string
+}
+
+/** The bookmark button of one card, or undefined when papers cannot be saved here. */
+function cardBookmark(bookmarks: PaperBookmarks | undefined, paper: PaperRef | null): PaperCardBookmark | undefined {
+  if (!bookmarks || bookmarks.status === 'unavailable' || paper === null) return undefined
+  return {
+    saved: bookmarks.isSaved(paper),
+    pending: bookmarks.isPending(paper),
+    loading: bookmarks.status === 'loading',
+    onToggle: () => bookmarks.toggle(paper),
+  }
+}
+
+/** Sign-in prompt, errors and confirmations for saving papers. */
+function BookmarkNoticeLine({ bookmarks, returnPath }: { bookmarks?: PaperBookmarks; returnPath?: string }) {
+  const notice = bookmarks?.notice
+  return (
+    <div className="details-bookmark-notice" role={notice && notice.kind !== 'done' ? 'alert' : 'status'}>
+      {notice && (
+        <p className={`details-bookmark-notice__text details-bookmark-notice__text--${notice.kind}`}>
+          {notice.message}
+          {notice.kind === 'sign-in' && (
+            <>
+              {' '}
+              <Link href={withReturnPath(routes.login, returnPath)}>Sign in</Link> or{' '}
+              <Link href={withReturnPath(routes.signUp, returnPath)}>create an account</Link>.
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  )
 }
 
 const NO_LINKED_PAPERS = 'No papers are linked to this thread in the AstroThread database yet.'
+
+/** Papers shown per thread: the first ones of each list, which come most relevant first. */
+export { MAX_PAPERS }
 
 /** The OpenAlex fallback; always says the papers are search results. */
 function OpenAlexFallback({
   state,
   onRetry,
   emptyText,
+  bookmarks,
 }: {
   state: OpenAlexPapersState
   onRetry: () => void
   emptyText: string
+  bookmarks?: PaperBookmarks
 }) {
   if (state.status === 'loading') {
     return (
@@ -55,7 +100,9 @@ function OpenAlexFallback({
     )
   }
 
-  const { query, phrases, observational, source, items } = state.data
+  const { query, phrases, observational, source } = state.data
+  // OpenAlex results come most-cited first; only the top ones are shown.
+  const items = state.data.items.slice(0, MAX_PAPERS)
   return (
     <>
       <p className="details-section-note">
@@ -68,6 +115,7 @@ function OpenAlexFallback({
         {items.map((item) => (
           <PaperCard
             key={item.openalex_id}
+            bookmark={cardBookmark(bookmarks, { openalexId: item.openalex_id })}
             paper={{
               year: item.year,
               title: item.title,
@@ -88,9 +136,11 @@ function RelatedPapers({
   paperCount,
   emptyText = 'Paper summaries for this thread have not been added yet.',
   openAlex,
+  bookmarks,
+  returnPath,
 }: RelatedPapersProps) {
-  const shown = papers?.length ?? 0
-  const hasIllustrative = papers?.some((paper) => paper.illustrative) ?? false
+  const shownPapers = papers?.slice(0, MAX_PAPERS)
+  const shown = shownPapers?.length ?? 0
 
   return (
     <section className="details-papers container" id="related-papers" aria-labelledby="papers-title">
@@ -109,22 +159,26 @@ function RelatedPapers({
         )}
       </div>
 
-      {hasIllustrative && (
-        <p className="details-section-note">
-          Papers marked Illustrative data are a hand-picked sample stored in the AstroThread
-          database, not a complete or curated list.
-        </p>
-      )}
+      <BookmarkNoticeLine bookmarks={bookmarks} returnPath={returnPath} />
 
-      {papers && papers.length > 0 ? (
+      {shownPapers && shownPapers.length > 0 ? (
         <div className="details-papers__grid">
-          {papers.map((paper) => (
+          {shownPapers.map((paper) => (
             // Titles can repeat; database ids cannot (sample papers have no id).
-            <PaperCard key={paper.id ?? `${paper.title}-${paper.year}`} paper={paper} />
+            <PaperCard
+              key={paper.id ?? `${paper.title}-${paper.year}`}
+              paper={paper}
+              bookmark={cardBookmark(bookmarks, paper.id !== undefined ? { paperId: paper.id } : null)}
+            />
           ))}
         </div>
       ) : openAlex ? (
-        <OpenAlexFallback state={openAlex.state} onRetry={openAlex.onRetry} emptyText={emptyText} />
+        <OpenAlexFallback
+          state={openAlex.state}
+          onRetry={openAlex.onRetry}
+          emptyText={emptyText}
+          bookmarks={bookmarks}
+        />
       ) : (
         <PlaceholderPanel className="details-section-placeholder" title="Related papers">
           {emptyText}

@@ -27,6 +27,53 @@ export function matchesThread(
   return [thread.title, thread.category, thread.description].some((text) => matchesWordStart(text, query))
 }
 
+/**
+ * How well a thread matches a Home search, lower is better: the exact title,
+ * then a title word, then the category, then the description.
+ */
+export function searchRank(
+  thread: { title: string; category: string; description: string },
+  query: string,
+): number {
+  const trimmed = query.trim().toLowerCase()
+  if (thread.title.trim().toLowerCase() === trimmed) return 0
+  if (matchesWordStart(thread.title, query)) return 1
+  if (matchesWordStart(thread.category, query)) return 2
+  if (matchesWordStart(thread.description, query)) return 3
+  return 4
+}
+
+/** Search results, best match first; equal matches keep their order. */
+export function rankSearchResults<T extends { title: string; category: string; description: string }>(
+  threads: T[],
+  query: string,
+): T[] {
+  return threads
+    .map((thread, index) => ({ thread, index, rank: searchRank(thread, query) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ thread }) => thread)
+}
+
+/**
+ * Splits `text` into the parts that match the search (same word-start rule
+ * as matchesWordStart) and the rest, so a result can highlight its matches.
+ */
+export function highlightParts(text: string, query: string): { text: string; match: boolean }[] {
+  const trimmed = query.trim()
+  if (!trimmed) return [{ text, match: false }]
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}_])${escapeRegExp(trimmed)}`, 'giu')
+  const parts: { text: string; match: boolean }[] = []
+  let last = 0
+  for (const found of text.matchAll(pattern)) {
+    const start = found.index ?? 0
+    if (start > last) parts.push({ text: text.slice(last, start), match: false })
+    parts.push({ text: found[0], match: true })
+    last = start + found[0].length
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), match: false })
+  return parts
+}
+
 /** The URL slug of a database thread: its stored slug, else the slug of its title. */
 export function databaseSlug(thread: { id?: number; slug?: string | null; title: string }): string {
   return thread.slug || slugify(thread.title) || String(thread.id ?? '')

@@ -19,7 +19,16 @@ import {
   useSearchParam,
   withReturnPath,
 } from '../../router/router'
-import type { Profile, ProfileChanges, SavedThread } from '../../services/api'
+import {
+  ApiError,
+  fetchPaperBookmarks,
+  removePaperBookmark,
+  type Profile,
+  type ProfileChanges,
+  type SavedPaper,
+  type SavedThread,
+} from '../../services/api'
+import { isHttpsUrl } from '../../services/chartData'
 import {
   describeActivity,
   formatWhen,
@@ -114,6 +123,7 @@ function ProfileContent({ profile, saveChanges, removeSaved, loadAllSaved }: Pro
       {tab === 'bookmarks' ? (
         <div role="tabpanel" id="profile-panel-bookmarks" aria-labelledby="profile-tab-bookmarks">
           <BookmarksPanel profile={profile} removeSaved={removeSaved} loadAllSaved={loadAllSaved} />
+          <SavedPapers />
         </div>
       ) : (
         <div role="tabpanel" id="profile-panel-overview" aria-labelledby="profile-tab-overview">
@@ -382,7 +392,7 @@ function JourneyStats({ profile }: { profile: Profile }) {
   const { stats } = profile
   const items = [
     {
-      label: 'Research Threads Explored',
+      label: 'Threads Explored',
       value: stats.threads_explored,
       note: `of ${stats.threads_available} available`,
     },
@@ -451,7 +461,7 @@ function SavedThreads({
     <section className="profile-section container" aria-labelledby="saved-title">
       <div className="profile-section__header">
         <h2 className="profile-section__title" id="saved-title">
-          Saved Research Threads
+          Saved Threads
           {count > 0 && <span className="profile-section__count"> ({count})</span>}
         </h2>
         {count > 0 && (
@@ -537,12 +547,135 @@ function BookmarksPanel({
   )
 }
 
+// ----- Saved Research Papers -----
+
+type SavedPapersState =
+  | { status: 'loading' }
+  | { status: 'ready'; papers: SavedPaper[] }
+  | { status: 'error'; message: string }
+
+/** Papers saved with the bookmark icon on Thread Details (GET /api/bookmarks/papers). */
+function SavedPapers() {
+  const [state, setState] = useState<SavedPapersState>({ status: 'loading' })
+  const [attempt, setAttempt] = useState(0)
+  const [removing, setRemoving] = useState<number | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchPaperBookmarks(controller.signal)
+      .then((papers) => setState({ status: 'ready', papers }))
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+        setState({
+          status: 'error',
+          message: error instanceof ApiError ? error.message : 'Something went wrong.',
+        })
+      })
+    return () => controller.abort()
+  }, [attempt])
+
+  function retry() {
+    setState({ status: 'loading' })
+    setAttempt((value) => value + 1)
+  }
+
+  async function handleRemove(paper: SavedPaper) {
+    setRemoving(paper.paper_id)
+    setMessage(null)
+    try {
+      await removePaperBookmark(paper.paper_id)
+      setState((current) =>
+        current.status === 'ready'
+          ? { status: 'ready', papers: current.papers.filter((item) => item.paper_id !== paper.paper_id) }
+          : current,
+      )
+      setMessage(`Removed "${paper.title}" from your saved papers.`)
+    } catch (error) {
+      setMessage(
+        `"${paper.title}" could not be removed: ${error instanceof ApiError ? error.message : 'Something went wrong.'}`,
+      )
+    } finally {
+      setRemoving(null)
+    }
+  }
+
+  const count = state.status === 'ready' ? state.papers.length : 0
+
+  return (
+    <section className="profile-section container" aria-labelledby="saved-papers-title">
+      <div className="profile-section__header">
+        <h2 className="profile-section__title" id="saved-papers-title">
+          Saved Papers
+          {count > 0 && <span className="profile-section__count"> ({count})</span>}
+        </h2>
+      </div>
+
+      <p className="profile-live" role="status">
+        {message}
+      </p>
+
+      {state.status === 'loading' ? (
+        <div className="profile-card profile-empty">
+          <p>Loading your saved papers…</p>
+        </div>
+      ) : state.status === 'error' ? (
+        <div className="profile-card profile-empty" role="alert">
+          <p>Your saved papers could not be loaded: {state.message}</p>
+          <button type="button" className="profile-text-link" onClick={retry}>
+            Try again
+          </button>
+        </div>
+      ) : state.papers.length === 0 ? (
+        <div className="profile-card profile-empty">
+          <p>You have not saved any papers yet. Use the bookmark icon on a paper in any thread.</p>
+        </div>
+      ) : (
+        <ul className="profile-saved">
+          {state.papers.map((paper) => (
+            <li key={paper.paper_id} className="profile-card profile-saved__card">
+              <div className="profile-saved__top">
+                {paper.year !== null ? <Tag>{paper.year}</Tag> : <span />}
+                <button
+                  type="button"
+                  className="profile-saved__remove"
+                  aria-label={`Remove "${paper.title}" from saved papers`}
+                  title="Remove from saved"
+                  disabled={removing === paper.paper_id}
+                  onClick={() => void handleRemove(paper)}
+                >
+                  <ProfileIcon name="bookmark" size={20} />
+                </button>
+              </div>
+              <h3 className="profile-saved__title">
+                {isHttpsUrl(paper.url) ? <a href={paper.url} rel="noreferrer">{paper.title}</a> : paper.title}
+              </h3>
+              {paper.authors && <p className="profile-saved__description">{paper.authors}</p>}
+              {paper.thread && (
+                <div className="profile-saved__footer">
+                  <Link
+                    className="profile-text-link"
+                    href={threadDetailsPath(paper.thread.slug || String(paper.thread.id))}
+                  >
+                    From {paper.thread.title}
+                    <ProfileIcon name="arrow-right" size={18} />
+                  </Link>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 function NoBookmarks() {
   return (
     <div className="profile-card profile-empty">
       <p>You have not saved any research threads yet.</p>
       <Link className="profile-text-link" href={routes.researchThreads}>
-        Browse Research Threads
+        Browse Threads
         <ProfileIcon name="arrow-right" size={18} />
       </Link>
     </div>

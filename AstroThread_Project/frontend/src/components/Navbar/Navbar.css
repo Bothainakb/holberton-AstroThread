@@ -44,18 +44,6 @@
   margin-left: auto;
 }
 
-.navbar__icon-button {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-}
-
-.navbar__icon-button--active {
-  box-shadow: 0 0 0 1px var(--color-accent);
-}
-
 /* Signed-in user menu (Figma "08-Profile" header). */
 .navbar__user {
   position: relative;

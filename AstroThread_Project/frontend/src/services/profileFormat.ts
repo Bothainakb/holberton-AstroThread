@@ -25,13 +25,13 @@ export function initialsFor(name: string | null | undefined, email: string) {
   return letters.toUpperCase()
 }
 
-/** The badge next to the name: "Research Explorer" for users, as in Figma "08-Profile". */
+/** The badge next to the name: "Research Explorer" for users, as in Figma "08-Profile"; owners show as "Admin". */
 export function roleBadge(role: Role) {
-  return role === 'owner' ? 'Owner' : 'Research Explorer'
+  return role === 'owner' ? 'Admin' : 'Research Explorer'
 }
 
 export function roleLabel(role: Role) {
-  return role === 'owner' ? 'Owner' : 'User'
+  return role === 'owner' ? 'Admin' : 'User'
 }
 
 /** "Stage 3 of 5" and the bar width (60). Null progress = not started. */

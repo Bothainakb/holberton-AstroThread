@@ -130,7 +130,6 @@ describe('Stages', () => {
         categories={['Cosmology']}
         paperCount={null}
         updatedLabel={null}
-        onStartJourney={() => {}}
         stagesNote={stagesNote}
         bookmark={{ state: { status: 'unavailable' }, notice: null, onToggle: () => {} }}
       />,
