@@ -1,14 +1,7 @@
-import Link from '../../router/Link'
-import { routes } from '../../router/router'
 import Logo from '../Logo/Logo'
 import './Footer.css'
 
-const footerLinks = [
-  { label: 'Home', href: routes.home },
-  { label: 'Research Threads', href: routes.researchThreads },
-  { label: 'Profile', href: '#' },
-]
-
+/** Shared footer: the AstroThread logo (a link to Home) and the platform text, on every page. */
 function Footer() {
   return (
     <footer className="footer">
@@ -21,14 +14,6 @@ function Footer() {
           </p>
           <p className="footer__copyright">© 2026 AstroThread. Source: Scientific Papers.</p>
         </div>
-
-        <nav className="footer__links" aria-label="Footer">
-          {footerLinks.map((link) => (
-            <Link key={link.label} className="footer__link" href={link.href}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
       </div>
     </footer>
   )

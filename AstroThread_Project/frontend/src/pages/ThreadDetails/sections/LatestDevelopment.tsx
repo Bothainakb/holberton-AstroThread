@@ -50,9 +50,8 @@ function LatestCard({ day, year, title, text, isNewest, source }: CardProps) {
           <a
             className="latest-card__link"
             href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Read "${title}" on ${sourceName} (opens in a new tab)`}
+            rel="noreferrer"
+            aria-label={`Read "${title}" on ${sourceName}`}
           >
             Read on {sourceName}
             <Icon name="arrow-right" />

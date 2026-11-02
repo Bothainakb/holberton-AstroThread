@@ -5,8 +5,10 @@ import {
   databaseSlug,
   designOnlyMatches,
   designOnlyThreads,
+  highlightParts,
   matchesThread,
   matchesWordStart,
+  rankSearchResults,
 } from '../src/data/threadSearch'
 
 // GET /api/threads on a database without migration 007 (no Dark Matter row
@@ -112,5 +114,38 @@ describe('regression: the library has exactly three topics', () => {
   it('has no previews once the database has all three topics', () => {
     const allInDatabase = [...DATABASE, { id: 207, slug: 'dark-matter', title: 'Dark Matter' }]
     assert.deepEqual(designOnlyThreads(allInDatabase), [])
+  })
+})
+
+describe('Home search results (rankSearchResults, highlightParts)', () => {
+  const THREADS = [
+    { title: 'Exoplanets', category: 'Astronomy', description: 'Planets around other stars, some with dark skies.' },
+    { title: 'Black Holes', category: 'Astrophysics', description: 'Regions where gravity traps light.' },
+    { title: 'Dark Matter', category: 'Cosmology', description: 'Invisible matter shaping galaxies.' },
+  ]
+  const titles = (query: string) => rankSearchResults(THREADS, query).map((thread) => thread.title)
+
+  it('puts the exact title first, then title words, then category, then description', () => {
+    assert.deepEqual(titles('dark matter'), ['Dark Matter', 'Exoplanets', 'Black Holes'])
+    assert.deepEqual(titles('dark')[0], 'Dark Matter')
+    assert.deepEqual(titles('cosmology')[0], 'Dark Matter')
+  })
+
+  it('keeps the original order for equal matches', () => {
+    assert.deepEqual(titles(''), ['Exoplanets', 'Black Holes', 'Dark Matter'])
+  })
+
+  it('marks matches at the start of a word, ignoring case', () => {
+    assert.deepEqual(highlightParts('Dark Matter', 'matter'), [
+      { text: 'Dark ', match: false },
+      { text: 'Matter', match: true },
+    ])
+    assert.deepEqual(highlightParts('Invisible matter, dark matter', 'MATTER').filter((p) => p.match).length, 2)
+  })
+
+  it('does not mark text inside a word, and treats symbols literally', () => {
+    assert.deepEqual(highlightParts('Dark Matter', 'atter'), [{ text: 'Dark Matter', match: false }])
+    assert.deepEqual(highlightParts('Dark Matter', '.*'), [{ text: 'Dark Matter', match: false }])
+    assert.deepEqual(highlightParts('Dark Matter', ''), [{ text: 'Dark Matter', match: false }])
   })
 })

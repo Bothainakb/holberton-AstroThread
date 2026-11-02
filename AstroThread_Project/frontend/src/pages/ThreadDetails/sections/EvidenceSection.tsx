@@ -39,25 +39,34 @@ interface EvidenceSectionProps {
   emptyText?: string
 }
 
+/** The thread's chart from the database, or a note that it has none. */
+export function EvidenceChart({ chart }: { chart: LiveEvidence['chart'] }) {
+  if (chart?.kind === 'measured') {
+    return <MeasuredChart className="data-chart--evidence" chart={chart.data} />
+  }
+  if (chart) {
+    return (
+      <DataChart
+        className="data-chart--evidence"
+        title={chart.title}
+        note={chart.note ?? undefined}
+        data={chart.points}
+        geometry={EVIDENCE_CHART}
+      />
+    )
+  }
+  return (
+    <PlaceholderPanel title="No verified measurements yet">
+      There is no verified dataset for this thread in the AstroThread database yet, so no chart
+      is shown.
+    </PlaceholderPanel>
+  )
+}
+
 function LiveEvidenceGrid({ live }: { live: LiveEvidence }) {
   return (
     <div className="details-evidence__grid">
-      {live.chart?.kind === 'measured' ? (
-        <MeasuredChart className="data-chart--evidence" chart={live.chart.data} />
-      ) : live.chart ? (
-        <DataChart
-          className="data-chart--evidence"
-          title={live.chart.title}
-          note={live.chart.note ?? undefined}
-          data={live.chart.points}
-          geometry={EVIDENCE_CHART}
-        />
-      ) : (
-        <PlaceholderPanel title="No verified measurements yet">
-          There is no verified dataset for this thread in the AstroThread database yet, so no
-          chart is shown.
-        </PlaceholderPanel>
-      )}
+      <EvidenceChart chart={live.chart} />
 
       <div className="details-evidence__side">
         <div className="details-discovery">
@@ -76,9 +85,8 @@ function LiveEvidenceGrid({ live }: { live: LiveEvidence }) {
                       <a
                         className="details-timeline__source"
                         href={event.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Source for "${event.title}": ${event.source_name || 'original source'} (opens in a new tab)`}
+                        rel="noreferrer"
+                        aria-label={`Source for "${event.title}": ${event.source_name || 'original source'}`}
                       >
                         Source: {event.source_name || 'original source'}
                         <Icon name="arrow-right" />

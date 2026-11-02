@@ -10,6 +10,7 @@ export const routes = {
   login: '/login',
   signUp: '/signup',
   aiAssistant: '/ai-assistant',
+  profile: '/profile',
 } as const
 
 /** Path of a thread's details page, e.g. "/research-threads/black-holes". */
@@ -25,12 +26,13 @@ export function matchThreadDetails(pathname: string) {
 
 /**
  * Where to go after signing in, from a "?next=" value. Only a Thread Details
- * path on this site is accepted ("/research-threads/black-holes"), so the
- * parameter can never send someone to another site or an unexpected page.
+ * path on this site ("/research-threads/black-holes") or the Profile page is
+ * accepted, so the parameter can never send someone to another site or an
+ * unexpected page.
  */
 export function safeReturnPath(value: string | null | undefined): string | null {
   if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
-  return matchThreadDetails(value) ? value : null
+  return matchThreadDetails(value) || value === routes.profile ? value : null
 }
 
 /** "/login?next=..." (or the sign-up page) that returns to `path` afterwards. */
@@ -52,8 +54,7 @@ function subscribe(onChange: () => void) {
 
 function getPathname() {
   // Treat "/research-threads/" the same as "/research-threads".
-  const path = window.location.pathname.replace(/\/+$/, '')
-  return path === '' ? '/' : path
+  return normalizePath(window.location.pathname)
 }
 
 export function usePathname() {
@@ -88,9 +89,64 @@ export function replacePath(to: string) {
   window.dispatchEvent(new Event(NAVIGATE_EVENT))
 }
 
+/**
+ * History state of a Thread Details entry whose previous entry is plain Home
+ * ("/"), so the browser's Back button (and the page's back arrow) from a
+ * thread always returns to Home, not to Research Threads or old search results.
+ */
+const THREAD_ENTRY = { astrothreadHomeBehind: true } as const
+
+function isThreadEntry(state: unknown) {
+  return (state as typeof THREAD_ENTRY | null)?.astrothreadHomeBehind === true
+}
+
+function normalizePath(pathname: string) {
+  const path = pathname.replace(/\/+$/, '')
+  return path === '' ? '/' : path
+}
+
+/**
+ * Fixes up the address the app was opened at. Run once before the first render.
+ *
+ * - The Research Search page was removed (Home is the only search), so its old
+ *   address ("/research-search?q=...") opens the Home search instead.
+ * - A Thread Details page opened straight from its URL (a bookmark, a new tab
+ *   or a link from another site) gets a Home entry before it, so Back goes to
+ *   Home there too. After a reload the entry is already marked; nothing changes.
+ */
+export function prepareStartUrl() {
+  if (getPathname() === routes.researchSearch) {
+    window.history.replaceState(null, '', routes.home + window.location.search)
+  }
+
+  if (!matchThreadDetails(getPathname()) || isThreadEntry(window.history.state)) return
+  const here = window.location.href
+  window.history.replaceState(null, '', routes.home)
+  window.history.pushState(THREAD_ENTRY, '', here)
+}
+
 export function navigate(to: string) {
   const url = new URL(to, window.location.href)
-  window.history.pushState(null, '', url)
+  const path = normalizePath(url.pathname)
+  const onThread = isThreadEntry(window.history.state)
+
+  if (path === routes.home && !url.search && !url.hash && onThread) {
+    // The entry before a thread is Home, so going back avoids stacking a
+    // second Home entry (and Back from Home then leaves Thread Details behind).
+    window.history.back()
+    return
+  }
+
+  if (matchThreadDetails(path)) {
+    // Turn the page being left into plain Home, then open the thread after it.
+    if (!onThread && window.location.pathname + window.location.search !== routes.home) {
+      window.history.replaceState(null, '', routes.home)
+    }
+    if (onThread) window.history.replaceState(THREAD_ENTRY, '', url)
+    else window.history.pushState(THREAD_ENTRY, '', url)
+  } else {
+    window.history.pushState(null, '', url)
+  }
   window.dispatchEvent(new Event(NAVIGATE_EVENT))
 
   if (url.hash) {

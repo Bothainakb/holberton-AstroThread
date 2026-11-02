@@ -180,7 +180,7 @@ function MeasuredChart({ chart, className }: { chart: MeasuredChartData; classNa
       {chart.note && <p className="measured-chart__note">{chart.note}</p>}
       <p className="measured-chart__source">
         Source:{' '}
-        <a href={chart.source.url} target="_blank" rel="noopener noreferrer">
+        <a href={chart.source.url} rel="noreferrer">
           {chart.source.name}
         </a>
         , retrieved {chart.source.retrieved}.{chart.source.detail ? ` ${chart.source.detail}` : ''}

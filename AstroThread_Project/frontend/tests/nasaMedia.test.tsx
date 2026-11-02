@@ -130,7 +130,9 @@ describe('NasaMediaSection', () => {
     assert.match(html, /A black hole and its jet\./)
     assert.match(html, /NASA\/JPL-Caltech · Nov 2, 2017/)
     assert.match(html, /href="https:\/\/images\.nasa\.gov\/details\/PIA22085"/)
-    assert.match(html, /rel="noopener noreferrer"/)
+    // The source link opens in the same tab.
+    assert.match(html, /rel="noreferrer"/)
+    assert.doesNotMatch(html, /target=/)
     assert.match(html, /NASA Image and Video Library/)
     assert.doesNotMatch(html, /planned integration|not connected/i)
   })
