@@ -1,6 +1,21 @@
 
 -- Seed the Black Holes thread details safely on repeated runs.
 
+-- Create the Black Holes thread on a new database. Without this row a fresh
+-- `python manage.py migrate` had no Black Holes thread at all: its page fell
+-- back to the design preview and the bookmark button stayed disabled. The
+-- slug is set by the UPDATE below. Skipped when the thread already exists.
+INSERT INTO research_threads (title, category, description)
+SELECT
+    'Black Holes',
+    'Astrophysics',
+    'Regions where gravity is so strong that nothing, not even light, can escape. Trace them from theory to the first image.'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM research_threads
+    WHERE lower(trim(title)) = 'black holes' OR slug = 'black-holes'
+);
+
 -- Assign the slug and details to one matching thread only.
 UPDATE research_threads
 SET slug = 'black-holes',
