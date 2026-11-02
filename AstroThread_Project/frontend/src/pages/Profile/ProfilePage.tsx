@@ -1,8 +1,24 @@
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { signOut } from '../../auth/auth'
 import Tag from '../../components/Tag/Tag'
 import Link from '../../router/Link'
-import { navigate, replacePath, routes, threadDetailsPath, withReturnPath } from '../../router/router'
+import {
+  navigate,
+  replacePath,
+  replaceSearchParam,
+  routes,
+  threadDetailsPath,
+  useSearchParam,
+  withReturnPath,
+} from '../../router/router'
 import type { Profile, ProfileChanges, SavedThread } from '../../services/api'
 import {
   describeActivity,
@@ -73,8 +89,15 @@ interface ProfileContentProps {
 
 function ProfileContent({ profile, saveChanges, removeSaved, loadAllSaved }: ProfileContentProps) {
   const [editing, setEditing] = useState(false)
+  // In the URL ("/profile?tab=bookmarks") so a reload or shared link keeps the tab.
+  const tab: ProfileTab = useSearchParam(TAB_PARAM) === 'bookmarks' ? 'bookmarks' : 'overview'
+
+  function selectTab(next: ProfileTab) {
+    replaceSearchParam(TAB_PARAM, next === 'overview' ? '' : next)
+  }
 
   function openEditor() {
+    selectTab('overview')
     setEditing(true)
     requestAnimationFrame(() => document.getElementById('edit-profile')?.scrollIntoView({ block: 'center' }))
   }
@@ -86,18 +109,85 @@ function ProfileContent({ profile, saveChanges, removeSaved, loadAllSaved }: Pro
         <EditProfileForm profile={profile} onSave={saveChanges} onClose={() => setEditing(false)} />
       )}
       <PlanBar profile={profile} />
-      <JourneyStats profile={profile} />
-      <SavedThreads profile={profile} removeSaved={removeSaved} loadAllSaved={loadAllSaved} />
+      <ProfileTabs active={tab} bookmarkCount={profile.saved_threads.count} onSelect={selectTab} />
 
-      <div className="profile-band">
-        <div className="profile-band__inner container">
-          <RecentlyExplored profile={profile} />
-          <ResearchActivity profile={profile} />
+      {tab === 'bookmarks' ? (
+        <div role="tabpanel" id="profile-panel-bookmarks" aria-labelledby="profile-tab-bookmarks">
+          <BookmarksPanel profile={profile} removeSaved={removeSaved} loadAllSaved={loadAllSaved} />
         </div>
-      </div>
+      ) : (
+        <div role="tabpanel" id="profile-panel-overview" aria-labelledby="profile-tab-overview">
+          <JourneyStats profile={profile} />
+          <SavedThreads
+            profile={profile}
+            removeSaved={removeSaved}
+            onViewAll={() => selectTab('bookmarks')}
+          />
 
-      <AccountSettings profile={profile} onEdit={openEditor} saveChanges={saveChanges} />
+          <div className="profile-band">
+            <div className="profile-band__inner container">
+              <RecentlyExplored profile={profile} />
+              <ResearchActivity profile={profile} />
+            </div>
+          </div>
+
+          <AccountSettings profile={profile} onEdit={openEditor} saveChanges={saveChanges} />
+        </div>
+      )}
     </main>
+  )
+}
+
+// ----- Tabs -----
+
+const TAB_PARAM = 'tab'
+const PROFILE_TABS = ['overview', 'bookmarks'] as const
+type ProfileTab = (typeof PROFILE_TABS)[number]
+
+/** Same tab style as the Tablist in Figma "11-Owner-Dashboard". */
+function ProfileTabs({
+  active,
+  bookmarkCount,
+  onSelect,
+}: {
+  active: ProfileTab
+  bookmarkCount: number
+  onSelect: (tab: ProfileTab) => void
+}) {
+  const buttons = useRef<Partial<Record<ProfileTab, HTMLButtonElement | null>>>({})
+
+  function handleKeyDown(event: KeyboardEvent) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+    event.preventDefault()
+    const next = PROFILE_TABS[active === 'overview' ? 1 : 0]
+    onSelect(next)
+    buttons.current[next]?.focus()
+  }
+
+  return (
+    <div className="profile-tabs container" role="tablist" aria-label="Profile sections" onKeyDown={handleKeyDown}>
+      {PROFILE_TABS.map((tab) => (
+        <button
+          key={tab}
+          ref={(element) => {
+            buttons.current[tab] = element
+          }}
+          type="button"
+          role="tab"
+          id={`profile-tab-${tab}`}
+          className="profile-tabs__tab"
+          aria-selected={active === tab}
+          aria-controls={`profile-panel-${tab}`}
+          tabIndex={active === tab ? 0 : -1}
+          onClick={() => onSelect(tab)}
+        >
+          {tab === 'overview' ? 'Overview' : 'Bookmarks'}
+          {tab === 'bookmarks' && bookmarkCount > 0 && (
+            <span className="profile-tabs__count"> ({bookmarkCount})</span>
+          )}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -329,34 +419,10 @@ function JourneyStats({ profile }: { profile: Profile }) {
 
 // ----- Saved Research Threads -----
 
-function SavedThreads({
-  profile,
-  removeSaved,
-  loadAllSaved,
-}: {
-  profile: Profile
-  removeSaved: (threadId: number) => Promise<string | null>
-  loadAllSaved: () => Promise<SavedThread[] | string>
-}) {
-  const { count, items } = profile.saved_threads
-  const [all, setAll] = useState<SavedThread[] | null>(null)
-  const [loadingAll, setLoadingAll] = useState(false)
+/** Runs the removal for one card and reports the outcome in the section's live region. */
+function useRemoveSaved(removeSaved: (threadId: number) => Promise<string | null>) {
   const [removing, setRemoving] = useState<number | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-
-  // The full list is dropped whenever the profile reloads (e.g. after a removal).
-  useEffect(() => setAll(null), [profile])
-
-  const threads = all ?? items
-
-  async function showAll() {
-    setLoadingAll(true)
-    setMessage(null)
-    const result = await loadAllSaved()
-    setLoadingAll(false)
-    if (typeof result === 'string') setMessage(result)
-    else setAll(result)
-  }
 
   async function handleRemove(thread: SavedThread) {
     setRemoving(thread.id)
@@ -366,6 +432,21 @@ function SavedThreads({
     setMessage(error ?? `Removed "${thread.title}" from your saved threads.`)
   }
 
+  return { removing, message, handleRemove }
+}
+
+function SavedThreads({
+  profile,
+  removeSaved,
+  onViewAll,
+}: {
+  profile: Profile
+  removeSaved: (threadId: number) => Promise<string | null>
+  onViewAll: () => void
+}) {
+  const { count, items } = profile.saved_threads
+  const { removing, message, handleRemove } = useRemoveSaved(removeSaved)
+
   return (
     <section className="profile-section container" aria-labelledby="saved-title">
       <div className="profile-section__header">
@@ -373,15 +454,10 @@ function SavedThreads({
           Saved Research Threads
           {count > 0 && <span className="profile-section__count"> ({count})</span>}
         </h2>
-        {count > items.length && !all && (
-          <button type="button" className="profile-text-link" onClick={showAll} disabled={loadingAll}>
-            {loadingAll ? 'Loading…' : 'View all saved'}
+        {count > 0 && (
+          <button type="button" className="profile-text-link" onClick={onViewAll}>
+            View all saved
             <ProfileIcon name="arrow-right" size={18} />
-          </button>
-        )}
-        {all && count > items.length && (
-          <button type="button" className="profile-text-link" onClick={() => setAll(null)}>
-            Show fewer
           </button>
         )}
       </div>
@@ -390,67 +466,149 @@ function SavedThreads({
         {message}
       </p>
 
-      {threads.length === 0 ? (
-        <div className="profile-card profile-empty">
-          <p>You have not saved any research threads yet.</p>
-          <Link className="profile-text-link" href={routes.researchThreads}>
-            Browse Research Threads
-            <ProfileIcon name="arrow-right" size={18} />
-          </Link>
-        </div>
+      {items.length === 0 ? (
+        <NoBookmarks />
       ) : (
-        <ul className="profile-saved">
-          {threads.map((thread) => {
-            const progress = progressSummary(thread.progress)
-            const href = threadDetailsPath(String(thread.id))
-            return (
-              <li key={thread.id} className="profile-card profile-saved__card">
-                <div className="profile-saved__top">
-                  <Tag>{thread.category}</Tag>
-                  <button
-                    type="button"
-                    className="profile-saved__remove"
-                    aria-label={`Remove "${thread.title}" from saved threads`}
-                    title="Remove from saved"
-                    disabled={removing === thread.id}
-                    onClick={() => handleRemove(thread)}
-                  >
-                    <ProfileIcon name="bookmark" size={20} />
-                  </button>
-                </div>
-                <h3 className="profile-saved__title">
-                  <Link href={href}>{thread.title}</Link>
-                </h3>
-                <p className="profile-saved__description">{thread.description}</p>
-                <div className="profile-progress">
-                  <div className="profile-progress__labels">
-                    <span>Your progress</span>
-                    <span className="profile-progress__stage">{progress.label}</span>
-                  </div>
-                  <div
-                    className="profile-progress__track"
-                    role="progressbar"
-                    aria-label={`${thread.title} progress`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={progress.percent}
-                    aria-valuetext={progress.label}
-                  >
-                    <span className="profile-progress__bar" style={{ width: `${progress.percent}%` }} />
-                  </div>
-                </div>
-                <div className="profile-saved__footer">
-                  <Link className="profile-text-link" href={href}>
-                    {progress.started ? 'Continue Research' : 'Start Research'}
-                    <ProfileIcon name="arrow-right" size={18} />
-                  </Link>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+        <SavedThreadList threads={items} removing={removing} onRemove={handleRemove} />
       )}
     </section>
+  )
+}
+
+/** The Bookmarks tab: every saved thread, from GET /api/bookmarks. */
+function BookmarksPanel({
+  profile,
+  removeSaved,
+  loadAllSaved,
+}: {
+  profile: Profile
+  removeSaved: (threadId: number) => Promise<string | null>
+  loadAllSaved: () => Promise<SavedThread[] | string>
+}) {
+  // Null until the first load finishes. The list stays on screen during later
+  // reloads (the profile reloads after every removal), so it does not flicker.
+  const [threads, setThreads] = useState<SavedThread[] | null>(null)
+  const [failed, setFailed] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const { removing, message, handleRemove } = useRemoveSaved(removeSaved)
+
+  useEffect(() => {
+    let current = true
+    loadAllSaved().then((result) => {
+      if (!current) return
+      setFailed(typeof result === 'string' ? result : null)
+      if (typeof result !== 'string') setThreads(result)
+    })
+    return () => {
+      current = false
+    }
+    // loadAllSaved is recreated on every render; `profile` marks real changes.
+  }, [profile, attempt])
+
+  return (
+    <section className="profile-section container" aria-labelledby="bookmarks-title">
+      <div className="profile-section__header">
+        <h2 className="profile-section__title" id="bookmarks-title">
+          Bookmarks
+        </h2>
+      </div>
+
+      <p className="profile-live" role="status">
+        {message}
+      </p>
+
+      {failed ? (
+        <div className="profile-status--error profile-bookmarks__state" role="alert">
+          <p>{failed}</p>
+          <button type="button" className="profile-button" onClick={() => setAttempt((value) => value + 1)}>
+            Try again
+          </button>
+        </div>
+      ) : threads === null ? (
+        <p className="profile-bookmarks__state" role="status">
+          Loading your bookmarks…
+        </p>
+      ) : threads.length === 0 ? (
+        <NoBookmarks />
+      ) : (
+        <SavedThreadList threads={threads} removing={removing} onRemove={handleRemove} />
+      )}
+    </section>
+  )
+}
+
+function NoBookmarks() {
+  return (
+    <div className="profile-card profile-empty">
+      <p>You have not saved any research threads yet.</p>
+      <Link className="profile-text-link" href={routes.researchThreads}>
+        Browse Research Threads
+        <ProfileIcon name="arrow-right" size={18} />
+      </Link>
+    </div>
+  )
+}
+
+function SavedThreadList({
+  threads,
+  removing,
+  onRemove,
+}: {
+  threads: SavedThread[]
+  removing: number | null
+  onRemove: (thread: SavedThread) => void
+}) {
+  return (
+    <ul className="profile-saved">
+      {threads.map((thread) => {
+        const progress = progressSummary(thread.progress)
+        const href = threadDetailsPath(String(thread.id))
+        return (
+          <li key={thread.id} className="profile-card profile-saved__card">
+            <div className="profile-saved__top">
+              <Tag>{thread.category}</Tag>
+              <button
+                type="button"
+                className="profile-saved__remove"
+                aria-label={`Remove "${thread.title}" from saved threads`}
+                title="Remove from saved"
+                disabled={removing === thread.id}
+                onClick={() => onRemove(thread)}
+              >
+                <ProfileIcon name="bookmark" size={20} />
+              </button>
+            </div>
+            <h3 className="profile-saved__title">
+              <Link href={href}>{thread.title}</Link>
+            </h3>
+            <p className="profile-saved__description">{thread.description}</p>
+            <div className="profile-progress">
+              <div className="profile-progress__labels">
+                <span>Your progress</span>
+                <span className="profile-progress__stage">{progress.label}</span>
+              </div>
+              <div
+                className="profile-progress__track"
+                role="progressbar"
+                aria-label={`${thread.title} progress`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress.percent}
+                aria-valuetext={progress.label}
+              >
+                <span className="profile-progress__bar" style={{ width: `${progress.percent}%` }} />
+              </div>
+            </div>
+            <div className="profile-saved__footer">
+              <Link className="profile-text-link" href={href}>
+                {progress.started ? 'Continue Research' : 'Start Research'}
+                <ProfileIcon name="arrow-right" size={18} />
+              </Link>
+            </div>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
