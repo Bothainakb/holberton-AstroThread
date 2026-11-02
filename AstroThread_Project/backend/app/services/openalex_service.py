@@ -5,8 +5,9 @@ OpenAlex (https://openalex.org) is a free scholarly index that needs no key.
 A plain full-text search sorted by citations returns unrelated papers (SciPy,
 NumPy, ...), so only research articles in Physics and Astronomy with the
 thread's topic in their title are requested, and each result is checked again
-here. ("expanding universe" alone also finds a protein-database paper.) Nothing is written to
-the database: these are search results, not curated papers.
+here. ("expanding universe" alone also finds a protein-database paper.) Searching writes
+nothing to the database: these are search results, not curated papers. A paper is only
+stored when a user saves it (fetch_paper, used by POST /api/bookmarks/papers).
 """
 import json
 import re
@@ -77,8 +78,17 @@ class OpenAlexUnavailable(Exception):
     """OpenAlex could not be reached or sent something unusable."""
 
 
+class OpenAlexNotFound(OpenAlexUnavailable):
+    """HTTP 404: no work with the requested id (a search treats it as unavailable)."""
+
+
 class OpenAlexTimeout(OpenAlexUnavailable):
     """OpenAlex did not answer within TIMEOUT_SECONDS."""
+
+
+WORK_FIELDS = "id,display_name,publication_year,doi,authorships,abstract_inverted_index,cited_by_count"
+# An OpenAlex work id as the API returns it, e.g. "https://openalex.org/W2101234009".
+OPENALEX_WORK_ID = re.compile(r"https://openalex\.org/(W\d{1,15})")
 
 
 def fetch_works(phrase):
@@ -88,16 +98,34 @@ def fetch_works(phrase):
         "filter": f'title.search:"{phrase}",type:article,primary_topic.field.id:{PHYSICS_AND_ASTRONOMY_FIELD}',
         "sort": "cited_by_count:desc",
         "per-page": PAGE_SIZE,
-        "select": "id,display_name,publication_year,doi,authorships,abstract_inverted_index,cited_by_count",
+        "select": WORK_FIELDS,
     })
-    request = Request(
-        f"{WORKS_URL}?{params}",
-        headers={"Accept": "application/json", "User-Agent": "AstroThread/1.0"},
-    )
+    return get_json(f"{WORKS_URL}?{params}")
+
+
+def fetch_paper(openalex_id):
+    """One paper by its OpenAlex id, in the shape of to_paper(); None if OpenAlex has none."""
+    match = OPENALEX_WORK_ID.fullmatch(openalex_id) if isinstance(openalex_id, str) else None
+    if match is None:
+        return None
+    try:
+        work = get_json(f"{WORKS_URL}/{match.group(1)}?{urlencode({'select': WORK_FIELDS})}")
+    except OpenAlexNotFound:
+        return None
+    paper = to_paper(work)
+    # The stored paper must be the one asked for (OpenAlex can redirect merged works).
+    return paper if paper and paper["openalex_id"] == openalex_id else None
+
+
+def get_json(url):
+    """GET an OpenAlex API URL with the timeout and size limits above."""
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "AstroThread/1.0"})
     try:
         with urlopen(request, timeout=TIMEOUT_SECONDS) as response:
             body = response.read(MAX_RESPONSE_BYTES + 1)
     except HTTPError as exc:
+        if exc.code == 404:
+            raise OpenAlexNotFound("OpenAlex has no such work") from exc
         raise OpenAlexUnavailable(f"OpenAlex answered with HTTP {exc.code}") from exc
     except (TimeoutError, socket.timeout) as exc:
         raise OpenAlexTimeout("OpenAlex did not answer in time") from exc

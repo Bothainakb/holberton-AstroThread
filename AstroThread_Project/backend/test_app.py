@@ -75,7 +75,7 @@ class ThreadsQueryTests(unittest.TestCase):
         self.cursor.fetchall.return_value = [
             (
                 1, "black-holes", "Black Holes", "Astrophysics",
-                "Explore black holes.", datetime(2026, 10, 12, 19, 16), 3, 5, 2,
+                "Explore black holes.", datetime(2026, 10, 12, 19, 16), 3, 5, 2, None,
             ),
         ]
         patcher = mock.patch.object(
@@ -101,6 +101,7 @@ class ThreadsQueryTests(unittest.TestCase):
                     "paperCount": 3,
                     "completedStages": 2,
                     "totalStages": 5,
+                    "openAlexPaperCount": None,
                 }
             ],
         )
@@ -188,6 +189,7 @@ class ThreadsIntegrationTests(unittest.TestCase):
                 {
                     "id", "slug", "title", "category", "description",
                     "updatedAt", "paperCount", "completedStages", "totalStages",
+                    "openAlexPaperCount",
                 },
             )
             self.assertIsInstance(thread["id"], int)
@@ -776,7 +778,11 @@ class UsersTableIntegrationTests(unittest.TestCase):
     def test_users_table_has_expected_columns(self):
         self.assertEqual(
             self.columns,
-            {"id", "name", "email", "password_hash", "role", "created_at", "updated_at"},
+            {
+                "id", "name", "email", "password_hash", "role", "created_at", "updated_at",
+                # Profile columns added by migrations/003_create_profile_tables.sql
+                "bio", "avatar_url", "email_notifications", "language",
+            },
         )
 
     def test_roles_are_limited_to_user_and_owner(self):

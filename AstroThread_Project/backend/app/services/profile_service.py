@@ -184,6 +184,81 @@ def remove_bookmark(cur, user_id, thread_id):
     return cur.rowcount == 1
 
 
+# ----- Saved research papers (paper bookmarks) -----
+
+def get_saved_papers(cur, user_id):
+    """The user's saved papers, newest first, with the thread each was saved from."""
+    cur.execute(
+        """
+        SELECT p.id, p.openalex_id, p.title, p.authors, p.publication_year, p.url,
+               t.id, t.slug, t.title, b.created_at
+        FROM paper_bookmarks b
+        JOIN research_papers p ON p.id = b.paper_id
+        LEFT JOIN research_threads t ON t.id = b.thread_id
+        WHERE b.user_id = %s
+        ORDER BY b.created_at DESC, b.id DESC;
+        """,
+        (user_id,),
+    )
+    return [
+        {
+            "paper_id": row[0],
+            "openalex_id": row[1],
+            "title": row[2],
+            "authors": row[3],
+            "year": row[4],
+            "url": row[5],
+            "thread": {"id": row[6], "slug": row[7], "title": row[8]} if row[6] is not None else None,
+            "saved_at": iso(row[9]),
+        }
+        for row in cur.fetchall()
+    ]
+
+
+def find_openalex_paper(cur, openalex_id):
+    """The research_papers id of an OpenAlex paper already stored, else None."""
+    cur.execute("SELECT id FROM research_papers WHERE openalex_id = %s;", (openalex_id,))
+    row = cur.fetchone()
+    return row[0] if row else None
+
+
+def store_openalex_paper(cur, paper):
+    """Stores an OpenAlex paper (looked up by the server) once; returns its id."""
+    cur.execute(
+        """
+        INSERT INTO research_papers (openalex_id, title, authors, publication_year, abstract, url)
+        VALUES (%(openalex_id)s, %(title)s, %(authors)s, %(year)s, %(summary)s, %(url)s)
+        ON CONFLICT (openalex_id) DO NOTHING
+        RETURNING id;
+        """,
+        paper,
+    )
+    row = cur.fetchone()
+    return row[0] if row else find_openalex_paper(cur, paper["openalex_id"])
+
+
+def add_paper_bookmark(cur, user_id, paper_id, thread_id=None):
+    """True if a new paper bookmark was created, False if it already existed."""
+    cur.execute(
+        """
+        INSERT INTO paper_bookmarks (user_id, paper_id, thread_id)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (user_id, paper_id) DO NOTHING
+        RETURNING id;
+        """,
+        (user_id, paper_id, thread_id),
+    )
+    return cur.fetchone() is not None
+
+
+def remove_paper_bookmark(cur, user_id, paper_id):
+    cur.execute(
+        "DELETE FROM paper_bookmarks WHERE user_id = %s AND paper_id = %s;",
+        (user_id, paper_id),
+    )
+    return cur.rowcount == 1
+
+
 # ----- Recently Explored -----
 
 def get_recent_threads(cur, user_id, limit):

@@ -18,7 +18,7 @@ from flask import Blueprint, current_app, jsonify
 
 from app.api.v1.helpers import error
 from app.persistence.database import get_db_connection
-from app.services import openalex_service, thread_service
+from app.services import openalex_service, paper_count_service, thread_service
 from app.services.design_threads import DESIGN_THREADS
 
 openalex_papers_bp = Blueprint("openalex_papers_v1", __name__)
@@ -30,7 +30,7 @@ CACHE_SECONDS = 3600
 # may show OpenAlex papers; any other slug is a 404.
 
 
-def openalex_response(title, label):
+def openalex_response(title, label, on_found=None):
     """The JSON answer for one OpenAlex search, or a 502/504 error."""
     try:
         papers = openalex_service.search_thread_papers(title)
@@ -41,6 +41,8 @@ def openalex_response(title, label):
         current_app.logger.warning("OpenAlex search failed for %s: %s", label, exc)
         return error("Papers from OpenAlex are unavailable right now. Please try again later.", 502)
 
+    if on_found is not None:
+        on_found(papers)
     response = jsonify(papers)
     response.headers["Cache-Control"] = f"public, max-age={CACHE_SECONDS}"
     return response
@@ -59,8 +61,16 @@ def get_thread_openalex_papers(thread_id):
     if thread is None:
         return error("Research thread not found", 404)
 
+    def store_count(papers):
+        # GET /api/threads shows this count on the thread's card (migration 012);
+        # failing to store it never changes the papers sent back.
+        try:
+            paper_count_service.store_count(thread_id, papers)
+        except (psycopg.Error, RuntimeError):
+            current_app.logger.warning("Storing the OpenAlex paper count of thread %s failed", thread_id)
+
     # The database connection is closed before waiting on OpenAlex.
-    return openalex_response(thread["title"], f"thread {thread_id}")
+    return openalex_response(thread["title"], f"thread {thread_id}", on_found=store_count)
 
 
 @openalex_papers_bp.route("/api/design-threads/<slug>/openalex-papers", methods=["GET"])
