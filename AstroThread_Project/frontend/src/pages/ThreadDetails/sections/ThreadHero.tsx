@@ -1,3 +1,4 @@
+import BookmarkIcon from '../../../components/BookmarkIcon/BookmarkIcon'
 import Button from '../../../components/Button/Button'
 import Icon from '../../../components/Icon/Icon'
 import Tag from '../../../components/Tag/Tag'
@@ -15,25 +16,9 @@ interface ThreadHeroProps {
   paperCount: number | null
   /** "Updated 2 days ago" from the design data; null when it is not known. */
   updatedLabel: string | null
-  onStartJourney: () => void
   /** Replaces "N research stages" when the thread has no stage content (design previews). */
   stagesNote?: string
   bookmark: { state: BookmarkState; notice: BookmarkNotice | null; onToggle: () => void }
-}
-
-/** The bookmark icon (same shape as icons/thread/bookmark.svg), filled once saved. */
-function BookmarkIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg width="12" height="18" viewBox="-1 -1 12 18" aria-hidden="true">
-      <path
-        d="M0 0H10V16L5 12.4L0 16Z"
-        fill={filled ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
 }
 
 function BookmarkButton({ state, onToggle }: { state: BookmarkState; onToggle: () => void }) {
@@ -74,22 +59,18 @@ function ThreadHero({
   categories,
   paperCount,
   updatedLabel,
-  onStartJourney,
   stagesNote,
   bookmark,
 }: ThreadHeroProps) {
   return (
     <section className="details-hero container" aria-labelledby="details-title">
       <nav className="details-breadcrumb" aria-label="Breadcrumb">
-        <Link
-          className="details-breadcrumb__back"
-          href={routes.researchThreads}
-          aria-label="Back to Research Threads"
-        >
+        {/* Back returns to Home (the history entry before every thread; see navigate). */}
+        <Link className="details-breadcrumb__back" href={routes.home} aria-label="Back to Home">
           <Icon name="arrow-left" />
         </Link>
         <Link className="details-breadcrumb__link" href={routes.researchThreads}>
-          Research Threads
+          Browse Threads
         </Link>
         <Icon name="chevron-right" className="details-breadcrumb__separator" />
         <span className="details-breadcrumb__current" aria-current="page">
@@ -129,9 +110,6 @@ function ThreadHero({
         </div>
 
         <div className="details-hero__actions">
-          <button type="button" className="button button--primary" onClick={onStartJourney}>
-            Start Research Journey
-          </button>
           <BookmarkButton state={bookmark.state} onToggle={bookmark.onToggle} />
         </div>
       </div>

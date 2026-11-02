@@ -350,6 +350,7 @@ def current_user():
 from app.api.v1.bookmarks import bookmarks_bp  # noqa: E402
 from app.api.v1.nasa_media import nasa_media_bp  # noqa: E402
 from app.api.v1.openalex_papers import openalex_papers_bp  # noqa: E402
+from app.api.v1.owner_threads import owner_threads_bp  # noqa: E402
 from app.api.v1.profile import profile_bp  # noqa: E402
 from app.api.v1.thread_details import thread_details_bp  # noqa: E402
 from app.api.v1.threads import (  # noqa: E402
@@ -365,6 +366,8 @@ app.register_blueprint(thread_details_bp)
 app.register_blueprint(nasa_media_bp)
 app.register_blueprint(openalex_papers_bp)
 app.register_blueprint(threads_bp)
+# Owner Dashboard: /api/owner/... (owner role only)
+app.register_blueprint(owner_threads_bp)
 
 
 if __name__ == "__main__":

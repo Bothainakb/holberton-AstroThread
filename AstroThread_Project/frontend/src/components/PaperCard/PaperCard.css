@@ -1,8 +1,7 @@
 .paper-card {
   display: flex;
   flex-direction: column;
-  min-height: 368px;
-  padding: 32px 24px 37px;
+  padding: 18px 18px 14px;
   border: 1px solid var(--color-surface-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -26,13 +25,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-/* Hand-picked sample papers (migration 005), not a curated list. */
-.paper-card__illustrative {
-  border: 1px dashed var(--color-warning);
-  background: transparent;
-  color: var(--color-warning);
 }
 
 /* 44px hit area around the small Figma bookmark icon. */
@@ -62,32 +54,52 @@
   opacity: 0.6;
 }
 
+/* Saved: the filled icon in the accent colour. */
+.paper-card__bookmark--saved,
+.paper-card__bookmark--saved:hover {
+  color: var(--color-accent);
+}
+
+.paper-card__bookmark[aria-busy='true'] {
+  cursor: progress;
+}
+
+/* The paper icon is a little smaller than the thread bookmark (12 x 18). */
+.paper-card__bookmark svg {
+  width: 10px;
+  height: 15px;
+}
+
 /* Figma draws this bookmark at 8.3 x 13.3px. */
 .paper-card__bookmark-icon {
   transform: scale(0.83);
 }
 
 .paper-card__title {
-  max-width: 270px;
-  margin-top: 21px;
-  font-size: 18px;
+  margin-top: 12px;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 27px;
+  line-height: 22px;
 }
 
 .paper-card__authors {
-  margin-top: 14px;
+  margin-top: 8px;
   font-size: 13px;
   line-height: 16px;
   color: var(--color-text-secondary);
 }
 
+/* Compact card: the summary is cut to three lines. */
 .paper-card__summary {
-  margin-top: 13px;
-  margin-bottom: 16px;
-  font-size: 14px;
-  line-height: 21px;
+  display: -webkit-box;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 19px;
   color: var(--color-text-secondary);
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 .paper-card__summary--missing {
@@ -97,7 +109,7 @@
 
 .paper-card__footer {
   margin-top: auto;
-  padding-top: 21px;
+  padding-top: 12px;
   border-top: 1px solid var(--color-surface-light);
 }
 

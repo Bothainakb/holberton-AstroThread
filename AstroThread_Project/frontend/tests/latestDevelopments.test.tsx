@@ -53,7 +53,9 @@ describe('Latest Developments from the database', () => {
     for (const item of DEVELOPMENTS) {
       assert.ok(html.includes(`href="${item.source_url}"`), item.source_url ?? '')
     }
-    assert.equal(count(html, /target="_blank" rel="noopener noreferrer"/g), 3)
+    // Source links open in the same tab.
+    assert.equal(count(html, /rel="noreferrer"/g), 3)
+    assert.doesNotMatch(html, /target=/)
     assert.match(html, /Read on LIGO Lab, Caltech/)
     assert.doesNotMatch(html, /Full story not available yet/)
   })
