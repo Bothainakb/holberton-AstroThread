@@ -348,6 +348,7 @@ def current_user():
 # GET /api/threads. GET /api/threads/<slug> (threads_bp) is the slug-based
 # details route; numeric ids still go to thread_details_bp (<int:> wins).
 from app.api.v1.bookmarks import bookmarks_bp  # noqa: E402
+from app.api.v1.ai_assistant import ai_assistant_bp  # noqa: E402
 from app.api.v1.nasa_media import nasa_media_bp  # noqa: E402
 from app.api.v1.openalex_papers import openalex_papers_bp  # noqa: E402
 from app.api.v1.owner_threads import owner_threads_bp  # noqa: E402
@@ -368,7 +369,8 @@ app.register_blueprint(openalex_papers_bp)
 app.register_blueprint(threads_bp)
 # Owner Dashboard: /api/owner/... (owner role only)
 app.register_blueprint(owner_threads_bp)
-
+# AI Research Assistant: /api/ai/... (signed-in users)
+app.register_blueprint(ai_assistant_bp)
 
 if __name__ == "__main__":
     app.run(
