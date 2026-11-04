@@ -33,6 +33,11 @@ function Navbar({ activeHref = routes.home, variant = 'full' }: NavbarProps) {
   const auth = useAuth()
   const user = auth.status === 'signed-in' ? auth.user : null
   const minimal = variant === 'minimal'
+  // Display only: the backend checks the role on every admin request.
+  const links =
+    user?.role === 'owner'
+      ? [...navLinks, { label: 'Admin Dashboard', href: routes.adminDashboard }]
+      : navLinks
 
   async function handleSignOut() {
     try {
@@ -77,7 +82,7 @@ function Navbar({ activeHref = routes.home, variant = 'full' }: NavbarProps) {
         <Logo />
 
         <nav className="navbar__links" aria-label="Main">
-          {navLinks.map((link) => {
+          {links.map((link) => {
             const isActive = link.href === activeHref
             return (
               <Link

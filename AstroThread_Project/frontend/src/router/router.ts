@@ -11,6 +11,7 @@ export const routes = {
   signUp: '/signup',
   aiAssistant: '/ai-assistant',
   profile: '/profile',
+  adminDashboard: '/admin',
 } as const
 
 /** Path of a thread's details page, e.g. "/research-threads/black-holes". */
@@ -32,7 +33,9 @@ export function matchThreadDetails(pathname: string) {
  */
 export function safeReturnPath(value: string | null | undefined): string | null {
   if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
-  return matchThreadDetails(value) || value === routes.profile ? value : null
+  return matchThreadDetails(value) || value === routes.profile || value === routes.adminDashboard
+    ? value
+    : null
 }
 
 /** "/login?next=..." (or the sign-up page) that returns to `path` afterwards. */
