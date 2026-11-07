@@ -9,7 +9,6 @@ import {
   TextField,
 } from "../../components/FormField/FormField";
 import {
-  demoCredentials,
   demoSignIn,
   getAccountTypeLabel,
   parseAccountType,
@@ -148,7 +147,7 @@ export function LoginPage() {
 
         {status === "success" && session && (
           <FormAlert tone="success" title={`Welcome back, ${session.fullName}`}>
-            You’re signed in with a {getAccountTypeLabel(session.accountType).toLowerCase()}{" "}
+              You’re signed in with a {getAccountTypeLabel(session.accountType).toLowerCase()}{" "}
             account. Taking you to the Home Page…
           </FormAlert>
         )}
@@ -196,8 +195,7 @@ export function LoginPage() {
 
           <div id="password-reset-notice" hidden={!showResetNotice}>
             <FormAlert tone="info" title="Password reset">
-              Password reset isn’t available in this demo yet. Use one of the
-              demo accounts below to sign in.
+             Password reset isn’t available in this demo yet.
             </FormAlert>
           </div>
 
@@ -220,20 +218,7 @@ export function LoginPage() {
         >
           Sign In
         </Button>
-      </form>
-
-      <FormAlert tone="info" title="Demo accounts">
-        <ul className="login-page__demo-list">
-          {demoCredentials.map((credential) => (
-            <li key={credential.email}>
-              <span className="login-page__demo-type">
-                {getAccountTypeLabel(credential.accountType)}:
-              </span>{" "}
-              {credential.email} / {credential.password}
-            </li>
-          ))}
-        </ul>
-      </FormAlert>
+      </form>     
     </AuthLayout>
   );
 }

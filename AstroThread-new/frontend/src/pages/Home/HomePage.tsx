@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+
+import { useState } from "react";
 import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
 import { SearchBox } from "../../components/SearchBox/SearchBox";
 import { PopularTopics } from "../../components/PopularTopics/PopularTopics";
 import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
-import type { PopularTopic } from "../../data/popularTopics";
-import { fetchPopularTopics } from "../../services/api";
+import {
+  popularTopics,
+  type PopularTopic,
+} from "../../data/popularTopics";
 import "./HomePage.css";
 
 interface HomePageProps {
@@ -23,18 +26,7 @@ function buildSearchHref(searchPath: string, query: string): string {
 
 export function HomePage({ onSearch, searchPath = "/search" }: HomePageProps) {
   const [query, setQuery] = useState("");
-  
-  const [popularTopics, setPopularTopics] = useState<readonly PopularTopic[]>([]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchPopularTopics(controller.signal)
-      .then(setPopularTopics)
-      .catch(() => {
-      });
-    return () => controller.abort();
-  }, []);
-  
   function runSearch(searchQuery: string) {
     const trimmedQuery = searchQuery.trim();
 
