@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
 import { SearchBox } from "../../components/SearchBox/SearchBox";
 import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
-import { ApiError, searchPapers } from "../../services/api";
+import { ApiError, fetchTopicOverview, searchPapers } from "../../services/api";
 import type { Paper, SearchResult } from "../../services/api";
 import "./SearchPage.css";
 
@@ -157,6 +157,7 @@ function SearchResults({ state, query, onRetry }: SearchResultsProps) {
 
   return (
     <>
+     {topic && <TopicOverviewBox key={topic.slug} slug={topic.slug} />}
       <p className="search-page__count">
         {papers.length} {papers.length === 1 ? "paper" : "papers"}
         {topic ? ` about ${topic.title}` : ""}
@@ -205,5 +206,55 @@ function PaperResult({ paper }: { paper: Paper }) {
         <p className="paper-result__abstract">{paper.abstract}</p>
       )}
     </article>
+
+    
+function TopicOverviewBox({ slug }: { slug: string }) {
+  const [overview, setOverview] = useState<string | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "hidden">("loading");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchTopicOverview(slug, controller.signal)
+      .then((result) => {
+        setOverview(result.overview);
+        setStatus("ready");
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setStatus("hidden");
+      });
+
+    return () => controller.abort();
+  }, [slug]);
+
+  if (status === "hidden") {
+    return null;
+  }
+
+  return (
+    <section className="topic-overview" aria-label="AI overview">
+      <p className="topic-overview__label">AI overview</p>
+
+      {status === "loading" ? (
+        <p className="topic-overview__loading" role="status">
+          Writing an overview of this topic…
+        </p>
+      ) : (
+        overview?.split(/\n\s*\n/).map((paragraph, index) => (
+          <p key={index} className="topic-overview__text">
+            {paragraph}
+          </p>
+        ))
+      )}
+
+      {status === "ready" && (
+        <p className="topic-overview__note">
+          Written by AI from the papers below. It can make mistakes, so check the
+          papers for details.
+        </p>
+      )}
+    </section>
+  );
+}
   );
 }
