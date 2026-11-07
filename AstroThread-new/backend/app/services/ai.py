@@ -59,8 +59,9 @@ def build_context(topic_title, papers):
 
 def write_overview(topic_title, papers):
     """The overview text (raises AIError, AINotConfigured or AITimeout)."""
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    model = os.getenv("OPENAI_MODEL", "").strip()
+    url = (os.getenv("AI_API_URL") or OPENAI_URL).strip()
+    api_key = (os.getenv("AI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
+    model = (os.getenv("AI_MODEL") or os.getenv("OPENAI_MODEL") or "").strip()
     if not api_key or not model:
         raise AINotConfigured()
 
@@ -72,12 +73,14 @@ def write_overview(topic_title, papers):
         ],
         "max_completion_tokens": MAX_ANSWER_TOKENS,
     }
-    request = Request(
-        OPENAI_URL,
+      request = Request(
+        url,
         data=json.dumps(body).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
-    )
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "AstroThread/1.0",
+        },
 
     try:
         with urlopen(request, timeout=TIMEOUT_SECONDS) as response:
