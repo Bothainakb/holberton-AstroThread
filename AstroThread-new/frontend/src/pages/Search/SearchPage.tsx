@@ -253,8 +253,6 @@ function TopicOverviewBox({ slug }: { slug: string }) {
           papers for details.
         </p>
       )}
-    </section>
-  );
-}
+     </section>
   );
 }
