@@ -72,8 +72,9 @@ def write_overview(topic_title, papers):
             {"role": "user", "content": build_context(topic_title, papers)},
         ],
         "max_completion_tokens": MAX_ANSWER_TOKENS,
-    }
-      request = Request(
+      }
+
+    request = Request(
         url,
         data=json.dumps(body).encode("utf-8"),
         headers={
@@ -81,6 +82,8 @@ def write_overview(topic_title, papers):
             "Content-Type": "application/json",
             "User-Agent": "AstroThread/1.0",
         },
+        method="POST",
+    )
 
     try:
         with urlopen(request, timeout=TIMEOUT_SECONDS) as response:
