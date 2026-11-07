@@ -121,3 +121,48 @@ def save_papers(cur, topic_id, papers):
         "UPDATE research_threads SET papers_fetched_at = NOW() WHERE id = %s;",
         (topic_id,),
     )
+
+
+def get_overview(cur, slug):
+    """{id, title, overview, generated_at} for a topic, or None if it was never searched.
+
+    overview is None until the AI has written one.
+    """
+    cur.execute(
+        """
+        SELECT id, title, overview, to_char(overview_generated_at, 'YYYY-MM-DD"T"HH24:MI:SS')
+        FROM research_threads
+        WHERE slug = %s;
+        """,
+        (slug,),
+    )
+    row = cur.fetchone()
+    if row is None:
+        return None
+    return {
+        "id": row[0],
+        "title": row[1],
+        "overview": row[2],
+        "generated_at": row[3],
+    }
+
+
+def save_overview(cur, topic_id, overview):
+    cur.execute(
+        """
+        UPDATE research_threads
+        SET overview = %s, overview_generated_at = NOW()
+        WHERE id = %s AND overview IS NULL
+        RETURNING overview, to_char(overview_generated_at, 'YYYY-MM-DD"T"HH24:MI:SS');
+        """,
+        (overview, topic_id),
+    )
+    row = cur.fetchone()
+    if row is None:
+        cur.execute(
+            """SELECT overview, to_char(overview_generated_at, 'YYYY-MM-DD"T"HH24:MI:SS')
+               FROM research_threads WHERE id = %s;""",
+            (topic_id,),
+        )
+        row = cur.fetchone()
+    return {"overview": row[0], "generated_at": row[1]}
