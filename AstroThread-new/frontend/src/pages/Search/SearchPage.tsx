@@ -205,9 +205,10 @@ function PaperResult({ paper }: { paper: Paper }) {
       {paper.abstract && (
         <p className="paper-result__abstract">{paper.abstract}</p>
       )}
-    </article>
+        </article>
+  );
+}
 
-    
 function TopicOverviewBox({ slug }: { slug: string }) {
   const [overview, setOverview] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "hidden">("loading");
