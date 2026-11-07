@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 TIMEOUT_SECONDS = 30
 MAX_RESPONSE_BYTES = 1_000_000
-MAX_ANSWER_TOKENS = 500
+MAX_ANSWER_TOKENS = 2000
 MAX_OVERVIEW_LENGTH = 2000
 MAX_ABSTRACT_LENGTH = 500      
 MAX_PAPERS = 10
