@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
 import { SearchBox } from "../../components/SearchBox/SearchBox";
 import { PopularTopics } from "../../components/PopularTopics/PopularTopics";
 import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
 import type { PopularTopic } from "../../data/popularTopics";
+import { fetchPopularTopics } from "../../services/api";
 import "./HomePage.css";
 
 interface HomePageProps {
@@ -22,7 +23,18 @@ function buildSearchHref(searchPath: string, query: string): string {
 
 export function HomePage({ onSearch, searchPath = "/search" }: HomePageProps) {
   const [query, setQuery] = useState("");
+  
+  const [popularTopics, setPopularTopics] = useState<readonly PopularTopic[]>([]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchPopularTopics(controller.signal)
+      .then(setPopularTopics)
+      .catch(() => {
+      });
+    return () => controller.abort();
+  }, []);
+  
   function runSearch(searchQuery: string) {
     const trimmedQuery = searchQuery.trim();
 
@@ -63,7 +75,10 @@ export function HomePage({ onSearch, searchPath = "/search" }: HomePageProps) {
             </div>
 
             <div className="home-page__topics">
-              <PopularTopics onTopicSelect={handleTopicSelect} />
+              <PopularTopics
+                topics={popularTopics}
+                onTopicSelect={handleTopicSelect}
+              />
             </div>
           </div>
         </section>
