@@ -53,3 +53,15 @@ export function fetchPopularTopics(signal?: AbortSignal): Promise<PopularTopic[]
 export function searchPapers(query: string, signal?: AbortSignal): Promise<SearchResult> {
   return getJson<SearchResult>(`/api/search?${new URLSearchParams({ q: query })}`, signal)
 }
+
+
+export interface TopicOverview {
+  slug: string
+  title: string
+  overview: string
+  generated_at: string | null
+}
+
+export function fetchTopicOverview(slug: string, signal?: AbortSignal): Promise<TopicOverview> {
+  return getJson<TopicOverview>(`/api/topics/${encodeURIComponent(slug)}/overview`, signal)
+}
