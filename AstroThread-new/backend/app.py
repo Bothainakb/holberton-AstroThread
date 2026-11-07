@@ -1,6 +1,6 @@
-from app import app
-from app.services import paper_count_service
+ffrom app import create_app
+
+app = create_app()
 
 if __name__ == "__main__":
-    paper_count_service.start_background_refresh(app.logger)
-    app.run(debug=True, use_reloader=False, port=5000)
+    app.run(debug=True, port=5000)
