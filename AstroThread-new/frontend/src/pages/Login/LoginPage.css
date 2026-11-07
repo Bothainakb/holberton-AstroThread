@@ -1,0 +1,14 @@
+.auth-form + .form-alert {
+  margin-top: var(--space-6);
+}
+
+.login-page__demo-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.login-page__demo-type {
+  font-weight: var(--font-weight-semibold);
+}
