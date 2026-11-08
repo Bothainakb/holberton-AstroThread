@@ -8,7 +8,7 @@ import { Pagination } from "../../components/Pagination/Pagination";
 import { FormAlert } from "../../components/FormAlert/FormAlert";
 import { Button } from "../../components/Button/Button";
 import { SelectField } from "../../components/FormField/FormField";
-import { navigate, routes, useLocation } from "../../lib/router";
+import { navigate, paperPath, routes, useLocation } from "../../lib/router";
 import {
   EMPTY_FILTERS,
   PAPER_TYPE_LABELS,
@@ -181,6 +181,7 @@ export function SearchPage() {
   }
 
   const relatedKeywords = hasResults ? getRelatedKeywords(basePapers, query) : [];
+  const detailsQuery = new URLSearchParams({ from: buildSearchHref(state) }).toString();
 
   return (
     <div className="search-page">
@@ -372,6 +373,7 @@ export function SearchPage() {
                         <li key={paper.id}>
                           <PaperResultCard
                             paper={paper}
+                            detailsHref={`${paperPath(paper.id)}?${detailsQuery}`}
                             onKeywordSelect={runSearch}
                           />
                         </li>
