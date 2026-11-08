@@ -1,7 +1,7 @@
-
 import { HomePage } from './pages/Home/HomePage'
 import { LoginPage } from './pages/Login/LoginPage'
 import { SignUpPage } from './pages/SignUp/SignUpPage'
+import { SearchPage } from './pages/Search/SearchPage'
 import { routes, useLocation, useInternalLinkNavigation } from './lib/router'
 
 function App() {
@@ -15,6 +15,10 @@ function App() {
 
   if (pathname === routes.signUp) {
     return <SignUpPage />
+  }
+
+  if (pathname === routes.search) {
+    return <SearchPage />
   }
 
   return <HomePage />

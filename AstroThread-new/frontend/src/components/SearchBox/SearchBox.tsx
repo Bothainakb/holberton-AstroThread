@@ -1,5 +1,6 @@
+
 import { useId } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SyntheticEvent } from "react";
 import "./SearchBox.css";
 
 interface SearchBoxProps {
@@ -16,7 +17,7 @@ export function SearchBox({
   onValueChange,
   onSearch,
   label = "Search topics and research papers",
-  placeholder = "Search any topic or keyword",
+  placeholder = "Search by topic, keyword, paper title, or author...",
   buttonLabel = "Search",
 }: SearchBoxProps) {
   const inputId = useId();
@@ -25,7 +26,7 @@ export function SearchBox({
     onValueChange(event.target.value);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     onSearch(value.trim());
   }
