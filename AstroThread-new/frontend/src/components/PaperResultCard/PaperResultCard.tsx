@@ -1,5 +1,6 @@
 import type { PaperSummary } from "../../types/research";
 import { PAPER_TYPE_LABELS } from "../../lib/searchResults";
+import { formatPaperMeta } from "../../lib/formatPaper";
 import "./PaperResultCard.css";
 
 interface PaperResultCardProps {
@@ -8,22 +9,12 @@ interface PaperResultCardProps {
   onKeywordSelect?: (keyword: string) => void;
 }
 
-function formatAuthors(authors: string[]) {
-  if (authors.length <= 3) {
-    return authors.join(", ");
-  }
-
-  return `${authors.slice(0, 3).join(", ")} et al.`;
-}
-
 export function PaperResultCard({
   paper,
   detailsHref,
   onKeywordSelect,
 }: PaperResultCardProps) {
-  const meta = [formatAuthors(paper.authors), paper.venue, paper.year || ""]
-    .filter(Boolean)
-    .join(" · ");
+  const meta = formatPaperMeta(paper);
 
   return (
     <article className="paper-card">

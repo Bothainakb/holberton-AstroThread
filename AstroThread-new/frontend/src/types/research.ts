@@ -11,3 +11,9 @@ export interface PaperSummary {
   keywords: string[];
   abstract: string;
 }
+
+export interface PaperDetails extends PaperSummary {
+  method: string;
+  mainFinding: string;
+  whyItMatters: string;
+}

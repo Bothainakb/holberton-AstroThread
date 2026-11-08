@@ -2,7 +2,8 @@ import { HomePage } from './pages/Home/HomePage'
 import { LoginPage } from './pages/Login/LoginPage'
 import { SignUpPage } from './pages/SignUp/SignUpPage'
 import { SearchPage } from './pages/Search/SearchPage'
-import { routes, useLocation, useInternalLinkNavigation } from './lib/router'
+import { PaperDetailsPage } from './pages/PaperDetails/PaperDetailsPage'
+import { getRouteId, routes, useLocation, useInternalLinkNavigation } from './lib/router'
 
 function App() {
   useInternalLinkNavigation()
@@ -19,6 +20,12 @@ function App() {
 
   if (pathname === routes.search) {
     return <SearchPage />
+  }
+
+  const paperId = getRouteId(pathname, routes.papers)
+
+  if (paperId) {
+    return <PaperDetailsPage key={paperId} paperId={paperId} />
   }
 
   return <HomePage />

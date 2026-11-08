@@ -12,7 +12,7 @@ const SAMPLE_DELAY_MS = 600;
 export const searchSource: SearchSource =
   import.meta.env.VITE_SEARCH_SOURCE === "api" ? "api" : "sample";
 
-const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL ?? "/api";
+export const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 const STOP_WORDS = new Set([
   "a", "an", "the", "of", "in", "on", "and", "or", "for", "to",
@@ -129,7 +129,7 @@ export function rankPapers(
     .map((match) => match.paper);
 }
 
-function wait(milliseconds: number, signal: AbortSignal) {
+export function wait(milliseconds: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
     const timer = window.setTimeout(resolve, milliseconds);
 
@@ -158,7 +158,7 @@ function toStringList(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
-function toPaperSummary(item: Record<string, unknown>): PaperSummary {
+export function toPaperSummary(item: Record<string, unknown>): PaperSummary {
   return {
     id: String(item.id ?? ""),
     title: String(item.title ?? "Untitled paper"),

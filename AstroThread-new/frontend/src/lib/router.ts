@@ -5,11 +5,15 @@ export const routes = {
   signIn: "/sign-in",
   signUp: "/sign-up",
   search: "/search",
+  papers: "/papers",
+  threads: "/threads",
+  timeline: "/timeline",
 } as const;
 
 export type AppRoute = (typeof routes)[keyof typeof routes];
 
 const appRoutes: readonly string[] = Object.values(routes);
+const routesWithIds: readonly string[] = [routes.papers, routes.threads];
 const listeners = new Set<() => void>();
 
 function notifyListeners() {
@@ -38,8 +42,40 @@ export function normalizePath(pathname: string): string {
   return pathname;
 }
 
+export function getRouteId(pathname: string, baseRoute: string): string | null {
+  const path = normalizePath(pathname);
+  const prefix = `${baseRoute}/`;
+
+  if (!path.startsWith(prefix)) {
+    return null;
+  }
+
+  const id = path.slice(prefix.length);
+
+  if (!id || id.includes("/")) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(id);
+  } catch {
+    return null;
+  }
+}
+
+export function paperPath(id: string): string {
+  return `${routes.papers}/${encodeURIComponent(id)}`;
+}
+
+export function threadPath(id: string): string {
+  return `${routes.threads}/${encodeURIComponent(id)}`;
+}
+
 export function isAppRoute(pathname: string): boolean {
-  return appRoutes.includes(normalizePath(pathname));
+  return (
+    appRoutes.includes(normalizePath(pathname)) ||
+    routesWithIds.some((baseRoute) => getRouteId(pathname, baseRoute) !== null)
+  );
 }
 
 interface NavigateOptions {
