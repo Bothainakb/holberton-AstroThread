@@ -63,6 +63,7 @@ export function HomePage({ onSearch, searchPath = "/search" }: HomePageProps) {
                 value={query}
                 onValueChange={setQuery}
                 onSearch={runSearch}
+                placeholder="Search by topic, keyword, paper title, or author..."
               />
             </div>
 

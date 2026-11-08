@@ -136,3 +136,23 @@
   line-height: 1.5;
   cursor: pointer;
 }
+
+.form-field__select {
+  padding-right: 2.5rem;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.form-field__select:disabled {
+  cursor: not-allowed;
+}
+
+.form-field__select-icon {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}

@@ -4,6 +4,7 @@ export const routes = {
   home: "/",
   signIn: "/sign-in",
   signUp: "/sign-up",
+  search: "/search",
 } as const;
 
 export type AppRoute = (typeof routes)[keyof typeof routes];
