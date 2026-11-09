@@ -1,8 +1,9 @@
+
 import psycopg
 from flask import Blueprint, current_app, jsonify, request
 
 from app.db import get_connection
-from app.services import home_service, openalex
+from app.services import home_service, openalex, paper_service
 
 home_bp = Blueprint("home", __name__)
 
@@ -30,7 +31,8 @@ def popular_topics():
 
 @home_bp.get("/api/search")
 def search():
-    query = " ".join(request.args.get("q", "").split())   
+    query = " ".join(request.args.get("q", "").split())  
+
     if len(query) < MIN_QUERY_LENGTH:
         return jsonify({"error": "Type at least 2 characters to search"}), 400
     if len(query) > MAX_QUERY_LENGTH:
@@ -56,7 +58,7 @@ def search():
                     return jsonify({"error": error.message}), error.status
 
         if not found and not cached and topic is None:
-            return jsonify({"query": query, "topic": None, "papers": []})
+            return jsonify({"query": query, "topic": None, "results": []})
 
         title = topic["title"] if topic else home_service.display_title(query)
         with get_connection() as conn:
@@ -69,4 +71,8 @@ def search():
         current_app.logger.exception("Search failed")
         return jsonify({"error": "Unable to search right now"}), 500
 
-    return jsonify({"query": query, "topic": {"slug": slug, "title": title}, "papers": papers})
+    return jsonify({
+        "query": query,
+        "topic": {"slug": slug, "title": title},
+        "results": [paper_service.to_summary(paper, title) for paper in papers],
+    })
