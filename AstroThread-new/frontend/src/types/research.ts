@@ -17,3 +17,17 @@ export interface PaperDetails extends PaperSummary {
   mainFinding: string;
   whyItMatters: string;
 }
+
+export interface ResearchThread {
+  id: string;
+  title: string;
+  topic: string;
+  summary: string;
+  paperIds: string[];
+}
+
+export interface ThreadSummary extends ResearchThread {
+  paperCount: number;
+  firstYear: number;
+  lastYear: number;
+}

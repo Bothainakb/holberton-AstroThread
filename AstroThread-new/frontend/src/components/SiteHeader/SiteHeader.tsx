@@ -16,7 +16,7 @@ interface NavLinkItem {
 
 const exploreLinks: readonly NavLinkItem[] = [
   { label: "Search", href: routes.search },
-  { label: "Thread Browser" },
+  { label: "Thread Browser", href: routes.threads },
   { label: "Research Timeline" },
   { label: "Data Visualization" },
 ];

@@ -68,3 +68,11 @@ export function formatPaperMeta(paper: PaperMetaFields): string {
 export function formatPublication(paper: Pick<PaperSummary, "venue" | "year">): string {
   return [paper.venue, paper.year || ""].filter(Boolean).join(", ");
 }
+
+export function formatYearRange(firstYear: number, lastYear: number): string {
+  if (!firstYear || !lastYear) {
+    return "";
+  }
+
+  return firstYear === lastYear ? String(firstYear) : `${firstYear} to ${lastYear}`;
+}
