@@ -1,4 +1,9 @@
-import type { PaperDetails, PaperSummary } from "../../types/research";
+import type {
+  PaperDetails,
+  PaperSummary,
+  ResearchThread,
+  ThreadSummary,
+} from "../../types/research";
 import { apiBaseUrl, searchSource, toPaperSummary, wait } from "../search/searchService";
 
 const SAMPLE_DELAY_MS = 300;
@@ -39,12 +44,51 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function loadSampleLibrary() {
-  const [{ samplePapers }, { samplePaperDetails }] = await Promise.all([
+  const [{ samplePapers }, { samplePaperDetails }, { sampleThreads }] = await Promise.all([
     import("../search/sampleSearchData"),
     import("../../data/samplePaperDetails"),
+    import("../../data/sampleThreads"),
   ]);
 
-  return { samplePapers, samplePaperDetails };
+  return { samplePapers, samplePaperDetails, sampleThreads };
+}
+
+function toStringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function toThreadSummary(item: Record<string, unknown>): ThreadSummary {
+  const paperIds = toStringList(item.paperIds);
+
+  return {
+    id: String(item.id ?? ""),
+    title: String(item.title ?? "Untitled thread"),
+    topic: String(item.topic ?? "Other"),
+    summary: String(item.summary ?? ""),
+    paperIds,
+    paperCount: Number(item.paperCount) || paperIds.length,
+    firstYear: Number(item.firstYear) || 0,
+    lastYear: Number(item.lastYear) || 0,
+  };
+}
+
+function summarizeThread(
+  thread: ResearchThread,
+  papers: readonly PaperSummary[],
+): ThreadSummary {
+  const years = thread.paperIds
+    .map((id) => papers.find((paper) => paper.id === id)?.year)
+    .filter((year): year is number => typeof year === "number" && year > 0);
+
+  return {
+    ...thread,
+    paperIds: [...thread.paperIds],
+    paperCount: thread.paperIds.length,
+    firstYear: years.length > 0 ? Math.min(...years) : 0,
+    lastYear: years.length > 0 ? Math.max(...years) : 0,
+  };
 }
 
 function countSharedKeywords(a: PaperSummary, b: PaperSummary) {
@@ -100,4 +144,37 @@ export async function getRelatedPapers(
     .sort((a, b) => b.score - a.score || b.item.year - a.item.year)
     .slice(0, RELATED_PAPER_LIMIT)
     .map((match) => match.item);
+}
+
+export async function getThreads(signal: AbortSignal): Promise<ThreadSummary[]> {
+  if (searchSource === "api") {
+    const body = await fetchJson("/threads", signal);
+    const results = isRecord(body) && Array.isArray(body.results) ? body.results : [];
+
+    return results.filter(isRecord).map(toThreadSummary);
+  }
+
+  const { samplePapers, sampleThreads } = await loadSampleLibrary();
+  await wait(SAMPLE_DELAY_MS, signal);
+
+  return sampleThreads.map((thread) => summarizeThread(thread, samplePapers));
+}
+
+export async function getThreadPapers(
+  thread: ResearchThread,
+  signal: AbortSignal,
+): Promise<PaperSummary[]> {
+  if (searchSource === "api") {
+    const body = await fetchJson(`/threads/${encodeURIComponent(thread.id)}/papers`, signal);
+    const results = isRecord(body) && Array.isArray(body.results) ? body.results : [];
+
+    return results.filter(isRecord).map(toPaperSummary);
+  }
+
+  const { samplePapers } = await loadSampleLibrary();
+
+  return thread.paperIds
+    .map((id) => samplePapers.find((paper) => paper.id === id))
+    .filter((paper): paper is PaperSummary => paper !== undefined)
+    .sort((a, b) => a.year - b.year);
 }
