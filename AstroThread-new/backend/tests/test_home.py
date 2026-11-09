@@ -1,3 +1,4 @@
+
 import json
 import socket
 import unittest
@@ -9,25 +10,47 @@ import psycopg
 
 from app import create_app
 from app.routes import home
-from app.services import home_service, openalex
+from app.services import home_service, openalex, paper_service
 
 FOUND = [{
     "openalex_id": "https://openalex.org/W1",
     "title": "Gravitational Collapse and Space-Time Singularities",
     "authors": "Roger Penrose",
+    "author_list": ["Roger Penrose"],
     "publication_year": 1965,
     "abstract": None,
     "url": "https://doi.org/10.1103/PhysRevLett.14.57",
     "cited_by_count": 4000,
+    "venue": "Physical Review Letters",
+    "topic": "Black Holes and Theoretical Physics",
+    "keywords": ["Singularity"],
 }]
 STORED = [{
+    "id": 7,
     "title": "Gravitational Collapse and Space-Time Singularities",
     "authors": "Roger Penrose",
     "year": 1965,
     "abstract": None,
     "url": "https://doi.org/10.1103/PhysRevLett.14.57",
     "cited_by_count": 4000,
+    "venue": "Physical Review Letters",
+    "topic": "Black Holes and Theoretical Physics",
+    "keywords": ["Singularity"],
+    "author_list": ["Roger Penrose"],
 }]
+RESULT = {
+    "id": "7",
+    "title": "Gravitational Collapse and Space-Time Singularities",
+    "authors": ["Roger Penrose"],
+    "year": 1965,
+    "venue": "Physical Review Letters",
+    "topic": "Black Holes and Theoretical Physics",
+    "paperType": "theoretical",
+    "keywords": ["Singularity"],
+    "abstract": "",
+    "url": "https://doi.org/10.1103/PhysRevLett.14.57",
+    "citedByCount": 4000,
+}
 TOPIC = {"id": 1, "slug": "black-holes", "title": "Black Holes", "fresh": False}
 
 
@@ -67,7 +90,7 @@ class HomeRouteTests(unittest.TestCase):
         self.assertEqual(response.get_json(), {
             "query": "black holes",
             "topic": {"slug": "black-holes", "title": "Black Holes"},
-            "papers": STORED,
+            "results": [RESULT],
         })
         self.openalex.assert_called_once_with("black holes")
         self.assertEqual(self.record.call_args.args[1:], ("black-holes", "Black Holes"))
@@ -79,9 +102,10 @@ class HomeRouteTests(unittest.TestCase):
         response = self.client.get("/api/search?q=Black%20Holes")
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["results"], [RESULT])
         self.openalex.assert_not_called()
         self.save.assert_not_called()
-        self.record.assert_called_once()          
+        self.record.assert_called_once()          # the search is still counted
 
     def test_a_search_that_finds_nothing_stores_nothing(self):
         self.openalex.return_value = []
@@ -89,7 +113,7 @@ class HomeRouteTests(unittest.TestCase):
 
         response = self.client.get("/api/search?q=zzzz")
 
-        self.assertEqual(response.get_json(), {"query": "zzzz", "topic": None, "papers": []})
+        self.assertEqual(response.get_json(), {"query": "zzzz", "topic": None, "results": []})
         self.record.assert_not_called()
         self.save.assert_not_called()
 
@@ -102,13 +126,13 @@ class HomeRouteTests(unittest.TestCase):
                 self.record.assert_not_called()
 
     def test_openalex_failure_falls_back_to_stored_papers(self):
-        self.find.return_value = TOPIC            
+        self.find.return_value = TOPIC            # stored, but older than a week
         self.openalex.side_effect = openalex.OpenAlexError("down")
 
         response = self.client.get("/api/search?q=black%20holes")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json()["papers"], STORED)
+        self.assertEqual(response.get_json()["results"], [RESULT])
         self.save.assert_not_called()
 
     def test_invalid_searches_are_400(self):
@@ -141,6 +165,31 @@ class TextTests(unittest.TestCase):
         self.assertEqual(home_service.display_title("JWST images"), "JWST images")
 
 
+class PaperSummaryTests(unittest.TestCase):
+    def test_paper_type_is_estimated_from_title_and_abstract(self):
+        self.assertEqual(paper_service.paper_type(
+            {"title": "Observation of Gravitational Waves", "abstract": None}), "observational")
+        self.assertEqual(paper_service.paper_type(
+            {"title": "A model", "abstract": "We measured the spectrum."}), "observational")
+        self.assertEqual(paper_service.paper_type(
+            {"title": "Gravitational Collapse and Space-Time Singularities", "abstract": ""}),
+            "theoretical")
+
+    def test_missing_fields_get_safe_defaults(self):
+        summary = paper_service.to_summary(
+            {"id": 3, "title": "T", "authors": "A, B, C et al.", "year": None, "abstract": None,
+             "url": None, "cited_by_count": None, "venue": None, "topic": None,
+             "keywords": [], "author_list": []},
+            fallback_topic="Moon",
+        )
+        self.assertEqual(summary["id"], "3")
+        self.assertEqual(summary["authors"], ["A", "B", "C"])   # from the short text
+        self.assertEqual(summary["year"], 0)
+        self.assertEqual(summary["venue"], "")
+        self.assertEqual(summary["topic"], "Moon")
+        self.assertEqual(summary["abstract"], "")
+
+
 class FakeResponse:
     def __init__(self, payload):
         self.body = BytesIO(payload if isinstance(payload, bytes) else json.dumps(payload).encode())
@@ -164,6 +213,9 @@ class OpenAlexTests(unittest.TestCase):
         "cited_by_count": 9000,
         "authorships": [{"author": {"display_name": name}} for name in ("A", "B", "C", "D")],
         "abstract_inverted_index": {"waves": [1], "Gravitational": [0], "detected": [2]},
+        "primary_location": {"source": {"display_name": "Physical Review Letters"}},
+        "primary_topic": {"display_name": "Pulsars and Gravitational Waves Research"},
+        "keywords": [{"display_name": "Gravitational wave"}, {"display_name": "LIGO"}],
     }
 
     def search(self, payload):
@@ -178,13 +230,27 @@ class OpenAlexTests(unittest.TestCase):
             "openalex_id": "https://openalex.org/W1",
             "title": "Observation of Gravitational Waves",
             "authors": "A, B, C et al.",
+            "author_list": ["A", "B", "C", "D"],
             "publication_year": 2016,
             "abstract": "Gravitational waves detected",
             "url": "https://doi.org/10.1103/PhysRevLett.116.061102",
             "cited_by_count": 9000,
+            "venue": "Physical Review Letters",
+            "topic": "Pulsars and Gravitational Waves Research",
+            "keywords": ["Gravitational wave", "LIGO"],
         }])
         self.assertIn("search=gravitational+waves", url)
-        self.assertIn("primary_topic.field.id%3A31", url)    
+        self.assertIn("primary_topic.field.id%3A31", url)    # Physics and Astronomy only
+
+    def test_missing_optional_fields_are_none_or_empty(self):
+        work = {"id": "https://openalex.org/W2", "display_name": "Bare"}
+        papers, _ = self.search({"results": [work]})
+
+        self.assertEqual(papers[0]["venue"], None)
+        self.assertEqual(papers[0]["topic"], None)
+        self.assertEqual(papers[0]["keywords"], [])
+        self.assertEqual(papers[0]["author_list"], [])
+        self.assertEqual(papers[0]["authors"], None)
 
     def test_failures_raise_openalex_errors(self):
         for failure, error in (
