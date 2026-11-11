@@ -21,7 +21,15 @@ PAPERS = [{
     "cited_by_count": 143,
 }]
 NEW_TOPIC = {"id": 4, "title": "Moon", "overview": None, "generated_at": None}
-CONFIG = {"OPENAI_API_KEY": "test-key", "OPENAI_MODEL": "test-model"}
+CONFIG = {
+    # The test settings. The AI_* names are emptied so that real settings
+    # from .env or Codespaces secrets can't replace the test ones.
+    "AI_API_URL": "",
+    "AI_API_KEY": "",
+    "AI_MODEL": "",
+    "OPENAI_API_KEY": "test-key",
+    "OPENAI_MODEL": "test-model",
+}
 
 
 class FakeResponse:
