@@ -110,6 +110,7 @@ def nested_name(parent, key):
 
 
 def author_list(authorships):
+    """All author names from OpenAlex's authorships list, in order."""
     names = []
     for authorship in authorships if isinstance(authorships, list) else []:
         name = nested_name(authorship, "author")
