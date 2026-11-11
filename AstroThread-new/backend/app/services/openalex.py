@@ -1,12 +1,12 @@
-
 import json
+import os
 import socket
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 WORKS_URL = "https://api.openalex.org/works"
-PHYSICS_AND_ASTRONOMY_FIELD = 31         
+PHYSICS_AND_ASTRONOMY_FIELD = 31
 FIELDS = (
     "id,display_name,publication_year,doi,authorships,abstract_inverted_index,"
     "cited_by_count,primary_location,primary_topic,keywords"
@@ -15,28 +15,25 @@ FIELDS = (
 TIMEOUT_SECONDS = 8
 MAX_RESPONSE_BYTES = 2_000_000
 MAX_PAPERS = 20
-MAX_AUTHORS = 3              
-MAX_AUTHOR_LIST = 10        
+MAX_AUTHORS = 3
+MAX_AUTHOR_LIST = 10
 MAX_KEYWORDS = 6
 MAX_ABSTRACT_LENGTH = 1200
 
 
 class OpenAlexError(Exception):
-    """OpenAlex could not be reached or sent something unusable (HTTP 502)."""
 
     status = 502
     message = "Research papers could not be loaded right now. Please try again."
 
 
 class OpenAlexTimeout(OpenAlexError):
-    """OpenAlex did not answer in time (HTTP 504)."""
 
     status = 504
     message = "Searching for papers took too long. Please try again."
 
 
 def search_papers(query):
-    """Up to MAX_PAPERS papers matching `query`, best match first (raises OpenAlexError)."""
     params = urlencode({
         "search": query,
         "filter": f"type:article,primary_topic.field.id:{PHYSICS_AND_ASTRONOMY_FIELD}",
@@ -54,8 +51,11 @@ def search_papers(query):
 
 
 def get_json(url):
-    """GET a URL and decode its JSON, with a time limit and a size limit."""
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "AstroThread/1.0"})
+    headers = {"Accept": "application/json", "User-Agent": "AstroThread/1.0"}
+    api_key = os.getenv("OPENALEX_API_KEY", "").strip()
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = Request(url, headers=headers)
     try:
         with urlopen(request, timeout=TIMEOUT_SECONDS) as response:
             body = response.read(MAX_RESPONSE_BYTES + 1)
@@ -77,7 +77,6 @@ def get_json(url):
 
 
 def to_paper(work):
-    """One OpenAlex result -> the dict we store, or None if it has no id or title."""
     if not isinstance(work, dict):
         return None
     openalex_id = work.get("id")
@@ -105,14 +104,12 @@ def to_paper(work):
 
 
 def nested_name(parent, key):
-    """parent[key]["display_name"] if it is text, else None."""
     child = parent.get(key) if isinstance(parent, dict) else None
     name = child.get("display_name") if isinstance(child, dict) else None
     return name.strip() if isinstance(name, str) and name.strip() else None
 
 
 def author_list(authorships):
-    """All author names from OpenAlex's authorships list, in order."""
     names = []
     for authorship in authorships if isinstance(authorships, list) else []:
         name = nested_name(authorship, "author")
@@ -122,7 +119,6 @@ def author_list(authorships):
 
 
 def short_authors(names):
-    """'A, B, C et al.' (None if there are no authors)."""
     if not names:
         return None
     shown = ", ".join(names[:MAX_AUTHORS])
@@ -130,7 +126,6 @@ def short_authors(names):
 
 
 def keyword_names(keywords):
-    """The names from OpenAlex's keywords list (at most MAX_KEYWORDS)."""
     names = []
     for keyword in keywords if isinstance(keywords, list) else []:
         name = keyword.get("display_name") if isinstance(keyword, dict) else None
@@ -140,7 +135,6 @@ def keyword_names(keywords):
 
 
 def rebuild_abstract(inverted_index):
-    """OpenAlex stores abstracts as {word: [positions]}; put the words back in order."""
     if not isinstance(inverted_index, dict) or not inverted_index:
         return None
     words = {}
