@@ -49,9 +49,9 @@ function MenuLinks({
               {link.label}
             </a>
           ) : (
-            <span className="site-header__menu-link site-header__menu-link--soon">
+            <span className="site-header__menu-link site-header__menu-link--">
               {link.label}
-              <span className="site-header__soon">Soon</span>
+              
             </span>
           )}
         </li>
@@ -161,9 +161,9 @@ export function SiteHeader({
                 </div>
               </div>
 
-              <span className="site-header__link site-header__link--soon">
+              <span className="site-header__link site-header__link--">
                 AI Assistant
-                <span className="site-header__soon">Soon</span>
+                
               </span>
             </nav>
 
