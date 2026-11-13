@@ -1,14 +1,32 @@
-.auth-form + .form-alert {
-  margin-top: var(--space-6);
+.login-page__demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-background);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
 }
 
-.login-page__demo-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+.login-page__demo-email {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
   overflow-wrap: anywhere;
 }
 
-.login-page__demo-type {
-  font-weight: var(--font-weight-semibold);
+.login-page__demo-email:hover:not(:disabled) {
+  color: var(--color-navy);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }

@@ -1,92 +1,122 @@
-import { SelectField } from "../../components/FormField/FormField";
-import { FilterPills } from "../../components/FilterPills/FilterPills";
-import type { FacetOption, SearchFilters as Filters } from "../../lib/searchResults";
-import { YEAR_RANGES } from "../../lib/searchResults";
+import type { ChangeEvent } from "react";
+import type { SearchFilters as Filters, SortOption, YearRange } from "../../lib/searchResults";
+import { PAPER_TYPE_LABELS, SORT_OPTIONS, YEAR_RANGES } from "../../lib/searchResults";
 import type { PaperType } from "../../types/research";
 
 interface SearchFiltersProps {
-  id: string;
   filters: Filters;
-  topicOptions: FacetOption[];
-  paperTypeOptions: FacetOption[];
-  authorOptions: FacetOption[];
+  sort: SortOption;
+  disabled?: boolean;
+  onFiltersChange: (filters: Filters) => void;
+  onSortChange: (sort: SortOption) => void;
+}
+
+interface InlineSelectProps {
+  id: string;
+  label: string;
+  value: string;
+  options: readonly { value: string; label: string }[];
   disabled: boolean;
-  onChange: (filters: Filters) => void;
-  onClear: () => void;
+  onChange: (value: string) => void;
+}
+
+const YEAR_OPTIONS = YEAR_RANGES.map((range) => ({
+  value: range.value,
+  label: range.value === "any" ? "All years" : range.label,
+}));
+
+const TYPE_OPTIONS = [
+  { value: "", label: "All types" },
+  ...(Object.keys(PAPER_TYPE_LABELS) as PaperType[]).map((type) => ({
+    value: type,
+    label: PAPER_TYPE_LABELS[type],
+  })),
+];
+
+const SORT_SELECT_OPTIONS = SORT_OPTIONS.map((option) => ({
+  value: option.value,
+  label: `Sort: ${option.label}`,
+}));
+
+function InlineSelect({ id, label, value, options, disabled, onChange }: InlineSelectProps) {
+  return (
+    <div className="search-filters__field">
+      <label className="visually-hidden" htmlFor={id}>
+        {label}
+      </label>
+      <select
+        id={id}
+        className="search-filters__select"
+        value={value}
+        disabled={disabled}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <svg
+        className="search-filters__chevron"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </div>
+  );
 }
 
 export function SearchFilters({
-  id,
   filters,
-  topicOptions,
-  paperTypeOptions,
-  authorOptions,
-  disabled,
-  onChange,
-  onClear,
+  sort,
+  disabled = false,
+  onFiltersChange,
+  onSortChange,
 }: SearchFiltersProps) {
-  if (disabled) {
-    return (
-      <div id={id} className="search-filters">
-        <p className="search-filters__hint">
-          Filters become available after you search.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div id={id} className="search-filters">
-      <FilterPills
-        legend="Topic"
-        options={topicOptions}
-        selected={filters.topics}
+    <div className="search-filters" role="group" aria-label="Filter and sort results">
+      <InlineSelect
+        id="search-filter-year"
+        label="Year"
+        value={filters.yearRange}
+        options={YEAR_OPTIONS}
         disabled={disabled}
-        onChange={(topics) => onChange({ ...filters, topics })}
+        onChange={(value) =>
+          onFiltersChange({ ...filters, yearRange: value as YearRange })
+        }
       />
 
-      <SelectField
-        id={`${id}-year`}
-        label="Year"
-        options={YEAR_RANGES}
-        value={filters.yearRange}
+      <InlineSelect
+        id="search-filter-type"
+        label="Paper type"
+        value={filters.paperTypes[0] ?? ""}
+        options={TYPE_OPTIONS}
         disabled={disabled}
-        onChange={(event) =>
-          onChange({
+        onChange={(value) =>
+          onFiltersChange({
             ...filters,
-            yearRange: event.target.value as Filters["yearRange"],
+            paperTypes: value ? [value as PaperType] : [],
           })
         }
       />
 
-      <FilterPills
-        legend="Paper type"
-        options={paperTypeOptions}
-        selected={filters.paperTypes}
+      <InlineSelect
+        id="search-sort"
+        label="Sort results"
+        value={sort}
+        options={SORT_SELECT_OPTIONS}
         disabled={disabled}
-        onChange={(paperTypes) =>
-          onChange({ ...filters, paperTypes: paperTypes as PaperType[] })
-        }
+        onChange={(value) => onSortChange(value as SortOption)}
       />
-
-      <SelectField
-        id={`${id}-author`}
-        label="Author"
-        options={[
-          { value: "", label: "All authors" },
-          ...authorOptions.map((option) => ({
-            value: option.value,
-            label: `${option.label} (${option.count})`,
-          })),
-        ]}
-        value={filters.author}
-        disabled={disabled}
-        onChange={(event) => onChange({ ...filters, author: event.target.value })}
-      />
-
-      <button type="button" className="search-filters__clear" onClick={onClear}>
-        Clear all
-      </button>
     </div>
   );
 }

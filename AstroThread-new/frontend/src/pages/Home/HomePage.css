@@ -3,6 +3,7 @@
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
+  background-color: var(--color-surface);
 }
 
 .home-page__main {
@@ -13,10 +14,8 @@
 .home-page__hero {
   display: flex;
   flex: 1;
-  align-items: center;
   justify-content: center;
-  padding: var(--space-10) var(--page-gutter)
-    calc(var(--space-16) + var(--space-8));
+  padding: var(--space-6) var(--page-gutter) var(--space-10);
 }
 
 .home-page__content {
@@ -28,24 +27,40 @@
   text-align: center;
 }
 
-.home-page__title {
-  max-width: 15ch;
-  color: var(--color-navy);
-  font-size: clamp(2rem, 1.25rem + 3vw, 3.5rem);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.14;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
+.home-page__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.home-page__description {
-  max-width: 36rem;
+.home-page__logo {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.home-page__title {
   margin-top: var(--space-4);
+  color: var(--color-navy);
+  font-size: clamp(2.25rem, 1.75rem + 2vw, 3rem);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.home-page__product {
+  margin-top: var(--space-2);
+  color: var(--color-source);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+}
+
+.home-page__tagline {
+  margin-top: var(--space-6);
   color: var(--color-text-muted);
-  font-size: var(--font-size-lg);
+  font-size: 1.25rem;
   font-weight: var(--font-weight-regular);
-  line-height: 1.65;
-  text-wrap: pretty;
+  line-height: 1.5;
 }
 
 .home-page__search {
@@ -57,37 +72,35 @@
 
 .home-page__topics {
   width: 100%;
-  margin-top: var(--space-4);
+  margin-top: var(--space-8);
 }
 
-@media (max-width: 62rem) {
-  .home-page__hero {
-    padding-top: var(--space-16);
-    padding-bottom: var(--space-16);
-  }
+.home-page__recent {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: var(--space-8);
 }
 
 @media (max-width: 40rem) {
   .home-page__hero {
-    align-items: flex-start;
-    padding-top: var(--space-10);
-    padding-bottom: var(--space-10);
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-8);
   }
 
-  .home-page__title {
-    letter-spacing: -0.02em;
+  .home-page__logo {
+    width: 3.5rem;
+    height: 3.5rem;
   }
 
-  .home-page__description {
-    margin-top: var(--space-3);
-    font-size: var(--font-size-md);
+  .home-page__tagline {
+    margin-top: var(--space-4);
+    font-size: var(--font-size-lg);
   }
 
-  .home-page__search {
+  .home-page__search,
+  .home-page__topics,
+  .home-page__recent {
     margin-top: var(--space-6);
-  }
-
-  .home-page__topics {
-    margin-top: var(--space-5);
   }
 }

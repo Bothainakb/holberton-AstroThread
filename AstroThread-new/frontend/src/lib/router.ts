@@ -6,14 +6,13 @@ export const routes = {
   signUp: "/sign-up",
   search: "/search",
   papers: "/papers",
-  threads: "/threads",
-  timeline: "/timeline",
+  myThread: "/my-thread",
 } as const;
 
 export type AppRoute = (typeof routes)[keyof typeof routes];
 
 const appRoutes: readonly string[] = Object.values(routes);
-const routesWithIds: readonly string[] = [routes.papers, routes.threads];
+const routesWithIds: readonly string[] = [routes.papers];
 const listeners = new Set<() => void>();
 
 function notifyListeners() {
@@ -65,10 +64,6 @@ export function getRouteId(pathname: string, baseRoute: string): string | null {
 
 export function paperPath(id: string): string {
   return `${routes.papers}/${encodeURIComponent(id)}`;
-}
-
-export function threadPath(id: string): string {
-  return `${routes.threads}/${encodeURIComponent(id)}`;
 }
 
 export function isAppRoute(pathname: string): boolean {

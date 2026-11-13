@@ -10,7 +10,16 @@
   --color-border-strong: #cbd5e1;
   --color-text: #182230;
   --color-text-muted: #667085;
-  --color-accent: #4776a8;
+  --color-accent: #2340b8;
+  --color-link-visited: #5b3a9e;
+  --color-source: #0b6e70;
+
+  --color-error: #b42318;
+  --color-error-surface: #fef3f2;
+  --color-error-border: #fecdca;
+  --color-success: #067647;
+  --color-success-surface: #ecfdf3;
+  --color-success-border: #abefc6;
 
   --font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
@@ -39,8 +48,9 @@
   --header-height: 4.5rem;
   --page-gutter: var(--space-16);
   --search-max-width: 47.5rem;
+  --page-max-width: 70rem;
 
-  --focus-ring: 0 0 0 3px rgba(71, 118, 168, 0.35);
+  --focus-ring: 0 0 0 3px rgba(35, 64, 184, 0.3);
   --transition-fast: 150ms ease;
 }
 

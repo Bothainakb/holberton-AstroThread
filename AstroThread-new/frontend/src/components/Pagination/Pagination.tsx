@@ -15,6 +15,24 @@ function getVisiblePages(currentPage: number, pageCount: number) {
     .sort((a, b) => a - b);
 }
 
+function Chevron({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={direction === "left" ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
+    </svg>
+  );
+}
+
 export function Pagination({
   currentPage,
   pageCount,
@@ -31,11 +49,12 @@ export function Pagination({
     <nav className="pagination" aria-label={label}>
       <button
         type="button"
-        className="pagination__button"
+        className="pagination__button pagination__step"
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
       >
-        Prev
+        <Chevron direction="left" />
+        Previous
       </button>
 
       <ol className="pagination__pages">
@@ -61,11 +80,12 @@ export function Pagination({
 
       <button
         type="button"
-        className="pagination__button"
+        className="pagination__button pagination__step"
         disabled={currentPage === pageCount}
         onClick={() => onPageChange(currentPage + 1)}
       >
         Next
+        <Chevron direction="right" />
       </button>
     </nav>
   );

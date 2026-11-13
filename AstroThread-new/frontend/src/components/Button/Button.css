@@ -6,11 +6,13 @@
   min-height: 2.75rem;
   padding: 0 var(--space-5);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  font-size: 0.9375rem;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   line-height: 1.4;
   text-align: center;
+  cursor: pointer;
   transition:
     background-color var(--transition-fast),
     border-color var(--transition-fast),
@@ -24,6 +26,11 @@
 
 .button--full-width {
   width: 100%;
+}
+
+.button__icon {
+  display: inline-flex;
+  flex-shrink: 0;
 }
 
 .button--primary {
@@ -52,8 +59,13 @@
 }
 
 .button--secondary:hover:not(:disabled) {
-  background-color: var(--color-ice);
-  border-color: var(--color-accent);
+  background-color: var(--color-background);
+  border-color: var(--color-border-strong);
+}
+
+.button--secondary:disabled {
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
 }
 
 .button--text {
@@ -62,8 +74,9 @@
   margin: calc(var(--space-1) * -1);
   background: none;
   border-radius: var(--radius-sm);
-  color: var(--color-navy-soft);
+  color: var(--color-accent);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-underline-offset: 0.2em;

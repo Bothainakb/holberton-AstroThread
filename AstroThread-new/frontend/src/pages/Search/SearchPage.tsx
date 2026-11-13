@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
 import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
 import { SearchBox } from "../../components/SearchBox/SearchBox";
@@ -7,25 +7,18 @@ import { PaperResultCard } from "../../components/PaperResultCard/PaperResultCar
 import { Pagination } from "../../components/Pagination/Pagination";
 import { FormAlert } from "../../components/FormAlert/FormAlert";
 import { Button } from "../../components/Button/Button";
-import { SelectField } from "../../components/FormField/FormField";
 import { navigate, paperPath, routes, useLocation } from "../../lib/router";
+import { addRecentSearch } from "../../lib/recentSearches";
 import {
   EMPTY_FILTERS,
-  PAPER_TYPE_LABELS,
-  SORT_OPTIONS,
-  YEAR_RANGES,
   applyFilters,
   buildSearchParams,
-  countActiveFilters,
-  getAuthorFacets,
-  getPaperTypeFacets,
   getRelatedKeywords,
-  getTopicFacets,
   paginate,
   readSearchState,
   sortPapers,
 } from "../../lib/searchResults";
-import type { SearchFilters as Filters, SearchQueryState, SortOption } from "../../lib/searchResults";
+import type { SearchQueryState } from "../../lib/searchResults";
 import { searchPapers, searchSource } from "../../services/search/searchService";
 import type { SearchSource } from "../../services/search/searchService";
 import type { PaperSummary } from "../../types/research";
@@ -39,12 +32,6 @@ interface SearchResult {
   error: boolean;
 }
 
-interface ActiveFilterChip {
-  key: string;
-  label: string;
-  remove: (filters: Filters) => Filters;
-}
-
 const LOADING_CARD_COUNT = 3;
 
 function buildSearchHref(state: SearchQueryState) {
@@ -52,60 +39,26 @@ function buildSearchHref(state: SearchQueryState) {
   return params ? `${routes.search}?${params}` : routes.search;
 }
 
-function getActiveFilterChips(filters: Filters): ActiveFilterChip[] {
-  const chips: ActiveFilterChip[] = filters.topics.map((topic) => ({
-    key: `topic-${topic}`,
-    label: topic,
-    remove: (current) => ({
-      ...current,
-      topics: current.topics.filter((item) => item !== topic),
-    }),
-  }));
+function readPageState(searchParams: URLSearchParams): SearchQueryState {
+  const state = readSearchState(searchParams);
 
-  if (filters.yearRange !== "any") {
-    chips.push({
-      key: "year",
-      label: YEAR_RANGES.find((range) => range.value === filters.yearRange)?.label ?? "",
-      remove: (current) => ({ ...current, yearRange: "any" }),
-    });
-  }
-
-  filters.paperTypes.forEach((type) =>
-    chips.push({
-      key: `type-${type}`,
-      label: PAPER_TYPE_LABELS[type],
-      remove: (current) => ({
-        ...current,
-        paperTypes: current.paperTypes.filter((item) => item !== type),
-      }),
-    }),
-  );
-
-  if (filters.author) {
-    chips.push({
-      key: "author",
-      label: filters.author,
-      remove: (current) => ({ ...current, author: "" }),
-    });
-  }
-
-  return chips;
+  // Topic and author filters are not part of the Research Explorer design.
+  return {
+    ...state,
+    filters: { ...state.filters, topics: [], author: "" },
+  };
 }
 
 export function SearchPage() {
   const { searchParams } = useLocation();
-  const state = readSearchState(searchParams);
+  const state = readPageState(searchParams);
   const { query, filters, sort, page } = state;
 
   const [input, setInput] = useState(query);
   const [syncedQuery, setSyncedQuery] = useState(query);
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<SearchResult | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(
-    () => countActiveFilters(filters) > 0,
-  );
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
-  const filtersId = useId();
 
   if (query !== syncedQuery) {
     setSyncedQuery(query);
@@ -117,6 +70,12 @@ export function SearchPage() {
 
   useEffect(() => {
     document.title = query ? `${query} | Search | AstroThread` : "Search | AstroThread";
+  }, [query]);
+
+  useEffect(() => {
+    if (query) {
+      addRecentSearch(query);
+    }
   }, [query]);
 
   useEffect(() => {
@@ -150,8 +109,6 @@ export function SearchPage() {
     [basePapers, filters, sort],
   );
   const { items: pagePapers, currentPage, pageCount } = paginate(filteredPapers, page);
-  const activeFilterCount = countActiveFilters(filters);
-  const activeChips = getActiveFilterChips(filters);
 
   const hasError = Boolean(query) && !isLoading && result?.error === true;
   const hasResults = Boolean(query) && !isLoading && !hasError && basePapers.length > 0;
@@ -185,250 +142,192 @@ export function SearchPage() {
 
   return (
     <div className="search-page">
-      <SiteHeader showMainNav />
+      <SiteHeader
+        search={
+          <SearchBox
+            size="compact"
+            value={input}
+            onValueChange={setInput}
+            onSearch={runSearch}
+          />
+        }
+      />
 
-      <main className="search-page__main">
-        <div className="search-page__layout">
-          <aside className="search-page__filters" aria-label="Search filters">
+      <nav className="search-page__tabs" aria-label="Result types">
+        <ul className="search-page__tab-list">
+          <li>
+            <span className="search-page__tab" aria-current="page">
+              All
+            </span>
+          </li>
+          <li>
             <button
               type="button"
-              className="search-page__filters-toggle"
-              aria-expanded={filtersOpen}
-              aria-controls={filtersId}
-              onClick={() => setFiltersOpen((open) => !open)}
+              className="search-page__tab search-page__tab--soon"
+              aria-disabled="true"
+              title="Coming soon"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
-                <circle cx="16" cy="7" r="2" />
-                <circle cx="8" cy="17" r="2" />
-              </svg>
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-              <svg className="search-page__filters-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="m6 9 6 6 6-6" />
+              Images
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              className="search-page__tab search-page__tab--soon"
+              aria-disabled="true"
+              title="Coming soon"
+            >
+              More
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M7 10l5 5 5-5z" />
               </svg>
             </button>
+          </li>
+        </ul>
+      </nav>
 
-            {filtersOpen && (
-              <SearchFilters
-                id={filtersId}
-                filters={filters}
-                topicOptions={getTopicFacets(basePapers)}
-                paperTypeOptions={getPaperTypeFacets(basePapers)}
-                authorOptions={getAuthorFacets(basePapers)}
-                disabled={!hasResults}
-                onChange={(nextFilters) => updateState({ filters: nextFilters })}
-                onClear={() => updateState({ filters: EMPTY_FILTERS })}
+      <main className="search-page__main">
+        <div className="search-page__content">
+          {!query && (
+            <div className="search-page__intro">
+              <h1 className="search-page__title">What do you want to explore?</h1>
+              <p className="search-page__lead">
+                Search for any astronomy or physics topic, keyword, or paper title.
+              </p>
+              <PopularTopics
+                title="Try"
+                onTopicSelect={(topic) => runSearch(topic.query)}
               />
-            )}
-          </aside>
+            </div>
+          )}
 
-          <section className="search-page__results" aria-labelledby="search-results-title">
-            <SearchBox value={input} onValueChange={setInput} onSearch={runSearch} />
-
-            {!query && (
-              <div className="search-page__intro">
-                <h1 id="search-results-title" className="search-page__title">
-                  What do you want to explore?
-                </h1>
-                <p className="search-page__lead">
-                  Search for any astronomy or physics topic, keyword, or paper title.
-                </p>
-                <PopularTopics
-                  title="Try"
-                  onTopicSelect={(topic) => runSearch(topic.query)}
-                />
-              </div>
-            )}
-
-            {isLoading && (
-              <div className="search-page__state" aria-busy="true">
-                <h1 id="search-results-title" className="visually-hidden">
-                  Search results
-                </h1>
-                <p className="search-page__summary" role="status">
-                  Searching for “{query}”…
-                </p>
-                <div className="search-page__skeletons" aria-hidden="true">
-                  {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
-                    <div key={index} className="search-page__skeleton">
-                      <span className="search-page__skeleton-line search-page__skeleton-line--short" />
-                      <span className="search-page__skeleton-line search-page__skeleton-line--title" />
-                      <span className="search-page__skeleton-line" />
-                      <span className="search-page__skeleton-line search-page__skeleton-line--medium" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {hasError && (
-              <div className="search-page__state">
-                <h1 id="search-results-title" className="visually-hidden">
-                  Search results
-                </h1>
-                <FormAlert tone="error" title="Search isn’t available right now">
-                  We couldn’t reach the search service. Check your connection and try again.
-                </FormAlert>
-                <Button variant="secondary" onClick={() => setAttempt((value) => value + 1)}>
-                  Try again
-                </Button>
-              </div>
-            )}
-
-            {hasNoResults && (
-              <div className="search-page__state search-page__empty">
-                <h1 id="search-results-title" className="search-page__empty-title">
-                  No results found for “{query}”
-                </h1>
-                <p className="search-page__lead">
-                  Check the spelling, try a broader keyword, or start with one of these topics.
-                </p>
-                <PopularTopics
-                  title="Try"
-                  onTopicSelect={(topic) => runSearch(topic.query)}
-                />
-              </div>
-            )}
-
-            {hasResults && (
-              <div className="search-page__state">
-                <div className="search-page__results-head">
-                  <h1
-                    id="search-results-title"
-                    ref={resultsHeadingRef}
-                    tabIndex={-1}
-                    className="search-page__summary search-page__summary--strong"
-                  >
-                    {filteredPapers.length} {filteredPapers.length === 1 ? "paper" : "papers"} for “{query}”
-                  </h1>
-
-                  <div className="search-page__sort">
-                    <SelectField
-                      id="search-sort"
-                      label="Sort by"
-                      options={SORT_OPTIONS}
-                      value={sort}
-                      disabled={filtersMatchNothing}
-                      onChange={(event) =>
-                        updateState({ sort: event.target.value as SortOption })
-                      }
-                    />
+          {isLoading && (
+            <div className="search-page__state" aria-busy="true">
+              <h1 className="visually-hidden">Search results</h1>
+              <p className="search-page__summary" role="status">
+                Searching for “{query}”…
+              </p>
+              <div className="search-page__skeletons" aria-hidden="true">
+                {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
+                  <div key={index} className="search-page__skeleton">
+                    <span className="search-page__skeleton-line search-page__skeleton-line--short" />
+                    <span className="search-page__skeleton-line search-page__skeleton-line--title" />
+                    <span className="search-page__skeleton-line" />
+                    <span className="search-page__skeleton-line search-page__skeleton-line--medium" />
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-                {searchSource === "sample" && (
-                  <p className="search-page__source-note">
-                    Sample results. The search API isn’t connected yet.
+          {hasError && (
+            <div className="search-page__state">
+              <h1 className="visually-hidden">Search results</h1>
+              <FormAlert tone="error" title="Search isn’t available right now">
+                We couldn’t reach the search service. Check your connection and try again.
+              </FormAlert>
+              <Button variant="secondary" onClick={() => setAttempt((value) => value + 1)}>
+                Try again
+              </Button>
+            </div>
+          )}
+
+          {hasNoResults && (
+            <div className="search-page__empty">
+              <h1 className="search-page__empty-title">No results found for “{query}”</h1>
+              <p className="search-page__lead">
+                Check the spelling, try a broader keyword, or start with one of these topics.
+              </p>
+              <PopularTopics
+                title="Try"
+                onTopicSelect={(topic) => runSearch(topic.query)}
+              />
+            </div>
+          )}
+
+          {hasResults && (
+            <div className="search-page__state">
+              <SearchFilters
+                filters={filters}
+                sort={sort}
+                onFiltersChange={(nextFilters) => updateState({ filters: nextFilters })}
+                onSortChange={(nextSort) => updateState({ sort: nextSort })}
+              />
+
+              <h1
+                ref={resultsHeadingRef}
+                tabIndex={-1}
+                className="search-page__summary"
+              >
+                <strong>{filteredPapers.length}</strong>{" "}
+                {filteredPapers.length === 1 ? "paper" : "papers"} for “{query}”
+              </h1>
+
+              {searchSource === "sample" && (
+                <p className="search-page__source-note">
+                  Sample results. The search API isn’t connected yet.
+                </p>
+              )}
+
+              {relatedKeywords.length > 0 && (
+                <section className="search-page__related" aria-labelledby="search-related-title">
+                  <h2 id="search-related-title" className="search-page__related-title">
+                    Related topics
+                  </h2>
+                  <ul className="search-page__related-list">
+                    {relatedKeywords.map((keyword) => (
+                      <li key={keyword.value}>
+                        <button
+                          type="button"
+                          className="search-page__related-chip"
+                          onClick={() => runSearch(keyword.value)}
+                        >
+                          {keyword.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {filtersMatchNothing ? (
+                <div className="search-page__empty">
+                  <h2 className="search-page__empty-title">No papers match these filters</h2>
+                  <p className="search-page__lead">
+                    Change the year or type to see the {basePapers.length}{" "}
+                    {basePapers.length === 1 ? "paper" : "papers"} found for “{query}”.
                   </p>
-                )}
+                  <Button
+                    variant="secondary"
+                    onClick={() => updateState({ filters: EMPTY_FILTERS })}
+                  >
+                    Show all papers
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <ol className="search-page__list">
+                    {pagePapers.map((paper) => (
+                      <li key={paper.id}>
+                        <PaperResultCard
+                          paper={paper}
+                          detailsHref={`${paperPath(paper.id)}?${detailsQuery}`}
+                          onKeywordSelect={runSearch}
+                        />
+                      </li>
+                    ))}
+                  </ol>
 
-                {activeChips.length > 0 && (
-                  <div className="search-page__active">
-                    <span className="search-page__active-label">Filtered by</span>
-                    <ul className="search-page__chips">
-                      {activeChips.map((chip) => (
-                        <li key={chip.key}>
-                          <button
-                            type="button"
-                            className="search-page__chip"
-                            aria-label={`Remove filter: ${chip.label}`}
-                            onClick={() => updateState({ filters: chip.remove(filters) })}
-                          >
-                            {chip.label}
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                              <path d="M6 6l12 12M18 6 6 18" />
-                            </svg>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    <button
-                      type="button"
-                      className="search-page__clear"
-                      onClick={() => updateState({ filters: EMPTY_FILTERS })}
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                )}
-
-                {filtersMatchNothing ? (
-                  <div className="search-page__empty">
-                    <h2 className="search-page__empty-title">No papers match these filters</h2>
-                    <p className="search-page__lead">
-                      Remove a filter or clear them all to see the {basePapers.length}{" "}
-                      {basePapers.length === 1 ? "paper" : "papers"} found for “{query}”.
-                    </p>
-                    <Button
-                      variant="secondary"
-                      onClick={() => updateState({ filters: EMPTY_FILTERS })}
-                    >
-                      Clear all filters
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <ol className="search-page__list">
-                      {pagePapers.map((paper) => (
-                        <li key={paper.id}>
-                          <PaperResultCard
-                            paper={paper}
-                            detailsHref={`${paperPath(paper.id)}?${detailsQuery}`}
-                            onKeywordSelect={runSearch}
-                          />
-                        </li>
-                      ))}
-                    </ol>
-
-                    <Pagination
-                      currentPage={currentPage}
-                      pageCount={pageCount}
-                      label="Search result pages"
-                      onPageChange={changePage}
-                    />
-                  </>
-                )}
-              </div>
-            )}
-          </section>
-
-          <aside className="search-page__rail" aria-labelledby="search-rail-title">
-            {hasResults && relatedKeywords.length > 0 ? (
-              <>
-                <h2 id="search-rail-title" className="search-page__rail-title">
-                  Related topics
-                </h2>
-                <p className="search-page__rail-text">
-                  Keywords found in these results. Select one to search it.
-                </p>
-                <ul className="search-page__rail-list">
-                  {relatedKeywords.map((keyword) => (
-                    <li key={keyword.value}>
-                      <button
-                        type="button"
-                        className="search-page__rail-chip"
-                        onClick={() => runSearch(keyword.value)}
-                      >
-                        {keyword.label}
-                        <span className="search-page__rail-count">{keyword.count}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <>
-                <h2 id="search-rail-title" className="search-page__rail-title">
-                  Search tips
-                </h2>
-                <ul className="search-page__tips">
-                  <li>Use a topic, such as “black holes”.</li>
-                  <li>Search a paper title or an author name.</li>
-                  <li>After searching, use Filters to narrow the results.</li>
-                </ul>
-              </>
-            )}
-          </aside>
+                  <Pagination
+                    currentPage={currentPage}
+                    pageCount={pageCount}
+                    label="Search result pages"
+                    onPageChange={changePage}
+                  />
+                </>
+              )}
+            </div>
+          )}
         </div>
       </main>
 

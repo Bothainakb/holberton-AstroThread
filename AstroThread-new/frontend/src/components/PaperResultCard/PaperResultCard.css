@@ -1,65 +1,37 @@
 .paper-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-5);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--transition-fast);
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
 }
 
-.paper-card:hover {
-  border-color: var(--color-border-strong);
-}
-
-.paper-card__top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+.paper-card__source {
+  color: var(--color-source);
   font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   line-height: 1.5;
 }
 
-.paper-card__type {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-navy-soft);
-  font-weight: var(--font-weight-semibold);
-}
-
-.paper-card__type::before {
-  width: 0.375rem;
-  height: 0.375rem;
-  background-color: var(--color-accent);
-  border-radius: 50%;
-  content: "";
-}
-
-.paper-card__topic {
-  color: var(--color-text-muted);
-}
-
 .paper-card__title {
-  color: var(--color-navy);
-  font-size: 1.0625rem;
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.4;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .paper-card__title-link {
   border-radius: var(--radius-sm);
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 0.2em;
-  transition: text-decoration-color var(--transition-fast);
+  color: var(--color-accent);
+  text-decoration: none;
 }
 
 .paper-card__title-link:hover {
-  text-decoration-color: currentColor;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.paper-card__title-link:visited {
+  color: var(--color-link-visited);
 }
 
 .paper-card__meta {
@@ -70,84 +42,40 @@
 
 .paper-card__abstract {
   display: -webkit-box;
+  margin-top: var(--space-1);
   overflow: hidden;
   color: var(--color-text);
-  font-size: 0.9375rem;
+  font-size: var(--font-size-md);
   line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   line-clamp: 3;
 }
 
-.paper-card__footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
-}
-
 .paper-card__keywords {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-4);
+  margin-top: var(--space-1);
 }
 
 .paper-card__keyword {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.75rem;
-  padding: 0 var(--space-3);
-  background-color: var(--color-ice);
-  border: 1px solid transparent;
+  padding: 0;
+  background: none;
+  border: 0;
   border-radius: var(--radius-sm);
-  color: var(--color-navy-soft);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
 }
 
 button.paper-card__keyword {
-  transition:
-    background-color var(--transition-fast),
-    border-color var(--transition-fast);
+  cursor: pointer;
 }
 
 button.paper-card__keyword:hover {
-  background-color: var(--color-surface);
-  border-color: var(--color-accent);
-}
-
-.paper-card__action {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.25rem;
-  padding: 0 var(--space-4);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-  color: var(--color-navy);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-}
-
-a.paper-card__action:hover {
-  background-color: var(--color-ice);
-  border-color: var(--color-accent);
-}
-
-.paper-card__action--soon {
-  border-style: dashed;
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-medium);
-}
-
-@media (max-width: 40rem) {
-  .paper-card {
-    padding: var(--space-4);
-  }
-
-  .paper-card__keyword {
-    min-height: 2.25rem;
-  }
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }

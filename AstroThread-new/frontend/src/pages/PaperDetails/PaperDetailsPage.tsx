@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { ResearchLayout } from "../../components/ResearchLayout/ResearchLayout";
-import { InfoPanel, InfoPanelSection } from "../../components/InfoPanel/InfoPanel";
-import { MiniPaperCard } from "../../components/MiniPaperCard/MiniPaperCard";
+import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
+import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
+import { SearchBox } from "../../components/SearchBox/SearchBox";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { Button } from "../../components/Button/Button";
-import { paperPath, routes, useLocation } from "../../lib/router";
-import { formatAllAuthors, formatPublication } from "../../lib/formatPaper";
+import { ResearchAssistant } from "../../components/ResearchAssistant/ResearchAssistant";
+import { getCurrentSession } from "../../data/demoAuth";
+import { getMyThread, isTopicSaved, recordPaperView, saveTopic } from "../../data/myThread";
+import { navigate, paperPath, routes, useLocation } from "../../lib/router";
+import { formatAllAuthors } from "../../lib/formatPaper";
 import { PAPER_TYPE_LABELS } from "../../lib/searchResults";
 import { getPaper, getRelatedPapers } from "../../services/research/researchService";
 import type { PaperDetails, PaperSummary } from "../../types/research";
@@ -28,23 +31,67 @@ function searchHref(query: string) {
   return `${routes.search}?${new URLSearchParams({ q: query }).toString()}`;
 }
 
-function getBackHref(from: string | null) {
-  return from && from.startsWith(routes.search) ? from : routes.search;
+function readSearchOrigin(from: string | null) {
+  if (!from || !from.startsWith(routes.search)) {
+    return null;
+  }
+
+  const query = new URL(from, window.location.origin).searchParams.get("q") ?? "";
+  return { href: from, query };
 }
 
 function buildCitation(paper: PaperDetails) {
   return `${formatAllAuthors(paper.authors)} (${paper.year}). ${paper.title}. ${paper.venue}.`;
 }
 
+function BackIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ThreadIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 18c3 0 3-12 6-12s3 12 6 12 2.5-6 4-6" />
+      <circle cx="4" cy="18" r="1.7" fill="currentColor" stroke="none" />
+      <circle cx="20" cy="12" r="1.7" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+      <rect x="8.5" y="8.5" width="11" height="11" rx="2" />
+      <path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5" />
+    </svg>
+  );
+}
+
 export function PaperDetailsPage({ paperId }: PaperDetailsPageProps) {
-  const { searchParams } = useLocation();
+  const { pathname, searchParams } = useLocation();
   const from = searchParams.get("from");
-  const backHref = getBackHref(from);
-  const hasSearchOrigin = backHref !== routes.search;
+  const searchOrigin = readSearchOrigin(from);
 
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<PaperResult | null>(null);
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+  const [query, setQuery] = useState(searchOrigin?.query ?? "");
+  const [session] = useState(getCurrentSession);
+  const [myThread, setMyThread] = useState(() =>
+    session ? getMyThread(session.email) : null,
+  );
 
   const requestKey = `${attempt}:${paperId}`;
   const isLoading = result?.key !== requestKey;
@@ -73,12 +120,26 @@ export function PaperDetailsPage({ paperId }: PaperDetailsPageProps) {
   }, [paperId, requestKey]);
 
   useEffect(() => {
+    if (paper && session) {
+      setMyThread(recordPaperView(session.email, paper));
+    }
+  }, [paper, session]);
+
+  useEffect(() => {
     if (paper) {
       document.title = `${paper.title} | AstroThread`;
     } else if (!isLoading) {
       document.title = "Paper not found | AstroThread";
     }
   }, [paper, isLoading]);
+
+  function runSearch(nextQuery: string) {
+    const trimmed = nextQuery.trim();
+
+    if (trimmed) {
+      navigate(searchHref(trimmed));
+    }
+  }
 
   async function copyCitation(citation: string) {
     try {
@@ -89,112 +150,193 @@ export function PaperDetailsPage({ paperId }: PaperDetailsPageProps) {
     }
   }
 
+  function handleSaveTopic(topic: string) {
+    if (!session) {
+      navigate(`${routes.signIn}?${returnParams}`);
+      return;
+    }
+
+    if (myThread && isTopicSaved(myThread, topic)) {
+      navigate(routes.myThread);
+      return;
+    }
+
+    setMyThread(saveTopic(session.email, topic));
+  }
+
+  function showAssistant() {
+    const assistant = document.getElementById("research-assistant");
+    assistant?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("assistant-input")?.focus({ preventScroll: true });
+  }
+
   const relatedHref = (relatedPaper: PaperSummary) => {
     const path = paperPath(relatedPaper.id);
     return from ? `${path}?${new URLSearchParams({ from }).toString()}` : path;
   };
 
-  const backLink = (
-    <a className="paper-details__back" href={backHref}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-      {hasSearchOrigin ? "Back to search results" : "Back to search"}
-    </a>
-  );
+  const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const returnParams = new URLSearchParams({ from: currentPath }).toString();
+  const backHref = searchOrigin?.href ?? routes.home;
+
+  let content;
 
   if (isLoading) {
-    return (
-      <ResearchLayout>
-        <div className="paper-details__loading" aria-busy="true">
-          <p className="paper-details__status" role="status">
-            Loading paper…
-          </p>
-          <span className="paper-details__skeleton paper-details__skeleton--short" />
-          <span className="paper-details__skeleton paper-details__skeleton--title" />
-          <span className="paper-details__skeleton" />
-          <span className="paper-details__skeleton" />
-          <span className="paper-details__skeleton paper-details__skeleton--medium" />
-        </div>
-      </ResearchLayout>
+    content = (
+      <div className="paper-page__loading" aria-busy="true">
+        <p className="visually-hidden" role="status">
+          Loading paper…
+        </p>
+        <span className="paper-page__skeleton paper-page__skeleton--short" />
+        <span className="paper-page__skeleton paper-page__skeleton--title" />
+        <span className="paper-page__skeleton" />
+        <span className="paper-page__skeleton paper-page__skeleton--medium" />
+      </div>
     );
-  }
-
-  if (result?.error) {
-    return (
-      <ResearchLayout>
-        <EmptyState
-          headingLevel="h1"
-          title="This paper couldn’t be loaded"
-          description="Check your connection and try again."
-          actions={
-            <>
-              <Button onClick={() => setAttempt((value) => value + 1)}>Try again</Button>
-              <a className="button button--secondary" href={backHref}>
-                Back to search
-              </a>
-            </>
-          }
-        />
-      </ResearchLayout>
-    );
-  }
-
-  if (!paper) {
-    return (
-      <ResearchLayout>
-        <EmptyState
-          headingLevel="h1"
-          title="We couldn’t find this paper"
-          description="The link may be out of date. Search for the paper by its title, author, or topic."
-          actions={
-            <a className="button button--primary" href={backHref}>
-              Go to search
+  } else if (result?.error) {
+    content = (
+      <EmptyState
+        headingLevel="h1"
+        title="This paper couldn’t be loaded"
+        description="Check your connection and try again."
+        actions={
+          <>
+            <Button onClick={() => setAttempt((value) => value + 1)}>Try again</Button>
+            <a className="button button--secondary" href={backHref}>
+              Go back
             </a>
-          }
-        />
-      </ResearchLayout>
+          </>
+        }
+      />
     );
-  }
+  } else if (!paper) {
+    content = (
+      <EmptyState
+        headingLevel="h1"
+        title="We couldn’t find this paper"
+        description="The link may be out of date. Search for the paper by its title, author, or topic."
+        actions={
+          <a className="button button--primary" href={routes.search}>
+            Go to search
+          </a>
+        }
+      />
+    );
+  } else {
+    const citation = buildCitation(paper);
+    const typeLabel = PAPER_TYPE_LABELS[paper.paperType];
+    const topicSaved = Boolean(myThread && isTopicSaved(myThread, paper.topic));
 
-  const citation = buildCitation(paper);
+    content = (
+      <div className="paper-page__layout">
+        <article className="paper-page__article" aria-labelledby="paper-title">
+          <a className="paper-page__back" href={backHref}>
+            <BackIcon />
+            {searchOrigin?.query ? `Results for “${searchOrigin.query}”` : "Home"}
+          </a>
 
-  return (
-    <ResearchLayout
-      sidebarLabel="Paper information"
-      sidebar={
-        <div className="paper-details__sidebar">
-          {backLink}
+          <p className="paper-page__source">
+            {paper.venue}
+            {paper.year ? ` · ${paper.year}` : ""}
+          </p>
 
-          <h2 className="paper-details__sidebar-title">Paper information</h2>
+          <h1 id="paper-title" className="paper-page__title">
+            {paper.title}
+          </h1>
 
-          <dl className="paper-details__facts">
-            <div>
-              <dt>Research type</dt>
-              <dd>{PAPER_TYPE_LABELS[paper.paperType]}</dd>
-            </div>
-            <div>
-              <dt>Topic</dt>
-              <dd>{paper.topic}</dd>
-            </div>
-            <div>
-              <dt>Authors</dt>
-              <dd>{formatAllAuthors(paper.authors)}</dd>
-            </div>
-            <div>
-              <dt>Published</dt>
-              <dd>{formatPublication(paper)}</dd>
-            </div>
-          </dl>
+          <p className="paper-page__authors">{formatAllAuthors(paper.authors)}</p>
+
+          <p className="paper-page__meta">
+            {paper.year > 0 && <span>Published {paper.year}</span>}
+            {paper.venue && <span>{paper.venue}</span>}
+            <span className="paper-page__tag">{typeLabel}</span>
+          </p>
+
+          <div className="paper-page__actions">
+            <Button
+              variant="secondary"
+              icon={topicSaved ? <CheckIcon /> : <ThreadIcon />}
+              className={topicSaved ? "paper-page__saved" : undefined}
+              onClick={() => handleSaveTopic(paper.topic)}
+            >
+              {topicSaved ? "Saved to My Thread" : "Save topic to My Thread"}
+            </Button>
+            <Button variant="secondary" icon={<CopyIcon />} onClick={() => copyCitation(citation)}>
+              Copy citation
+            </Button>
+            <Button
+              variant="secondary"
+              className="paper-page__ask"
+              onClick={showAssistant}
+            >
+              Ask the assistant
+            </Button>
+          </div>
+
+          <p className="paper-page__copy-status" role="status">
+            {copyStatus === "copied" && "Citation copied."}
+            {copyStatus === "failed" && "Couldn’t copy automatically. Select the citation below."}
+          </p>
+          {copyStatus === "failed" && <p className="paper-page__citation">{citation}</p>}
+
+          <section className="paper-page__section">
+            <h2 className="paper-page__heading">Summary</h2>
+            <p className="paper-page__text">{paper.abstract}</p>
+          </section>
+
+          <section className="paper-page__section">
+            <h2 className="paper-page__heading">Key findings</h2>
+            <p className="paper-page__text">{paper.mainFinding}</p>
+          </section>
+
+          <section className="paper-page__section">
+            <h2 className="paper-page__heading">Method</h2>
+            <p className="paper-page__text">{paper.method}</p>
+          </section>
+
+          <section className="paper-page__section">
+            <h2 className="paper-page__heading">Why it matters</h2>
+            <p className="paper-page__text">{paper.whyItMatters}</p>
+          </section>
+
+          <section className="paper-page__section">
+            <h2 className="paper-page__heading">Research information</h2>
+            <dl className="paper-page__info">
+              {paper.venue && (
+                <div>
+                  <dt>Journal</dt>
+                  <dd>{paper.venue}</dd>
+                </div>
+              )}
+              {paper.year > 0 && (
+                <div>
+                  <dt>Published</dt>
+                  <dd>{paper.year}</dd>
+                </div>
+              )}
+              <div>
+                <dt>Research type</dt>
+                <dd>{typeLabel}</dd>
+              </div>
+              <div>
+                <dt>Topic</dt>
+                <dd>
+                  <a className="paper-page__link" href={searchHref(paper.topic)}>
+                    {paper.topic}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </section>
 
           {paper.keywords.length > 0 && (
-            <div className="paper-details__keywords">
-              <h3 className="paper-details__label">Keywords</h3>
-              <ul className="paper-details__chips">
+            <section className="paper-page__section">
+              <h2 className="paper-page__heading">Keywords</h2>
+              <ul className="paper-page__keywords">
                 {paper.keywords.map((keyword) => (
                   <li key={keyword}>
                     <a
-                      className="paper-details__chip"
+                      className="paper-page__keyword"
                       href={searchHref(keyword)}
                       aria-label={`Search for ${keyword}`}
                     >
@@ -203,95 +345,62 @@ export function PaperDetailsPage({ paperId }: PaperDetailsPageProps) {
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
 
-          <div className="paper-details__actions">
-            <Button variant="secondary" fullWidth onClick={() => copyCitation(citation)}>
-              Copy citation
-            </Button>
-            <p className="paper-details__copy-status" role="status">
-              {copyStatus === "copied" && "Citation copied."}
-              {copyStatus === "failed" &&
-                "Couldn’t copy automatically. Select the citation below instead."}
-            </p>
-            {copyStatus === "failed" && (
-              <p className="paper-details__citation">{citation}</p>
-            )}
-          </div>
-        </div>
-      }
-      rail={
-        <InfoPanel
-          title="Connected research"
-          description="Papers and searches linked to this paper."
-        >
-          <InfoPanelSection title="Related research papers">
+          <section className="paper-page__section">
+            <h2 className="paper-page__heading">Related papers</h2>
             {result && result.relatedPapers.length > 0 ? (
-              <ul className="info-panel__list">
+              <ul className="paper-page__related">
                 {result.relatedPapers.map((relatedPaper) => (
                   <li key={relatedPaper.id}>
-                    <MiniPaperCard paper={relatedPaper} href={relatedHref(relatedPaper)} />
+                    <a className="paper-page__link" href={relatedHref(relatedPaper)}>
+                      {relatedPaper.title}
+                    </a>
+                    <span>
+                      {formatAllAuthors(relatedPaper.authors)}
+                      {relatedPaper.year ? `, ${relatedPaper.year}` : ""}
+                    </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="info-panel__text">No related papers found yet.</p>
+              <p className="paper-page__text">No related papers found yet.</p>
             )}
-          </InfoPanelSection>
+          </section>
 
-          <InfoPanelSection title="Explore this topic">
-            <p className="info-panel__text">
-              Find more research on {paper.topic.toLowerCase()}.
-            </p>
-            <div className="info-panel__chips">
-              <a className="info-panel__chip" href={searchHref(paper.topic)}>
-                Search {paper.topic}
-              </a>
-            </div>
-          </InfoPanelSection>
-        </InfoPanel>
-      }
-    >
-      <article className="paper-details" aria-labelledby="paper-title">
-        <p className="paper-details__eyebrow">
-          <span className="paper-details__type">{PAPER_TYPE_LABELS[paper.paperType]}</span>
-          <span>{paper.topic}</span>
-        </p>
+          <p className="paper-page__note">
+            The summary and key findings are written for AstroThread. Read the original paper
+            for the full abstract and methods.
+          </p>
+        </article>
 
-        <h1 id="paper-title" className="paper-details__title">
-          {paper.title}
-        </h1>
+        <ResearchAssistant
+          paper={paper}
+          isSignedIn={Boolean(session)}
+          logInHref={`${routes.signIn}?${returnParams}`}
+          signUpHref={`${routes.signUp}?${returnParams}`}
+        />
+      </div>
+    );
+  }
 
-        <p className="paper-details__meta">{formatPublication(paper)}</p>
+  return (
+    <div className="paper-page">
+      <SiteHeader
+        search={
+          <SearchBox
+            size="compact"
+            value={query}
+            onValueChange={setQuery}
+            onSearch={runSearch}
+          />
+        }
+      />
 
-        <section className="paper-details__section" aria-labelledby="paper-abstract">
-          <h2 id="paper-abstract" className="paper-details__heading">
-            Abstract
-          </h2>
-          <p className="paper-details__text">{paper.abstract}</p>
-        </section>
+      <main className="paper-page__main">{content}</main>
 
-        <section className="paper-details__section" aria-labelledby="paper-summary">
-          <h2 id="paper-summary" className="paper-details__heading">
-            Research summary
-          </h2>
-          <dl className="paper-details__summary">
-            <div className="paper-details__summary-row">
-              <dt>Method</dt>
-              <dd>{paper.method}</dd>
-            </div>
-            <div className="paper-details__summary-row">
-              <dt>Main finding</dt>
-              <dd>{paper.mainFinding}</dd>
-            </div>
-            <div className="paper-details__summary-row">
-              <dt>Why it matters</dt>
-              <dd>{paper.whyItMatters}</dd>
-            </div>
-          </dl>
-        </section>
-      </article>
-    </ResearchLayout>
+      <SiteFooter />
+    </div>
   );
 }

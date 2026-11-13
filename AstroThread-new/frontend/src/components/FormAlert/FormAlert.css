@@ -4,7 +4,7 @@
   gap: var(--space-1);
   padding: var(--space-3) var(--space-4);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   line-height: 1.5;
 }
@@ -22,9 +22,9 @@
 }
 
 .form-alert--info {
-  background-color: var(--color-ice);
-  border-color: var(--color-ice);
-  color: var(--color-navy-soft);
+  background-color: var(--color-background);
+  border-color: var(--color-border);
+  color: var(--color-text);
 }
 
 .form-alert__title {

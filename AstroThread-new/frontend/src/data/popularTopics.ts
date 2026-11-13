@@ -7,13 +7,13 @@ export interface PopularTopic {
 export const popularTopics: readonly PopularTopic[] = [
   {
     id: "black-holes",
-    label: "Black Holes",
-    query: "Black Holes",
+    label: "Black holes",
+    query: "Black holes",
   },
   {
     id: "gravitational-waves",
-    label: "Gravitational Waves",
-    query: "Gravitational Waves",
+    label: "Gravitational waves",
+    query: "Gravitational waves",
   },
   {
     id: "exoplanets",
