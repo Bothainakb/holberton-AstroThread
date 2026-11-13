@@ -6,63 +6,25 @@ export interface DemoSession {
   accountType: AccountType;
 }
 
-interface DemoAccount extends DemoSession {
-  password: string;
-}
+export type CodeRequestResult =
+  | { ok: true }
+  | { ok: false; reason: "no-account" | "exists" };
 
-interface SignInInput {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-interface SignUpInput {
-  fullName: string;
-  email: string;
-  password: string;
-  accountType: AccountType;
-  invitationCode?: string;
-}
-
-type SignUpErrorField = "email" | "invitationCode";
-
-export type SignInResult =
+export type VerifyResult =
   | { ok: true; session: DemoSession }
   | { ok: false; message: string };
 
-export type SignUpResult =
-  | { ok: true; session: DemoSession }
-  | { ok: false; field: SignUpErrorField; message: string };
+export const DEMO_ADMIN_EMAIL = "admin@astrothread.demo";
+export const LOGIN_CODE_LENGTH = 6;
 
-export const DEMO_ADMIN_INVITATION_CODE = "ASTRO-ADMIN-2026";
-
-export const demoCredentials = [
-  {
-    accountType: "user",
-    email: "user@astrothread.dev",
-    password: "Explore2026",
-  },
-  {
-    accountType: "admin",
-    email: "admin@astrothread.dev",
-    password: "Admin2026",
-  },
-] as const;
-
+const ACCOUNTS_STORAGE_KEY = "astrothread-demo-accounts";
 const SESSION_STORAGE_KEY = "astrothread-demo-session";
-const DEMO_DELAY_MS = 900;
+const DEMO_DELAY_MS = 700;
 
-const demoAccounts: DemoAccount[] = [
-  {
-    fullName: "Sara Alharbi",
-    email: demoCredentials[0].email,
-    password: demoCredentials[0].password,
-    accountType: "user",
-  },
+const builtInAccounts: DemoSession[] = [
   {
     fullName: "AstroThread Admin",
-    email: demoCredentials[1].email,
-    password: demoCredentials[1].password,
+    email: DEMO_ADMIN_EMAIL,
     accountType: "admin",
   },
 ];
@@ -77,97 +39,116 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-function findAccount(email: string) {
-  const normalizedEmail = normalizeEmail(email);
-  return demoAccounts.find((account) => account.email === normalizedEmail);
-}
-
-function toSession(account: DemoAccount): DemoSession {
-  return {
-    fullName: account.fullName,
-    email: account.email,
-    accountType: account.accountType,
-  };
-}
-
-function saveSession(session: DemoSession, rememberMe: boolean) {
+function readSavedAccounts(): DemoSession[] {
   try {
-    const storage = rememberMe ? window.localStorage : window.sessionStorage;
-    const otherStorage = rememberMe ? window.sessionStorage : window.localStorage;
-
-    otherStorage.removeItem(SESSION_STORAGE_KEY);
-    storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    const raw = window.localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as DemoSession[]) : [];
   } catch {
-    // Storage can be unavailable in private browsing; the demo still continues.
+    return [];
   }
 }
 
-export async function demoSignIn({
-  email,
-  password,
-  rememberMe,
-}: SignInInput): Promise<SignInResult> {
+function saveAccount(account: DemoSession) {
+  try {
+    const accounts = readSavedAccounts().filter((item) => item.email !== account.email);
+    window.localStorage.setItem(
+      ACCOUNTS_STORAGE_KEY,
+      JSON.stringify([...accounts, account]),
+    );
+  } catch {
+  }
+}
+
+function findAccount(email: string): DemoSession | undefined {
+  const normalizedEmail = normalizeEmail(email);
+  return [...builtInAccounts, ...readSavedAccounts()].find(
+    (account) => account.email === normalizedEmail,
+  );
+}
+
+function saveSession(session: DemoSession) {
+  try {
+    window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+  }
+}
+
+export function getCurrentSession(): DemoSession | null {
+  try {
+    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "email" in parsed &&
+      "fullName" in parsed
+    ) {
+      return parsed as DemoSession;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function signOut() {
+  try {
+    window.localStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+  }
+}
+
+function isValidDemoCode(code: string) {
+  return new RegExp(`^\\d{${LOGIN_CODE_LENGTH}}$`).test(code.trim());
+}
+
+const WRONG_CODE_MESSAGE = "This code is incorrect or has expired. Check it, or send a new code.";
+
+export async function requestLoginCode(email: string): Promise<CodeRequestResult> {
+  await wait(DEMO_DELAY_MS);
+  return findAccount(email) ? { ok: true } : { ok: false, reason: "no-account" };
+}
+
+export async function verifyLoginCode(email: string, code: string): Promise<VerifyResult> {
   await wait(DEMO_DELAY_MS);
 
   const account = findAccount(email);
 
-  if (!account || account.password !== password) {
-    return {
-      ok: false,
-      message: "The email or password is incorrect. Check them and try again.",
-    };
+  if (!account || !isValidDemoCode(code)) {
+    return { ok: false, message: WRONG_CODE_MESSAGE };
   }
 
-  const session = toSession(account);
-  saveSession(session, rememberMe);
-
-  return { ok: true, session };
+  saveSession(account);
+  return { ok: true, session: account };
 }
 
-export async function demoSignUp({
-  fullName,
-  email,
-  password,
-  accountType,
-  invitationCode = "",
-}: SignUpInput): Promise<SignUpResult> {
+export async function requestSignUpCode(email: string): Promise<CodeRequestResult> {
+  await wait(DEMO_DELAY_MS);
+  return findAccount(email) ? { ok: false, reason: "exists" } : { ok: true };
+}
+
+export async function verifySignUpCode(
+  fullName: string,
+  email: string,
+  code: string,
+): Promise<VerifyResult> {
   await wait(DEMO_DELAY_MS);
 
-  if (findAccount(email)) {
-    return {
-      ok: false,
-      field: "email",
-      message: "An account with this email already exists. Sign in instead.",
-    };
+  if (!isValidDemoCode(code)) {
+    return { ok: false, message: WRONG_CODE_MESSAGE };
   }
 
-  if (
-    accountType === "admin" &&
-    invitationCode.trim().toUpperCase() !== DEMO_ADMIN_INVITATION_CODE
-  ) {
-    return {
-      ok: false,
-      field: "invitationCode",
-      message: "This invitation code isn’t valid. Check it and try again.",
-    };
-  }
-
-  const account: DemoAccount = {
+  const account: DemoSession = {
     fullName: fullName.trim(),
     email: normalizeEmail(email),
-    password,
-    accountType,
+    accountType: "user",
   };
 
-  demoAccounts.push(account);
+  saveAccount(account);
+  saveSession(account);
 
-  return { ok: true, session: toSession(account) };
-}
-
-export function getAccountTypeLabel(accountType: AccountType) {
-  return accountType === "admin" ? "Admin" : "User";
-}
-
-export function parseAccountType(value: string | null): AccountType {
-  return value === "admin" ? "admin" : "user";
+  return { ok: true, session: account };
 }

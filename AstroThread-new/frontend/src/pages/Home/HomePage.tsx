@@ -1,46 +1,46 @@
-
 import { useState } from "react";
+import logoIcon from "../../assets/brand/astrothread-icon.svg";
 import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
 import { SearchBox } from "../../components/SearchBox/SearchBox";
 import { PopularTopics } from "../../components/PopularTopics/PopularTopics";
+import { RecentSearches } from "../../components/RecentSearches/RecentSearches";
 import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
-import {
-  popularTopics,
-  type PopularTopic,
-} from "../../data/popularTopics";
+import type { PopularTopic } from "../../data/popularTopics";
+import { navigate, routes } from "../../lib/router";
+import { useRecentSearches } from "../../lib/recentSearches";
 import "./HomePage.css";
 
-interface HomePageProps {
-  onSearch?: (query: string) => void;
-  searchPath?: string;
-}
-
-function buildSearchHref(searchPath: string, query: string): string {
+function buildSearchHref(query: string): string {
   if (!query) {
-    return searchPath;
+    return routes.search;
   }
 
   const params = new URLSearchParams({ q: query });
-  return `${searchPath}?${params.toString()}`;
+  return `${routes.search}?${params.toString()}`;
 }
 
-export function HomePage({ onSearch, searchPath = "/search" }: HomePageProps) {
+export function HomePage() {
   const [query, setQuery] = useState("");
+  const recentSearches = useRecentSearches();
 
   function runSearch(searchQuery: string) {
     const trimmedQuery = searchQuery.trim();
 
-    if (onSearch) {
-      onSearch(trimmedQuery);
-      return;
+    if (trimmedQuery) {
+      recentSearches.add(trimmedQuery);
     }
 
-    window.location.assign(buildSearchHref(searchPath, trimmedQuery));
+    navigate(buildSearchHref(trimmedQuery));
   }
 
   function handleTopicSelect(topic: PopularTopic) {
     setQuery(topic.query);
     runSearch(topic.query);
+  }
+
+  function handleRecentSelect(recentQuery: string) {
+    setQuery(recentQuery);
+    runSearch(recentQuery);
   }
 
   return (
@@ -50,27 +50,42 @@ export function HomePage({ onSearch, searchPath = "/search" }: HomePageProps) {
       <main className="home-page__main">
         <section className="home-page__hero" aria-labelledby="home-page-title">
           <div className="home-page__content">
-            <h1 id="home-page-title" className="home-page__title">
-              Explore the universe, one thread at a time
-            </h1>
+            <div className="home-page__brand">
+              <img
+                className="home-page__logo"
+                src={logoIcon}
+                alt=""
+                width={72}
+                height={72}
+              />
+              <h1 id="home-page-title" className="home-page__title">
+                AstroThread
+              </h1>
+              <p className="home-page__product">Research Explorer</p>
+            </div>
 
-            <p className="home-page__description">
-              Search astronomy and physics topics and research papers.
-            </p>
+            <p className="home-page__tagline">Explore Beyond Knowledge</p>
 
             <div className="home-page__search">
               <SearchBox
+                size="large"
                 value={query}
                 onValueChange={setQuery}
                 onSearch={runSearch}
-                placeholder="Search by topic, keyword, paper title, or author..."
+                placeholder="Search papers and topics"
               />
             </div>
 
             <div className="home-page__topics">
-              <PopularTopics
-                topics={popularTopics}
-                onTopicSelect={handleTopicSelect}
+              <PopularTopics onTopicSelect={handleTopicSelect} />
+            </div>
+
+            <div className="home-page__recent">
+              <RecentSearches
+                searches={recentSearches.searches}
+                onSelect={handleRecentSelect}
+                onRemove={recentSearches.remove}
+                onClear={recentSearches.clear}
               />
             </div>
           </div>

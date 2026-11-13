@@ -9,6 +9,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
   isLoading?: boolean;
   loadingText?: string;
+  icon?: ReactNode;
 }
 
 export function Button({
@@ -17,6 +18,7 @@ export function Button({
   fullWidth = false,
   isLoading = false,
   loadingText,
+  icon,
   className,
   disabled,
   type = "button",
@@ -40,7 +42,15 @@ export function Button({
       disabled={disabled || isLoading}
       aria-busy={isLoading || undefined}
     >
-      {isLoading && <span className="button__spinner" aria-hidden="true" />}
+      {isLoading ? (
+        <span className="button__spinner" aria-hidden="true" />
+      ) : (
+        icon && (
+          <span className="button__icon" aria-hidden="true">
+            {icon}
+          </span>
+        )
+      )}
       <span>{isLoading && loadingText ? loadingText : children}</span>
     </button>
   );

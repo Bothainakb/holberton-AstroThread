@@ -14,9 +14,10 @@
   width: 3.5rem;
   height: 3.5rem;
   margin-bottom: var(--space-2);
-  background-color: var(--color-ice);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
-  color: var(--color-navy-soft);
+  color: var(--color-navy);
 }
 
 .empty-state__title {

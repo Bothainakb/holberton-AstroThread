@@ -1,95 +1,93 @@
+
 import { useEffect, useId, useRef, useState } from "react";
-import logo from "../../assets/brand/astrothread-logo-full.svg";
-import { routes, useLocation } from "../../lib/router";
+import type { ReactNode } from "react";
+import logoIcon from "../../assets/brand/astrothread-icon.svg";
+import { getCurrentSession, signOut } from "../../data/demoAuth";
+import type { DemoSession } from "../../data/demoAuth";
+import { navigate, routes, useLocation } from "../../lib/router";
 import "./SiteHeader.css";
 
 interface SiteHeaderProps {
   homeHref?: string;
   signInHref?: string;
-  showMainNav?: boolean;
+  showBrand?: boolean;
+  search?: ReactNode;
 }
 
-interface NavLinkItem {
-  label: string;
-  href?: string;
-}
-
-const exploreLinks: readonly NavLinkItem[] = [
-  { label: "Search", href: routes.search },
-  { label: "Thread Browser", href: routes.threads },
-  { label: "Research Timeline" },
-  { label: "Data Visualization" },
-];
-
-const allLinks: readonly NavLinkItem[] = [
-  { label: "Home", href: routes.home },
-  ...exploreLinks,
-  { label: "AI Assistant" },
-];
-
-type OpenMenu = "explore" | "mobile" | null;
-
-function MenuLinks({
-  links,
-  pathname,
-}: {
-  links: readonly NavLinkItem[];
-  pathname: string;
-}) {
+function UserIcon() {
   return (
-    <ul className="site-header__menu-list">
-      {links.map((link) => (
-        <li key={link.label}>
-          {link.href ? (
-            <a
-              className="site-header__menu-link"
-              href={link.href}
-              aria-current={pathname === link.href ? "page" : undefined}
-            >
-              {link.label}
-            </a>
-          ) : (
-            <span className="site-header__menu-link site-header__menu-link--">
-              {link.label}
-              
-            </span>
-          )}
-        </li>
-      ))}
-    </ul>
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </svg>
   );
 }
 
-export function SiteHeader({
-  homeHref = "/",
-  signInHref = "/sign-in",
-  showMainNav = false,
-}: SiteHeaderProps) {
-  const { pathname } = useLocation();
-  const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
-  const navRef = useRef<HTMLDivElement>(null);
-  const exploreMenuId = useId();
-  const mobileMenuId = useId();
-  const isExploreActive = exploreLinks.some((link) => link.href === pathname);
+function ThreadIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 18c3 0 3-12 6-12s3 12 6 12 2.5-6 4-6" />
+      <circle cx="4" cy="18" r="1.7" fill="currentColor" stroke="none" />
+      <circle cx="20" cy="12" r="1.7" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function getInitials(fullName: string) {
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+interface AccountMenuProps {
+  session: DemoSession;
+  onSignOut: () => void;
+}
+
+function AccountMenu({ session, onSignOut }: AccountMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuId = useId();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!openMenu) {
-      return;
-    }
+    if (!isOpen) return;
 
     function handlePointerDown(event: PointerEvent) {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) {
-        setOpenMenu(null);
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        const trigger = navRef.current?.querySelector<HTMLButtonElement>(
-          `[aria-expanded="true"]`,
-        );
-        setOpenMenu(null);
-        trigger?.focus();
+        setIsOpen(false);
+        buttonRef.current?.focus();
       }
     }
 
@@ -100,103 +98,131 @@ export function SiteHeader({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [openMenu]);
+  }, [isOpen]);
 
-  function closeMenuAfterLinkClick(event: { target: EventTarget }) {
-    if (event.target instanceof Element && event.target.closest("a")) {
-      setOpenMenu(null);
-    }
-  }
-
-  function toggleMenu(menu: Exclude<OpenMenu, null>) {
-    setOpenMenu((current) => (current === menu ? null : menu));
+  function handleSignOut() {
+    signOut();
+    setIsOpen(false);
+    onSignOut();
+    navigate(routes.home);
   }
 
   return (
-    <header className={`site-header${showMainNav ? " site-header--with-nav" : ""}`}>
-      <div className="site-header__inner">
+    <div className="account-menu" ref={wrapperRef}>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="account-menu__button"
+        aria-expanded={isOpen}
+        aria-controls={menuId}
+        aria-label={`Account menu for ${session.fullName}`}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        {getInitials(session.fullName)}
+      </button>
+
+      <div id={menuId} className="account-menu__panel" hidden={!isOpen}>
+        <div className="account-menu__who">
+          <p className="account-menu__name">{session.fullName}</p>
+          <p className="account-menu__email">{session.email}</p>
+          {session.accountType === "admin" && (
+            <span className="account-menu__badge">Admin</span>
+          )}
+        </div>
+
+        <ul className="account-menu__list">
+          <li>
+            <a className="account-menu__item" href={routes.myThread}>
+              My Thread
+            </a>
+          </li>
+          <li>
+            <button
+              type="button"
+              className="account-menu__item"
+              onClick={handleSignOut}
+            >
+              Log out
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export function SiteHeader({
+  homeHref = routes.home,
+  signInHref = routes.signIn,
+  showBrand,
+  search,
+}: SiteHeaderProps) {
+  const { pathname } = useLocation();
+  const [session, setSession] = useState(getCurrentSession);
+  const isBrandVisible = showBrand ?? pathname !== routes.home;
+  const isAuthPage =
+    pathname === routes.signIn || pathname === routes.signUp;
+
+  let account: ReactNode;
+
+  if (isAuthPage) {
+    account = (
+      <a className="site-header__cancel" href={homeHref}>
+        Cancel
+      </a>
+    );
+  } else if (session) {
+    account = (
+      <>
         <a
-          className="site-header__logo"
-          href={homeHref}
-          aria-label="AstroThread home"
+          className="site-header__thread-link"
+          href={routes.myThread}
+          aria-label="My Thread"
+          aria-current={pathname === routes.myThread ? "page" : undefined}
         >
-          <img src={logo} alt="" width={174} height={36} />
+          <ThreadIcon />
+          <span>My Thread</span>
         </a>
+        <AccountMenu
+          session={session}
+          onSignOut={() => setSession(null)}
+        />
+      </>
+    );
+  } else {
+    account = (
+      <a className="site-header__login" href={signInHref}>
+        <UserIcon />
+        <span>Log in</span>
+      </a>
+    );
+  }
 
-        {showMainNav && (
-          <div
-            className="site-header__main-nav"
-            ref={navRef}
-            onClick={closeMenuAfterLinkClick}
-          >
-            <nav className="site-header__links" aria-label="Main">
-              <a
-                className="site-header__link"
-                href={routes.home}
-                aria-current={pathname === routes.home ? "page" : undefined}
-              >
-                Home
-              </a>
-
-              <div className="site-header__dropdown">
-                <button
-                  type="button"
-                  className={`site-header__link${isExploreActive ? " site-header__link--active" : ""}`}
-                  aria-expanded={openMenu === "explore"}
-                  aria-controls={exploreMenuId}
-                  onClick={() => toggleMenu("explore")}
-                >
-                  Explore
-                  <svg className="site-header__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-
-                <div
-                  id={exploreMenuId}
-                  className="site-header__menu"
-                  hidden={openMenu !== "explore"}
-                >
-                  <MenuLinks links={exploreLinks} pathname={pathname} />
-                </div>
-              </div>
-
-              <span className="site-header__link site-header__link--">
-                AI Assistant
-                
+  return (
+    <header className="site-header">
+      <div className="site-header__inner">
+        {isBrandVisible && (
+          <a className="site-header__brand" href={homeHref}>
+            <img
+              className="site-header__brand-icon"
+              src={logoIcon}
+              alt=""
+              width={40}
+              height={40}
+            />
+            <span className="site-header__brand-text">
+              <span className="site-header__brand-name">AstroThread</span>
+              <span className="site-header__brand-tagline">
+                Research Explorer
               </span>
-            </nav>
-
-            <div className="site-header__dropdown site-header__mobile">
-              <button
-                type="button"
-                className="site-header__link"
-                aria-expanded={openMenu === "mobile"}
-                aria-controls={mobileMenuId}
-                onClick={() => toggleMenu("mobile")}
-              >
-                Menu
-                <svg className="site-header__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-
-              <nav
-                id={mobileMenuId}
-                className="site-header__menu site-header__menu--right"
-                aria-label="Main"
-                hidden={openMenu !== "mobile"}
-              >
-                <MenuLinks links={allLinks} pathname={pathname} />
-              </nav>
-            </div>
-          </div>
+            </span>
+          </a>
         )}
 
-        <nav aria-label="Account">
-          <a className="site-header__sign-in" href={signInHref}>
-            Sign In
-          </a>
+        {search && <div className="site-header__search">{search}</div>}
+
+        <nav className="site-header__account" aria-label="Account">
+          {account}
         </nav>
       </div>
     </header>

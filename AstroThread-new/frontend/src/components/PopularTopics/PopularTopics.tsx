@@ -12,7 +12,7 @@ interface PopularTopicsProps {
 export function PopularTopics({
   onTopicSelect,
   topics = popularTopics,
-  title = "Popular",
+  title = "Popular topics",
 }: PopularTopicsProps) {
   const titleId = useId();
 

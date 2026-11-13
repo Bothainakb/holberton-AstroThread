@@ -3,7 +3,7 @@ import { LoginPage } from './pages/Login/LoginPage'
 import { SignUpPage } from './pages/SignUp/SignUpPage'
 import { SearchPage } from './pages/Search/SearchPage'
 import { PaperDetailsPage } from './pages/PaperDetails/PaperDetailsPage'
-import { ThreadBrowserPage } from './pages/ThreadBrowser/ThreadBrowserPage'
+import { MyThreadPage } from './pages/MyThread/MyThreadPage'
 import { getRouteId, routes, useLocation, useInternalLinkNavigation } from './lib/router'
 
 function App() {
@@ -23,8 +23,8 @@ function App() {
     return <SearchPage />
   }
 
-  if (pathname === routes.threads) {
-    return <ThreadBrowserPage />
+  if (pathname === routes.myThread) {
+    return <MyThreadPage />
   }
 
   const paperId = getRouteId(pathname, routes.papers)

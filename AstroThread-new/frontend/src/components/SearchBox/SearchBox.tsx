@@ -1,7 +1,8 @@
-
-import { useId } from "react";
+import { useId, useRef } from "react";
 import type { ChangeEvent, SyntheticEvent } from "react";
 import "./SearchBox.css";
+
+type SearchBoxSize = "large" | "compact";
 
 interface SearchBoxProps {
   value: string;
@@ -10,17 +11,23 @@ interface SearchBoxProps {
   label?: string;
   placeholder?: string;
   buttonLabel?: string;
+  clearLabel?: string;
+  size?: SearchBoxSize;
 }
 
 export function SearchBox({
   value,
   onValueChange,
   onSearch,
-  label = "Search topics and research papers",
-  placeholder = "Search by topic, keyword, paper title, or author...",
+  label = "Search papers and topics",
+  placeholder = "Search papers and topics",
   buttonLabel = "Search",
+  clearLabel = "Clear search",
+  size = "large",
 }: SearchBoxProps) {
   const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const iconSize = size === "large" ? 22 : 20;
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     onValueChange(event.target.value);
@@ -31,28 +38,23 @@ export function SearchBox({
     onSearch(value.trim());
   }
 
+  function handleClear() {
+    onValueChange("");
+    inputRef.current?.focus();
+  }
+
   return (
-    <form className="search-box" role="search" onSubmit={handleSubmit}>
+    <form
+      className={`search-box search-box--${size}`}
+      role="search"
+      onSubmit={handleSubmit}
+    >
       <label className="visually-hidden" htmlFor={inputId}>
         {label}
       </label>
 
-      <span className="search-box__icon" aria-hidden="true">
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
-      </span>
-
       <input
+        ref={inputRef}
         id={inputId}
         className="search-box__input"
         type="search"
@@ -63,8 +65,42 @@ export function SearchBox({
         onChange={handleChange}
       />
 
-      <button className="search-box__button" type="submit">
-        {buttonLabel}
+      {value.length > 0 && (
+        <button
+          type="button"
+          className="search-box__clear"
+          aria-label={clearLabel}
+          onClick={handleClear}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      )}
+
+      <button type="submit" className="search-box__submit" aria-label={buttonLabel}>
+        <svg
+          width={iconSize}
+          height={iconSize}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
       </button>
     </form>
   );

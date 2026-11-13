@@ -1,0 +1,106 @@
+.recent-searches {
+  width: 100%;
+  max-width: var(--search-max-width);
+  text-align: left;
+}
+
+.recent-searches__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.recent-searches__title {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.5;
+}
+
+.recent-searches__clear {
+  padding: var(--space-1) var(--space-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.recent-searches__clear:hover {
+  color: var(--color-navy);
+  text-decoration: underline;
+}
+
+.recent-searches__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-searches__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.recent-searches__item:hover {
+  background-color: var(--color-background);
+}
+
+.recent-searches__query {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0 var(--space-1);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-navy);
+  font-size: var(--font-size-md);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recent-searches__icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.recent-searches__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-searches__remove {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.recent-searches__remove:hover {
+  background-color: var(--color-border);
+  color: var(--color-navy);
+}

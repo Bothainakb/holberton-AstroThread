@@ -1,224 +1,215 @@
 import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { AuthLayout } from "../../components/AuthLayout/AuthLayout";
 import { Button } from "../../components/Button/Button";
 import { FormAlert } from "../../components/FormAlert/FormAlert";
+import { TextField } from "../../components/FormField/FormField";
+import { VerifyCodeForm } from "../../components/VerifyCodeForm/VerifyCodeForm";
 import {
-  CheckboxField,
-  PasswordField,
-  TextField,
-} from "../../components/FormField/FormField";
-import {
-  demoSignIn,
-  getAccountTypeLabel,
-  parseAccountType,
+  DEMO_ADMIN_EMAIL,
+  LOGIN_CODE_LENGTH,
+  requestLoginCode,
+  verifyLoginCode,
 } from "../../data/demoAuth";
 import type { DemoSession } from "../../data/demoAuth";
+import { buildAuthHref, getReturnPath } from "../../lib/authRedirect";
 import { navigate, routes, useLocation } from "../../lib/router";
-import {
-  getFirstErrorField,
-  hasFieldErrors,
-  validateEmail,
-  validateRequiredPassword,
-} from "../../lib/validation";
-import type { FieldErrors } from "../../lib/validation";
+import { validateEmail } from "../../lib/validation";
 import "./LoginPage.css";
 
-type LoginField = "email" | "password";
+type LoginStep = "email" | "code";
 type FormStatus = "idle" | "submitting" | "success";
 
-const LOGIN_FIELDS: readonly LoginField[] = ["email", "password"];
-const FIELD_IDS: Record<LoginField, string> = {
-  email: "login-email",
-  password: "login-password",
-};
-const REDIRECT_DELAY_MS = 1500;
-
-function validateLogin(email: string, password: string): FieldErrors<LoginField> {
-  return {
-    email: validateEmail(email),
-    password: validateRequiredPassword(password),
-  };
-}
+const EMAIL_FIELD_ID = "login-email";
+const REDIRECT_DELAY_MS = 1200;
 
 export function LoginPage() {
   const { searchParams } = useLocation();
-  const registeredParam = searchParams.get("registered");
-  const registeredType = registeredParam ? parseAccountType(registeredParam) : null;
 
+  const [step, setStep] = useState<LoginStep>("email");
   const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors<LoginField>>({});
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [hasNoAccount, setHasNoAccount] = useState(false);
   const [status, setStatus] = useState<FormStatus>("idle");
-  const [formError, setFormError] = useState("");
-  const [showResetNotice, setShowResetNotice] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
   const [session, setSession] = useState<DemoSession | null>(null);
   const redirectTimer = useRef<number | undefined>(undefined);
-  const pendingFocus = useRef<LoginField | null>(null);
+  const shouldFocusEmail = useRef(false);
 
   useEffect(() => {
     return () => window.clearTimeout(redirectTimer.current);
   }, []);
 
   useEffect(() => {
-    if (pendingFocus.current) {
-      document.getElementById(FIELD_IDS[pendingFocus.current])?.focus();
-      pendingFocus.current = null;
+    if (shouldFocusEmail.current) {
+      document.getElementById(EMAIL_FIELD_ID)?.focus();
+      shouldFocusEmail.current = false;
     }
   });
 
   const isBusy = status !== "idle";
 
-  function updateField(field: LoginField, nextEmail: string, nextPassword: string) {
-    setFormError("");
-
-    if (hasSubmitted) {
-      const nextErrors = validateLogin(nextEmail, nextPassword);
-      setErrors((current) => ({ ...current, [field]: nextErrors[field] }));
-    }
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (isBusy) {
       return;
     }
 
-    setHasSubmitted(true);
-    setFormError("");
-    setShowResetNotice(false);
+    const error = validateEmail(email);
+    setEmailError(error ?? "");
+    setHasNoAccount(false);
 
-    const nextErrors = validateLogin(email, password);
-    setErrors(nextErrors);
-
-    if (hasFieldErrors(nextErrors)) {
-      pendingFocus.current = getFirstErrorField(LOGIN_FIELDS, nextErrors) ?? null;
+    if (error) {
+      shouldFocusEmail.current = true;
       return;
     }
 
     setStatus("submitting");
-    const result = await demoSignIn({ email, password, rememberMe });
+    const result = await requestLoginCode(email);
+    setStatus("idle");
+
+    if (!result.ok) {
+      setHasNoAccount(true);
+      shouldFocusEmail.current = true;
+      return;
+    }
+
+    setVerifyError("");
+    setStep("code");
+  }
+
+  async function handleVerify(code: string) {
+    setVerifyError("");
+    setStatus("submitting");
+    const result = await verifyLoginCode(email, code);
 
     if (!result.ok) {
       setStatus("idle");
-      setFormError(result.message);
-      setPassword("");
-      pendingFocus.current = "password";
+      setVerifyError(result.message);
       return;
     }
 
     setSession(result.session);
     setStatus("success");
     redirectTimer.current = window.setTimeout(() => {
-      navigate(routes.home);
+      navigate(getReturnPath(searchParams));
     }, REDIRECT_DELAY_MS);
+  }
+
+  async function handleResend() {
+    const result = await requestLoginCode(email);
+    return result.ok;
+  }
+
+  function changeEmail() {
+    setStep("email");
+    setStatus("idle");
+    setVerifyError("");
+    shouldFocusEmail.current = true;
+  }
+
+  function fillDemoEmail() {
+    setEmail(DEMO_ADMIN_EMAIL);
+    setEmailError("");
+    setHasNoAccount(false);
+    shouldFocusEmail.current = true;
+  }
+
+  const signUpHref = buildAuthHref(routes.signUp, email, searchParams);
+
+  if (step === "code") {
+    return (
+      <AuthLayout
+        pageTitle="Log in"
+        title="Check your email"
+        description={
+          <>
+            Enter the {LOGIN_CODE_LENGTH}-digit code we sent to{" "}
+            <strong>{email.trim()}</strong>. It expires in 10 minutes.
+          </>
+        }
+      >
+        <VerifyCodeForm
+          length={LOGIN_CODE_LENGTH}
+          status={status}
+          submitLabel="Log in"
+          loadingText="Logging in…"
+          hint={`Demo: no email is sent. Enter any ${LOGIN_CODE_LENGTH} digits.`}
+          error={verifyError}
+          successMessage={session ? `Logged in as ${session.fullName}.` : undefined}
+          onVerify={(code) => void handleVerify(code)}
+          onResend={handleResend}
+          onChangeEmail={changeEmail}
+        />
+      </AuthLayout>
+    );
   }
 
   return (
     <AuthLayout
-      pageTitle="Sign In"
-      title="Sign In"
-      description="Welcome back. Sign in to continue your research."
+      pageTitle="Log in"
+      title="Log in to AstroThread"
+      description="We’ll email you a one-time code. No password needed."
       footer={
         <p>
-          New to AstroThread?{" "}
-          <a className="auth-link" href={routes.signUp}>
+          New to AstroThread?
+          <a className="auth-link" href={signUpHref}>
             Create an account
           </a>
         </p>
       }
     >
-      <form className="auth-form" noValidate onSubmit={handleSubmit}>
-        {registeredType && status === "idle" && !formError && (
-          <FormAlert tone="success" title="Account created">
-            Your {getAccountTypeLabel(registeredType).toLowerCase()} account is
-            ready. Sign in to continue.
-          </FormAlert>
-        )}
-
-        {formError && (
-          <FormAlert tone="error" title="Couldn’t sign in">
-            {formError}
-          </FormAlert>
-        )}
-
-        {status === "success" && session && (
-          <FormAlert tone="success" title={`Welcome back, ${session.fullName}`}>
-              You’re signed in with a {getAccountTypeLabel(session.accountType).toLowerCase()}{" "}
-            account. Taking you to the Home Page…
+      <form className="auth-form" noValidate onSubmit={handleEmailSubmit}>
+        {hasNoAccount && (
+          <FormAlert tone="error">
+            No account uses this email.
+            <a className="auth-link" href={signUpHref}>
+              Create an account
+            </a>
           </FormAlert>
         )}
 
         <fieldset className="auth-form__fieldset" disabled={isBusy}>
-          <legend className="visually-hidden">Account details</legend>
+          <legend className="visually-hidden">Log in with your email</legend>
 
           <TextField
-            id={FIELD_IDS.email}
-            label="Email address"
+            id={EMAIL_FIELD_ID}
+            label="Email"
             type="email"
             autoComplete="email"
             inputMode="email"
-            placeholder="name@example.com"
             value={email}
-            error={errors.email}
-            onChange={(event) => {
+            error={emailError || undefined}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
               setEmail(event.target.value);
-              updateField("email", event.target.value, password);
+              setEmailError("");
+              setHasNoAccount(false);
             }}
           />
-
-          <PasswordField
-            id={FIELD_IDS.password}
-            label="Password"
-            autoComplete="current-password"
-            placeholder="Enter your password"
-            value={password}
-            error={errors.password}
-            labelAction={
-              <Button
-                variant="text"
-                aria-expanded={showResetNotice}
-                aria-controls="password-reset-notice"
-                onClick={() => setShowResetNotice((visible) => !visible)}
-              >
-                Forgot password?
-              </Button>
-            }
-            onChange={(event) => {
-              setPassword(event.target.value);
-              updateField("password", email, event.target.value);
-            }}
-          />
-
-          <div id="password-reset-notice" hidden={!showResetNotice}>
-            <FormAlert tone="info" title="Password reset">
-             Password reset isn’t available in this demo yet.
-            </FormAlert>
-          </div>
-
-          <div className="auth-form__options">
-            <CheckboxField
-              id="login-remember"
-              label="Remember me"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />
-          </div>
         </fieldset>
 
         <Button
           type="submit"
           fullWidth
           isLoading={status === "submitting"}
-          loadingText="Signing in…"
-          disabled={status === "success"}
+          loadingText="Sending code…"
         >
-          Sign In
+          Send code
         </Button>
-      </form>     
+      </form>
+
+      <p className="login-page__demo">
+        Demo admin account:
+        <button
+          type="button"
+          className="login-page__demo-email"
+          disabled={isBusy}
+          onClick={fillDemoEmail}
+        >
+          {DEMO_ADMIN_EMAIL}
+        </button>
+      </p>
     </AuthLayout>
   );
 }
