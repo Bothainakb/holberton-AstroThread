@@ -20,15 +20,19 @@ def create_app():
         PERMANENT_SESSION_LIFETIME=timedelta(days=30),
     )
 
+    # استيراد مسارات التطبيق (Blueprints)
     from app.routes.auth import auth_bp
     from app.routes.home import home_bp
     from app.routes.images import images_bp
+    from app.routes.my_thread import my_thread_bp
     from app.routes.papers import papers_bp
     from app.routes.topics import topics_bp
 
+    # تسجيل المسارات داخل تطبيق Flask
     app.register_blueprint(auth_bp)
     app.register_blueprint(home_bp)
     app.register_blueprint(images_bp)
+    app.register_blueprint(my_thread_bp)
     app.register_blueprint(topics_bp)
     app.register_blueprint(papers_bp)
 
