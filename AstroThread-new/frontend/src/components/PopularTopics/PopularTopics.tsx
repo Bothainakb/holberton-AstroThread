@@ -1,6 +1,6 @@
-import { useId } from "react";
-import { popularTopics } from "../../data/popularTopics";
+import { useEffect, useId, useState } from "react";
 import type { PopularTopic } from "../../data/popularTopics";
+import { getPopularTopics } from "../../services/topics/topicService";
 import "./PopularTopics.css";
 
 interface PopularTopicsProps {
@@ -11,12 +11,30 @@ interface PopularTopicsProps {
 
 export function PopularTopics({
   onTopicSelect,
-  topics = popularTopics,
+  topics,
   title = "Popular topics",
 }: PopularTopicsProps) {
   const titleId = useId();
+  const [loadedTopics, setLoadedTopics] = useState<readonly PopularTopic[]>([]);
 
-  if (topics.length === 0) {
+  useEffect(() => {
+    if (topics) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    getPopularTopics(controller.signal)
+      .then(setLoadedTopics)
+      .catch(() => {
+      });
+
+    return () => controller.abort();
+  }, [topics]);
+
+  const shownTopics = topics ?? loadedTopics;
+
+  if (shownTopics.length === 0) {
     return null;
   }
 
@@ -27,7 +45,7 @@ export function PopularTopics({
       </h2>
 
       <ul className="popular-topics__list">
-        {topics.map((topic) => (
+        {shownTopics.map((topic) => (
           <li key={topic.id} className="popular-topics__item">
             <button
               className="popular-topics__button"
