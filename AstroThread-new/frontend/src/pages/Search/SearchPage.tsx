@@ -23,6 +23,9 @@ import { searchPapers, searchSource } from "../../services/search/searchService"
 import type { SearchSource } from "../../services/search/searchService";
 import type { PaperSummary } from "../../types/research";
 import { SearchFilters } from "./SearchFilters";
+import { ResultTabs, parseResultTab } from "./ResultTabs";
+import type { ResultTab } from "./ResultTabs";
+import { ResultsTimeline } from "./ResultsTimeline";
 import "./SearchPage.css";
 
 interface SearchResult {
@@ -34,9 +37,26 @@ interface SearchResult {
 
 const LOADING_CARD_COUNT = 3;
 
-function buildSearchHref(state: SearchQueryState) {
-  const params = buildSearchParams(state).toString();
-  return params ? `${routes.search}?${params}` : routes.search;
+const COMING_SOON: Record<"images" | "data", { title: string; text: string }> = {
+  images: {
+    title: "Images are coming soon",
+    text: "Space images and scientific illustrations for this search will appear here once image search is connected.",
+  },
+  data: {
+    title: "Data is coming soon",
+    text: "Charts and datasets for this topic will appear here in a later version.",
+  },
+};
+
+function buildSearchHref(state: SearchQueryState, tab: ResultTab = "all") {
+  const params = buildSearchParams(state);
+
+  if (tab !== "all") {
+    params.set("tab", tab);
+  }
+
+  const query = params.toString();
+  return query ? `${routes.search}?${query}` : routes.search;
 }
 
 function readPageState(searchParams: URLSearchParams): SearchQueryState {
@@ -52,6 +72,7 @@ export function SearchPage() {
   const { searchParams } = useLocation();
   const state = readPageState(searchParams);
   const { query, filters, sort, page } = state;
+  const activeTab = parseResultTab(searchParams.get("tab"));
 
   const [input, setInput] = useState(query);
   const [syncedQuery, setSyncedQuery] = useState(query);
@@ -115,7 +136,11 @@ export function SearchPage() {
   const filtersMatchNothing = hasResults && filteredPapers.length === 0;
 
   function updateState(next: Partial<SearchQueryState>, replace = true) {
-    navigate(buildSearchHref({ ...state, page: 1, ...next }), { replace });
+    navigate(buildSearchHref({ ...state, page: 1, ...next }, activeTab), { replace });
+  }
+
+  function changeTab(tab: ResultTab) {
+    navigate(buildSearchHref({ ...state, page: 1 }, tab));
   }
 
   function runSearch(nextQuery: string) {
@@ -127,17 +152,23 @@ export function SearchPage() {
     }
 
     navigate(
-      buildSearchHref({ query: trimmed, filters: EMPTY_FILTERS, sort: "relevance", page: 1 }),
+      buildSearchHref(
+        { query: trimmed, filters: EMPTY_FILTERS, sort: "relevance", page: 1 },
+        activeTab,
+      ),
     );
   }
 
   function changePage(nextPage: number) {
-    navigate(buildSearchHref({ ...state, page: nextPage }));
+    navigate(buildSearchHref({ ...state, page: nextPage }, activeTab));
     resultsHeadingRef.current?.focus();
   }
 
   const relatedKeywords = hasResults ? getRelatedKeywords(basePapers, query) : [];
-  const detailsQuery = new URLSearchParams({ from: buildSearchHref(state) }).toString();
+  const detailsQuery = new URLSearchParams({
+    from: buildSearchHref(state, activeTab),
+  }).toString();
+  const paperHref = (paper: PaperSummary) => `${paperPath(paper.id)}?${detailsQuery}`;
 
   return (
     <div className="search-page">
@@ -152,36 +183,7 @@ export function SearchPage() {
         }
       />
 
-      <nav className="search-page__tabs" aria-label="Result types">
-        <ul className="search-page__tab-list">
-          <li>
-            <span className="search-page__tab" aria-current="page">
-              All
-            </span>
-          </li>
-          <li>
-            <button
-              type="button"
-              className="search-page__tab search-page__tab--soon"
-              aria-disabled="true"
-            >
-              Images
-            </button>
-          </li>
-          <li>
-            <button
-              type="button"
-              className="search-page__tab search-page__tab--soon"
-              aria-disabled="true"
-            >
-              More
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M7 10l5 5 5-5z" />
-              </svg>
-            </button>
-          </li>
-        </ul>
-      </nav>
+      <ResultTabs active={activeTab} onChange={changeTab} />
 
       <main className="search-page__main">
         <div className="search-page__content">
@@ -198,51 +200,82 @@ export function SearchPage() {
             </div>
           )}
 
-          {isLoading && (
-            <div className="search-page__state" aria-busy="true">
-              <h1 className="visually-hidden">Search results</h1>
-              <p className="search-page__summary" role="status">
-                Searching for “{query}”…
-              </p>
-              <div className="search-page__skeletons" aria-hidden="true">
-                {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
-                  <div key={index} className="search-page__skeleton">
-                    <span className="search-page__skeleton-line search-page__skeleton-line--short" />
-                    <span className="search-page__skeleton-line search-page__skeleton-line--title" />
-                    <span className="search-page__skeleton-line" />
-                    <span className="search-page__skeleton-line search-page__skeleton-line--medium" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {hasError && (
-            <div className="search-page__state">
-              <h1 className="visually-hidden">Search results</h1>
-              <FormAlert tone="error" title="Search isn’t available right now">
-                We couldn’t reach the search service. Check your connection and try again.
-              </FormAlert>
-              <Button variant="secondary" onClick={() => setAttempt((value) => value + 1)}>
-                Try again
+          {query && (activeTab === "images" || activeTab === "data") && (
+            <div className="search-page__empty">
+              <h1 className="search-page__empty-title">{COMING_SOON[activeTab].title}</h1>
+              <p className="search-page__lead">{COMING_SOON[activeTab].text}</p>
+              <Button variant="secondary" onClick={() => changeTab("all")}>
+                Back to all results
               </Button>
             </div>
           )}
 
-          {hasNoResults && (
-            <div className="search-page__empty">
-              <h1 className="search-page__empty-title">No results found for “{query}”</h1>
-              <p className="search-page__lead">
-                Check the spelling, try a broader keyword, or start with one of these topics.
-              </p>
-              <PopularTopics
-                title="Try"
-                onTopicSelect={(topic) => runSearch(topic.query)}
-              />
+          {(activeTab === "all" || activeTab === "timeline") && (
+            <>
+              {isLoading && (
+                <div className="search-page__state" aria-busy="true">
+                  <h1 className="visually-hidden">Search results</h1>
+                  <p className="search-page__summary" role="status">
+                    Searching for “{query}”…
+                  </p>
+                  <div className="search-page__skeletons" aria-hidden="true">
+                    {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
+                      <div key={index} className="search-page__skeleton">
+                        <span className="search-page__skeleton-line search-page__skeleton-line--short" />
+                        <span className="search-page__skeleton-line search-page__skeleton-line--title" />
+                        <span className="search-page__skeleton-line" />
+                        <span className="search-page__skeleton-line search-page__skeleton-line--medium" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {hasError && (
+                <div className="search-page__state">
+                  <h1 className="visually-hidden">Search results</h1>
+                  <FormAlert tone="error" title="Search isn’t available right now">
+                    We couldn’t reach the search service. Check your connection and try again.
+                  </FormAlert>
+                  <Button variant="secondary" onClick={() => setAttempt((value) => value + 1)}>
+                    Try again
+                  </Button>
+                </div>
+              )}
+
+              {hasNoResults && (
+                <div className="search-page__empty">
+                  <h1 className="search-page__empty-title">No results found for “{query}”</h1>
+                  <p className="search-page__lead">
+                    Check the spelling, try a broader keyword, or start with one of these topics.
+                  </p>
+                  <PopularTopics
+                    title="Try"
+                    onTopicSelect={(topic) => runSearch(topic.query)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {hasResults && activeTab === "timeline" && (
+            <div className="search-page__state">
+              <h1 ref={resultsHeadingRef} tabIndex={-1} className="search-page__summary">
+                <strong>{basePapers.length}</strong>{" "}
+                {basePapers.length === 1 ? "paper" : "papers"} for “{query}”, oldest first
+              </h1>
+
+              {searchSource === "sample" && (
+                <p className="search-page__source-note">
+                  Sample results. The search API isn’t connected yet.
+                </p>
+              )}
+
+              <ResultsTimeline papers={basePapers} paperHref={paperHref} />
             </div>
           )}
 
-          {hasResults && (
+          {hasResults && activeTab === "all" && (
             <div className="search-page__state">
               <SearchFilters
                 filters={filters}
@@ -308,7 +341,7 @@ export function SearchPage() {
                       <li key={paper.id}>
                         <PaperResultCard
                           paper={paper}
-                          detailsHref={`${paperPath(paper.id)}?${detailsQuery}`}
+                          detailsHref={paperHref(paper)}
                           onKeywordSelect={runSearch}
                         />
                       </li>

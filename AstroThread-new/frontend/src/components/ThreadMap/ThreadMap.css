@@ -1,0 +1,85 @@
+.thread-map {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.thread-map__scroll {
+  overflow-x: auto;
+  padding: var(--space-4) 0;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 0.875rem;
+}
+
+.thread-map__svg {
+  display: block;
+  max-width: none;
+  margin: 0 auto;
+}
+
+.thread-map__thread {
+  fill: none;
+  stroke: #0ea5c6;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.thread-map__spoke {
+  stroke: var(--color-border-strong);
+  stroke-width: 1.5;
+}
+
+.thread-map__end {
+  fill: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.thread-map__hub {
+  fill: var(--color-navy);
+  stroke: var(--color-surface);
+  stroke-width: 3;
+}
+
+.thread-map__hub-count {
+  fill: var(--color-surface);
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.thread-map__hub-name {
+  fill: var(--color-navy);
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.thread-map__hub-meta {
+  fill: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.thread-map__paper circle {
+  fill: var(--color-surface);
+  stroke: var(--color-source);
+  stroke-width: 2.5;
+  cursor: pointer;
+  transition: fill var(--transition-fast);
+}
+
+.thread-map__paper:hover circle,
+.thread-map__paper:focus-visible circle {
+  fill: var(--color-source);
+}
+
+.thread-map__paper:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.thread-map__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}

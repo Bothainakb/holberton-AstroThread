@@ -5,6 +5,7 @@ import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
 import { SearchBox } from "../../components/SearchBox/SearchBox";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { Button } from "../../components/Button/Button";
+import { ThreadMap } from "../../components/ThreadMap/ThreadMap";
 import { getCurrentSession } from "../../data/demoAuth";
 import {
   getMyThread,
@@ -19,7 +20,7 @@ import { getTopicPapers } from "../../services/research/researchService";
 import type { PaperSummary } from "../../types/research";
 import "./MyThreadPage.css";
 
-type ThreadView = "topics" | "journey";
+type ThreadView = "topics" | "journey" | "map";
 
 const dayFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" });
 const timeFormat = new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" });
@@ -418,12 +419,23 @@ export function MyThreadPage() {
             Journey
             <span className="my-thread__count">{thread.journey.length}</span>
           </button>
+          <button
+            type="button"
+            role="tab"
+            id="my-thread-tab-map"
+            aria-controls="my-thread-panel"
+            aria-selected={view === "map"}
+            className="my-thread__tab"
+            onClick={() => setView("map")}
+          >
+            Map
+          </button>
         </div>
 
         <div
           id="my-thread-panel"
           role="tabpanel"
-          aria-labelledby={view === "topics" ? "my-thread-tab-topics" : "my-thread-tab-journey"}
+          aria-labelledby={`my-thread-tab-${view}`}
           className="my-thread__panel"
         >
           {view === "topics" &&
@@ -482,6 +494,8 @@ export function MyThreadPage() {
                 ))}
               </div>
             ))}
+
+          {view === "map" && <ThreadMap journey={thread.journey} />}
         </div>
       </div>
     );
