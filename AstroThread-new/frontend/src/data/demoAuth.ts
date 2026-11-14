@@ -1,4 +1,5 @@
 import { apiBaseUrl, searchSource } from "../services/search/searchService";
+import { forgetMyThread, syncMyThread } from "./myThread";
 
 // Sign in and sign up with one-time email codes.
 // With the backend on (VITE_SEARCH_SOURCE=api), every step goes to the Flask /api/auth routes
@@ -119,9 +120,15 @@ export function getCurrentSession(): DemoSession | null {
 }
 
 export function signOut() {
+  const session = getCurrentSession();
   clearSession();
 
+  if (session) {
+    forgetMyThread(session.email);
+  }
+
   if (USES_BACKEND) {
+   
     fetch(`${apiBaseUrl}/auth/logout`, { method: "POST", keepalive: true }).catch(() => {
     });
   }
@@ -178,6 +185,7 @@ async function verifyWithBackend(email: string, code: string): Promise<VerifyRes
     }
 
     saveSession(session);
+    await syncMyThread(session.email);
     return { ok: true, session };
   } catch {
     return { ok: false, message: SERVER_DOWN_MESSAGE };
