@@ -6,7 +6,6 @@ import { FormAlert } from "../../components/FormAlert/FormAlert";
 import { TextField } from "../../components/FormField/FormField";
 import { VerifyCodeForm } from "../../components/VerifyCodeForm/VerifyCodeForm";
 import {
-  DEMO_ADMIN_EMAIL,
   LOGIN_CODE_LENGTH,
   requestLoginCode,
   verifyLoginCode,
@@ -15,7 +14,6 @@ import type { DemoSession } from "../../data/demoAuth";
 import { buildAuthHref, getReturnPath } from "../../lib/authRedirect";
 import { navigate, routes, useLocation } from "../../lib/router";
 import { validateEmail } from "../../lib/validation";
-import "./LoginPage.css";
 
 type LoginStep = "email" | "code";
 type FormStatus = "idle" | "submitting" | "success";
@@ -109,13 +107,6 @@ export function LoginPage() {
     shouldFocusEmail.current = true;
   }
 
-  function fillDemoEmail() {
-    setEmail(DEMO_ADMIN_EMAIL);
-    setEmailError("");
-    setHasNoAccount(false);
-    shouldFocusEmail.current = true;
-  }
-
   const signUpHref = buildAuthHref(routes.signUp, email, searchParams);
 
   if (step === "code") {
@@ -198,18 +189,6 @@ export function LoginPage() {
           Send code
         </Button>
       </form>
-
-      <p className="login-page__demo">
-        Demo admin account:
-        <button
-          type="button"
-          className="login-page__demo-email"
-          disabled={isBusy}
-          onClick={fillDemoEmail}
-        >
-          {DEMO_ADMIN_EMAIL}
-        </button>
-      </p>
     </AuthLayout>
   );
 }

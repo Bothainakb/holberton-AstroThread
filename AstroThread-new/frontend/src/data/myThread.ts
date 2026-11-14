@@ -3,9 +3,15 @@ export interface SavedTopic {
   savedAt: string;
 }
 
+interface StepBase {
+  id: string;
+  at: string;
+  note?: string;
+}
+
 export type JourneyStep =
-  | { id: string; type: "search"; query: string; at: string }
-  | { id: string; type: "paper"; paperId: string; title: string; topic: string; at: string };
+  | (StepBase & { type: "search"; query: string })
+  | (StepBase & { type: "paper"; paperId: string; title: string; topic: string });
 
 export interface MyThread {
   topics: SavedTopic[];
@@ -14,6 +20,7 @@ export interface MyThread {
 
 const STORAGE_PREFIX = "astrothread-my-thread:";
 const MAX_JOURNEY_STEPS = 100;
+const MAX_NOTE_LENGTH = 500;
 
 function storageKey(email: string) {
   return `${STORAGE_PREFIX}${email.trim().toLowerCase()}`;
@@ -23,7 +30,7 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function sameText(a: string, b: string) {
+export function sameText(a: string, b: string) {
   return a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase();
 }
 
@@ -49,7 +56,6 @@ function saveMyThread(email: string, thread: MyThread): MyThread {
   try {
     window.localStorage.setItem(storageKey(email), JSON.stringify(thread));
   } catch {
-    // Storage can be unavailable in private browsing; the demo still continues.
   }
 
   return thread;
@@ -57,6 +63,12 @@ function saveMyThread(email: string, thread: MyThread): MyThread {
 
 export function isTopicSaved(thread: MyThread, topic: string) {
   return thread.topics.some((saved) => sameText(saved.topic, topic));
+}
+
+export function getReadPaperIds(thread: MyThread): Set<string> {
+  return new Set(
+    thread.journey.flatMap((step) => (step.type === "paper" ? [step.paperId] : [])),
+  );
 }
 
 export function saveTopic(email: string, topic: string): MyThread {
@@ -120,6 +132,29 @@ export function recordPaperView(
     title: paper.title,
     topic: paper.topic,
     at: new Date().toISOString(),
+  });
+}
+
+export function setStepNote(email: string, stepId: string, note: string): MyThread {
+  const thread = getMyThread(email);
+  const text = note.trim().slice(0, MAX_NOTE_LENGTH);
+
+  return saveMyThread(email, {
+    ...thread,
+    journey: thread.journey.map((step) => {
+      if (step.id !== stepId) {
+        return step;
+      }
+
+      const updated: JourneyStep = { ...step };
+      delete updated.note;
+
+      if (text) {
+        updated.note = text;
+      }
+
+      return updated;
+    }),
   });
 }
 

@@ -1,5 +1,11 @@
 import type { PaperDetails, PaperSummary } from "../../types/research";
-import { apiBaseUrl, searchSource, toPaperSummary, wait } from "../search/searchService";
+import {
+  apiBaseUrl,
+  searchPapers,
+  searchSource,
+  toPaperSummary,
+  wait,
+} from "../search/searchService";
 
 const SAMPLE_DELAY_MS = 300;
 const RELATED_PAPER_LIMIT = 3;
@@ -100,4 +106,16 @@ export async function getRelatedPapers(
     .sort((a, b) => b.score - a.score || b.item.year - a.item.year)
     .slice(0, RELATED_PAPER_LIMIT)
     .map((match) => match.item);
+}
+
+export async function getTopicPapers(
+  topic: string,
+  signal: AbortSignal,
+): Promise<PaperSummary[]> {
+  const { papers } = await searchPapers(topic, signal);
+  const wanted = topic.trim().toLocaleLowerCase();
+
+  return papers
+    .filter((paper) => paper.topic.trim().toLocaleLowerCase() === wanted)
+    .sort((a, b) => a.year - b.year);
 }
