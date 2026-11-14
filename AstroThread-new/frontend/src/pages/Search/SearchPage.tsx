@@ -26,6 +26,8 @@ import { SearchFilters } from "./SearchFilters";
 import { ResultTabs, parseResultTab } from "./ResultTabs";
 import type { ResultTab } from "./ResultTabs";
 import { ResultsTimeline } from "./ResultsTimeline";
+import { ResultsData } from "./ResultsData";
+import { ResultsImages } from "./ResultsImages";
 import "./SearchPage.css";
 
 interface SearchResult {
@@ -36,17 +38,6 @@ interface SearchResult {
 }
 
 const LOADING_CARD_COUNT = 3;
-
-const COMING_SOON: Record<"images" | "data", { title: string; text: string }> = {
-  images: {
-    title: "Images are coming soon",
-    text: "Space images and scientific illustrations for this search will appear here once image search is connected.",
-  },
-  data: {
-    title: "Data is coming soon",
-    text: "Charts and datasets for this topic will appear here in a later version.",
-  },
-};
 
 function buildSearchHref(state: SearchQueryState, tab: ResultTab = "all") {
   const params = buildSearchParams(state);
@@ -200,17 +191,15 @@ export function SearchPage() {
             </div>
           )}
 
-          {query && (activeTab === "images" || activeTab === "data") && (
-            <div className="search-page__empty">
-              <h1 className="search-page__empty-title">{COMING_SOON[activeTab].title}</h1>
-              <p className="search-page__lead">{COMING_SOON[activeTab].text}</p>
-              <Button variant="secondary" onClick={() => changeTab("all")}>
-                Back to all results
-              </Button>
-            </div>
+          {query && activeTab === "images" && (
+            <ResultsImages
+              query={query}
+              onSearch={runSearch}
+              onBackToAll={() => changeTab("all")}
+            />
           )}
 
-          {(activeTab === "all" || activeTab === "timeline") && (
+          {activeTab !== "images" && (
             <>
               {isLoading && (
                 <div className="search-page__state" aria-busy="true">
@@ -272,6 +261,23 @@ export function SearchPage() {
               )}
 
               <ResultsTimeline papers={basePapers} paperHref={paperHref} />
+            </div>
+          )}
+
+          {hasResults && activeTab === "data" && (
+            <div className="search-page__state">
+              <h1 ref={resultsHeadingRef} tabIndex={-1} className="search-page__summary">
+                Data for <strong>{basePapers.length}</strong>{" "}
+                {basePapers.length === 1 ? "paper" : "papers"} found for “{query}”
+              </h1>
+
+              {searchSource === "sample" && (
+                <p className="search-page__source-note">
+                  Sample results. The search API isn’t connected yet.
+                </p>
+              )}
+
+              <ResultsData papers={basePapers} />
             </div>
           )}
 
