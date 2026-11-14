@@ -16,6 +16,7 @@ PAPER = {
     "title": "Black hole explosions?",
     "abstract": "Quantum gravitational effects are usually ignored in calculations ...",
 }
+# Real AI settings from .env or Codespaces secrets must not leak into the tests.
 CONFIG = {"AI_API_URL": "", "AI_API_KEY": "test-key", "AI_MODEL": "test-model"}
 
 
@@ -40,8 +41,11 @@ def ai_answer(text):
 class AskRouteTests(unittest.TestCase):
     def setUp(self):
         app = create_app()
+        app.secret_key = "test-secret"
         app.logger.disabled = True
         self.client = app.test_client()
+        with self.client.session_transaction() as session:
+            session["user_id"] = 5   # the assistant is only for signed-in users
 
         patches = {
             "env": mock.patch.dict(os.environ, CONFIG),
@@ -55,6 +59,13 @@ class AskRouteTests(unittest.TestCase):
 
     def ask(self, body, paper_id=7):
         return self.client.post(f"/api/papers/{paper_id}/ask", json=body)
+
+    def test_signed_out_users_get_401(self):
+        with self.client.session_transaction() as session:
+            session.clear()
+
+        self.assertEqual(self.ask({"question": "What did they find?"}).status_code, 401)
+        self.urlopen.assert_not_called()
 
     def test_question_gets_an_answer(self):
         response = self.ask({"question": "  What   did they find? "})
