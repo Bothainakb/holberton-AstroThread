@@ -31,3 +31,14 @@ export interface ThreadSummary extends ResearchThread {
   firstYear: number;
   lastYear: number;
 }
+
+export interface SpaceImage {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  imageUrl: string;
+  pageUrl: string;
+  credit: string;
+  date: string;
+}
