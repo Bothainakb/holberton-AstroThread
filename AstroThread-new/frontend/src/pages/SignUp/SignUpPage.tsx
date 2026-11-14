@@ -6,6 +6,7 @@ import { FormAlert } from "../../components/FormAlert/FormAlert";
 import { CheckboxField, TextField } from "../../components/FormField/FormField";
 import { VerifyCodeForm } from "../../components/VerifyCodeForm/VerifyCodeForm";
 import {
+  IS_DEMO_AUTH,
   LOGIN_CODE_LENGTH,
   requestSignUpCode,
   verifySignUpCode,
@@ -92,11 +93,16 @@ export function SignUpPage() {
     }
 
     setStatus("submitting");
-    const result = await requestSignUpCode(email);
+    const result = await requestSignUpCode(email, fullName);
     setStatus("idle");
 
     if (!result.ok) {
-      setEmailExists(true);
+      if (result.reason === "error") {
+        setErrors((current) => ({ ...current, email: result.message }));
+      } else {
+        setEmailExists(true);
+      }
+
       pendingFocus.current = "email";
       return;
     }
@@ -124,7 +130,7 @@ export function SignUpPage() {
   }
 
   async function handleResend() {
-    const result = await requestSignUpCode(email);
+    const result = await requestSignUpCode(email, fullName);
     return result.ok;
   }
 
@@ -155,7 +161,7 @@ export function SignUpPage() {
           status={status}
           submitLabel="Create account"
           loadingText="Creating account…"
-          hint={`Demo: no email is sent. Enter any ${LOGIN_CODE_LENGTH} digits.`}
+          hint={IS_DEMO_AUTH ? `Demo: no email is sent. Enter any ${LOGIN_CODE_LENGTH} digits.` : undefined}
           error={verifyError}
           successMessage={session ? `Account created. Welcome, ${firstName}.` : undefined}
           onVerify={(code) => void handleVerify(code)}
