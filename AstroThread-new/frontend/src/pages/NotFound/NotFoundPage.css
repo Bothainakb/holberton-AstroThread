@@ -1,0 +1,108 @@
+.not-found-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--color-surface);
+}
+
+.not-found-page__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--page-gutter);
+  border-top: 1px solid var(--color-border);
+}
+
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 32rem;
+  text-align: center;
+}
+
+.not-found__code {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.12em;
+}
+
+.not-found__title {
+  margin-top: var(--space-2);
+  color: var(--color-navy);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.not-found__lead {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+}
+
+.not-found__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.not-found__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 var(--space-5);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.not-found__link:hover {
+  border-color: var(--color-text-muted);
+}
+
+.not-found__link--primary {
+  border-color: var(--color-navy);
+  background: var(--color-navy);
+  color: #ffffff;
+}
+
+.not-found__link--primary:hover {
+  border-color: var(--color-navy-soft);
+  background: var(--color-navy-soft);
+}
+
+.not-found__link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.not-found__topics {
+  margin-top: var(--space-8);
+}
+
+@media (max-width: 40rem) {
+  .not-found-page__main {
+    align-items: flex-start;
+    padding: var(--space-10) var(--space-4);
+  }
+
+  .not-found__title {
+    font-size: 1.5rem;
+  }
+}
