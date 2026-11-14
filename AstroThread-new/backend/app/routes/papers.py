@@ -2,6 +2,7 @@ import psycopg
 from flask import Blueprint, current_app, jsonify, request
 
 from app.db import get_connection
+from app.routes.auth import login_required
 from app.services import ai, paper_service
 
 papers_bp = Blueprint("papers", __name__)
@@ -54,6 +55,7 @@ def related_papers(paper_id):
 
 
 @papers_bp.post("/api/papers/<int:paper_id>/ask")
+@login_required
 def ask_about_paper(paper_id):
     body = request.get_json(silent=True)
     question = body.get("question") if isinstance(body, dict) else None
