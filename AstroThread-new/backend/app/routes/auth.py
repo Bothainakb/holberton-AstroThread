@@ -1,6 +1,7 @@
 import os  # التعامل مع متغيرات البيئة
 import re  # استخدام Regular Expressions للتحقق من البيانات
 import secrets  # إجراء مقارنات آمنة للرموز السرية
+from functools import wraps
 
 import psycopg  # الاتصال بقاعدة بيانات PostgreSQL
 from flask import Blueprint, current_app, jsonify, request, session  # أدوات Flask
@@ -178,11 +179,89 @@ def verify():
         return error("This code isn't valid. Check it and try again.", 400, "code")
 
     session.clear()  # مسح بيانات الجلسة القديمة
-    session["user_id"] = user_id  # حفظ رقم المستخدم في الجلسة لتسجيل دخوله
+    session["user_id"] = user_id  
+    session.permanent = True  
 
-    # إرجاع بيانات المستخدم بعد نجاح التحقق وتسجيل الدخول
     return jsonify({
         "fullName": full_name,
         "email": email,
         "accountType": account_type
     })
+
+
+def login_required(view):
+    """Only signed-in users may use this route; everyone else gets 401."""
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        if not session.get("user_id"):
+            return error("Sign in to use this feature.", 401)
+        return view(*args, **kwargs)
+    return wrapper
+
+
+@auth_bp.post("/api/auth/login")
+def login():
+    """Email a one-time code to someone who already has a verified account."""
+    data = request.get_json(silent=True) or {}
+    email = str(data.get("email", "")).strip().lower()
+
+    if len(email) > MAX_EMAIL_LENGTH or not EMAIL_PATTERN.match(email):
+        return error("Enter a valid email address, such as name@example.com.", 400, "email")
+
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id FROM users WHERE email = %s AND email_verified_at IS NOT NULL",
+                    (email,),
+                )
+                user = cur.fetchone()
+                if user is None:
+                    return error("No account uses this email. Create one instead.", 404, "email")
+
+                code = otp_service.create_otp(cur, user[0])
+                send_otp_email(email, code)
+
+    except psycopg.Error:
+        current_app.logger.exception("Requesting a login code failed")
+        return error("Unable to send a code right now. Please try again.", 500)
+
+    except OSError:
+        current_app.logger.exception("Sending the login email failed")
+        return error("We couldn't send the email with your code. Please try again.", 502)
+
+    return jsonify({"email": email})
+
+
+@auth_bp.get("/api/auth/me")
+def me():
+    """Who is signed in? 401 if nobody is."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return error("Not signed in.", 401)
+
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT full_name, email, account_type FROM users WHERE id = %s",
+                    (user_id,),
+                )
+                user = cur.fetchone()
+    except psycopg.Error:
+        current_app.logger.exception("Loading the signed-in user failed")
+        return error("Unable to check your account right now.", 500)
+
+    if user is None:
+        session.clear()  
+        return error("Not signed in.", 401)
+
+    full_name, email, account_type = user
+    return jsonify({"fullName": full_name, "email": email, "accountType": account_type})
+
+
+@auth_bp.post("/api/auth/logout")
+def logout():
+    """Forget who is signed in."""
+    session.clear()
+    return "", 204
