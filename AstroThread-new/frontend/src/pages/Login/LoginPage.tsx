@@ -6,6 +6,7 @@ import { FormAlert } from "../../components/FormAlert/FormAlert";
 import { TextField } from "../../components/FormField/FormField";
 import { VerifyCodeForm } from "../../components/VerifyCodeForm/VerifyCodeForm";
 import {
+  IS_DEMO_AUTH,
   LOGIN_CODE_LENGTH,
   requestLoginCode,
   verifyLoginCode,
@@ -68,7 +69,12 @@ export function LoginPage() {
     setStatus("idle");
 
     if (!result.ok) {
-      setHasNoAccount(true);
+      if (result.reason === "error") {
+        setEmailError(result.message);
+      } else {
+        setHasNoAccount(true);
+      }
+
       shouldFocusEmail.current = true;
       return;
     }
@@ -126,7 +132,7 @@ export function LoginPage() {
           status={status}
           submitLabel="Log in"
           loadingText="Logging in…"
-          hint={`Demo: no email is sent. Enter any ${LOGIN_CODE_LENGTH} digits.`}
+          hint={IS_DEMO_AUTH ? `Demo: no email is sent. Enter any ${LOGIN_CODE_LENGTH} digits.` : undefined}
           error={verifyError}
           successMessage={session ? `Logged in as ${session.fullName}.` : undefined}
           onVerify={(code) => void handleVerify(code)}
