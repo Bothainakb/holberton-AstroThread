@@ -42,7 +42,6 @@ function buildSearchHref(state: SearchQueryState) {
 function readPageState(searchParams: URLSearchParams): SearchQueryState {
   const state = readSearchState(searchParams);
 
-  // Topic and author filters are not part of the Research Explorer design.
   return {
     ...state,
     filters: { ...state.filters, topics: [], author: "" },
@@ -165,7 +164,6 @@ export function SearchPage() {
               type="button"
               className="search-page__tab search-page__tab--soon"
               aria-disabled="true"
-              title="Coming soon"
             >
               Images
             </button>
@@ -175,7 +173,6 @@ export function SearchPage() {
               type="button"
               className="search-page__tab search-page__tab--soon"
               aria-disabled="true"
-              title="Coming soon"
             >
               More
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
