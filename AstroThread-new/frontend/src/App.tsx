@@ -5,6 +5,7 @@ import { SearchPage } from './pages/Search/SearchPage'
 import { PaperDetailsPage } from './pages/PaperDetails/PaperDetailsPage'
 import { MyThreadPage } from './pages/MyThread/MyThreadPage'
 import { ProfilePage } from './pages/Profile/ProfilePage'
+import { AdminPage } from './pages/Admin/AdminPage'
 import { NotFoundPage } from './pages/NotFound/NotFoundPage'
 import { getRouteId, routes, useLocation, useInternalLinkNavigation } from './lib/router'
 
@@ -35,6 +36,10 @@ function App() {
 
   if (pathname === routes.profile) {
     return <ProfilePage />
+  }
+
+  if (pathname === routes.admin) {
+    return <AdminPage />
   }
 
   const paperId = getRouteId(pathname, routes.papers)

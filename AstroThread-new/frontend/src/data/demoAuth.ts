@@ -1,3 +1,5 @@
+import { isAccountSuspended } from "./demoAdmin";
+
 export type AccountType = "user" | "admin";
 
 export interface DemoSession {
@@ -8,7 +10,7 @@ export interface DemoSession {
 
 export type CodeRequestResult =
   | { ok: true }
-  | { ok: false; reason: "no-account" | "exists" };
+  | { ok: false; reason: "no-account" | "exists" | "suspended" };
 
 export type VerifyResult =
   | { ok: true; session: DemoSession }
@@ -19,6 +21,7 @@ export const LOGIN_CODE_LENGTH = 6;
 
 const ACCOUNTS_STORAGE_KEY = "astrothread-demo-accounts";
 const SESSION_STORAGE_KEY = "astrothread-demo-session";
+// Same prefix as data/myThread.ts: each account's My Thread is stored under it.
 const MY_THREAD_STORAGE_PREFIX = "astrothread-my-thread:";
 const DEMO_DELAY_MS = 700;
 const DEMO_SAVE_DELAY_MS = 400;
@@ -65,9 +68,23 @@ function saveAccount(account: DemoSession) {
 
 function findAccount(email: string): DemoSession | undefined {
   const normalizedEmail = normalizeEmail(email);
+  // Saved accounts come first so an edited name replaces the built-in one.
   return [...readSavedAccounts(), ...builtInAccounts].find(
     (account) => account.email === normalizedEmail,
   );
+}
+
+// Every account in this browser, each email once. Used by the Admin dashboard.
+export function getAccounts(): DemoSession[] {
+  const accounts: DemoSession[] = [];
+
+  [...readSavedAccounts(), ...builtInAccounts].forEach((account) => {
+    if (!accounts.some((item) => item.email === account.email)) {
+      accounts.push(account);
+    }
+  });
+
+  return accounts;
 }
 
 function saveSession(session: DemoSession) {
@@ -88,7 +105,9 @@ export function getCurrentSession(): DemoSession | null {
       "email" in parsed &&
       "fullName" in parsed
     ) {
-      return parsed as DemoSession;
+      const session = parsed as DemoSession;
+      // A suspended account is signed out, like an expired token.
+      return isAccountSuspended(session.email) ? null : session;
     }
 
     return null;
@@ -109,16 +128,31 @@ function isValidDemoCode(code: string) {
 }
 
 const WRONG_CODE_MESSAGE = "This code is incorrect or has expired. Check it, or send a new code.";
+export const SUSPENDED_MESSAGE =
+  "This account is suspended. Contact the AstroThread team for help.";
 
 export async function requestLoginCode(email: string): Promise<CodeRequestResult> {
   await wait(DEMO_DELAY_MS);
-  return findAccount(email) ? { ok: true } : { ok: false, reason: "no-account" };
+
+  if (!findAccount(email)) {
+    return { ok: false, reason: "no-account" };
+  }
+
+  if (isAccountSuspended(email)) {
+    return { ok: false, reason: "suspended" };
+  }
+
+  return { ok: true };
 }
 
 export async function verifyLoginCode(email: string, code: string): Promise<VerifyResult> {
   await wait(DEMO_DELAY_MS);
 
   const account = findAccount(email);
+
+  if (account && isAccountSuspended(account.email)) {
+    return { ok: false, message: SUSPENDED_MESSAGE };
+  }
 
   if (!account || !isValidDemoCode(code)) {
     return { ok: false, message: WRONG_CODE_MESSAGE };

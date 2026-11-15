@@ -130,6 +130,13 @@ function AccountMenu({ session, onSignOut }: AccountMenuProps) {
         </div>
 
         <ul className="account-menu__list">
+          {session.accountType === "admin" && (
+            <li>
+              <a className="account-menu__item" href={routes.admin}>
+                Admin dashboard
+              </a>
+            </li>
+          )}
           <li>
             <a className="account-menu__item" href={routes.profile}>
               Profile

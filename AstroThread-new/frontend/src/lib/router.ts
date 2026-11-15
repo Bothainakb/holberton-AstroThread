@@ -8,6 +8,7 @@ export const routes = {
   papers: "/papers",
   myThread: "/my-thread",
   profile: "/profile",
+  admin: "/admin",
 } as const;
 
 export type AppRoute = (typeof routes)[keyof typeof routes];

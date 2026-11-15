@@ -66,6 +66,7 @@
   font-size: var(--font-size-sm);
 }
 
+
 .my-thread__bar {
   display: flex;
   flex-wrap: wrap;

@@ -1,4 +1,5 @@
 import type { PaperSummary, PaperType } from "../../types/research";
+import { isPaperUnavailable } from "../../data/demoAdmin";
 
 export type SearchSource = "sample" | "api";
 
@@ -147,7 +148,9 @@ async function searchSamplePapers(
   const { samplePapers } = await import("./sampleSearchData");
   await wait(SAMPLE_DELAY_MS, signal);
 
-  return rankPapers(samplePapers, query);
+  const available = samplePapers.filter((paper) => !isPaperUnavailable(paper.id));
+
+  return rankPapers(available, query);
 }
 
 function toPaperType(value: unknown): PaperType {

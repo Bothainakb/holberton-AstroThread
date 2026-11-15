@@ -1,4 +1,5 @@
 import type { PaperDetails, PaperSummary } from "../../types/research";
+import { isPaperUnavailable } from "../../data/demoAdmin";
 import {
   apiBaseUrl,
   searchPapers,
@@ -50,7 +51,10 @@ async function loadSampleLibrary() {
     import("../../data/samplePaperDetails"),
   ]);
 
-  return { samplePapers, samplePaperDetails };
+  return {
+    samplePapers: samplePapers.filter((paper) => !isPaperUnavailable(paper.id)),
+    samplePaperDetails,
+  };
 }
 
 function countSharedKeywords(a: PaperSummary, b: PaperSummary) {
