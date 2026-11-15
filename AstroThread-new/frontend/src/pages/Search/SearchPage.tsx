@@ -7,7 +7,9 @@ import { PaperResultCard } from "../../components/PaperResultCard/PaperResultCar
 import { Pagination } from "../../components/Pagination/Pagination";
 import { FormAlert } from "../../components/FormAlert/FormAlert";
 import { Button } from "../../components/Button/Button";
-import { navigate, paperPath, routes, useLocation } from "../../lib/router";
+import { findTopicAnswer } from "../../data/topicAnswers";
+import { navigate, paperPath, routes, useLocation } 
+from "../../lib/router";
 import { addRecentSearch } from "../../lib/recentSearches";
 import {
   EMPTY_FILTERS,
@@ -28,6 +30,8 @@ import type { ResultTab } from "./ResultTabs";
 import { ResultsTimeline } from "./ResultsTimeline";
 import { ResultsData } from "./ResultsData";
 import { ResultsImages } from "./ResultsImages";
+import { TopicAnswer } from "./TopicAnswer";
+import { PaperThumbnail } from "./PaperThumbnail";
 import "./SearchPage.css";
 
 interface SearchResult {
@@ -156,6 +160,7 @@ export function SearchPage() {
   }
 
   const relatedKeywords = hasResults ? getRelatedKeywords(basePapers, query) : [];
+  const topicAnswer = hasResults && currentPage === 1 ? findTopicAnswer(query) : undefined;
   const detailsQuery = new URLSearchParams({
     from: buildSearchHref(state, activeTab),
   }).toString();
@@ -305,6 +310,10 @@ export function SearchPage() {
                 </p>
               )}
 
+              {topicAnswer && (
+                <TopicAnswer answer={topicAnswer} returnHref={buildSearchHref(state, activeTab)} />
+              )}
+
               {relatedKeywords.length > 0 && (
                 <section className="search-page__related" aria-labelledby="search-related-title">
                   <h2 id="search-related-title" className="search-page__related-title">
@@ -344,12 +353,13 @@ export function SearchPage() {
                 <>
                   <ol className="search-page__list">
                     {pagePapers.map((paper) => (
-                      <li key={paper.id}>
+                      <li key={paper.id} className="paper-thumb-row">
                         <PaperResultCard
                           paper={paper}
                           detailsHref={paperHref(paper)}
                           onKeywordSelect={runSearch}
                         />
+                        <PaperThumbnail paper={paper} href={paperHref(paper)} />
                       </li>
                     ))}
                   </ol>
