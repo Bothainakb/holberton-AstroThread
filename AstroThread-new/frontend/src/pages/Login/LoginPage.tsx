@@ -8,6 +8,7 @@ import { VerifyCodeForm } from "../../components/VerifyCodeForm/VerifyCodeForm";
 import {
   IS_DEMO_AUTH,
   LOGIN_CODE_LENGTH,
+  SUSPENDED_MESSAGE,
   requestLoginCode,
   verifyLoginCode,
 } from "../../data/demoAuth";
@@ -18,6 +19,7 @@ import { validateEmail } from "../../lib/validation";
 
 type LoginStep = "email" | "code";
 type FormStatus = "idle" | "submitting" | "success";
+type EmailProblem = "no-account" | "suspended" | null;
 
 const EMAIL_FIELD_ID = "login-email";
 const REDIRECT_DELAY_MS = 1200;
@@ -28,7 +30,7 @@ export function LoginPage() {
   const [step, setStep] = useState<LoginStep>("email");
   const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
   const [emailError, setEmailError] = useState("");
-  const [hasNoAccount, setHasNoAccount] = useState(false);
+  const [emailProblem, setEmailProblem] = useState<EmailProblem>(null);
   const [status, setStatus] = useState<FormStatus>("idle");
   const [verifyError, setVerifyError] = useState("");
   const [session, setSession] = useState<DemoSession | null>(null);
@@ -57,7 +59,7 @@ export function LoginPage() {
 
     const error = validateEmail(email);
     setEmailError(error ?? "");
-    setHasNoAccount(false);
+    setEmailProblem(null);
 
     if (error) {
       shouldFocusEmail.current = true;
@@ -71,8 +73,10 @@ export function LoginPage() {
     if (!result.ok) {
       if (result.reason === "error") {
         setEmailError(result.message);
+      } else if (result.reason === "suspended") {
+        setEmailProblem("suspended");
       } else {
-        setHasNoAccount(true);
+        setEmailProblem("no-account");
       }
 
       shouldFocusEmail.current = true;
@@ -158,7 +162,7 @@ export function LoginPage() {
       }
     >
       <form className="auth-form" noValidate onSubmit={handleEmailSubmit}>
-        {hasNoAccount && (
+        {emailProblem === "no-account" && (
           <FormAlert tone="error">
             No account uses this email.
             <a className="auth-link" href={signUpHref}>
@@ -166,6 +170,8 @@ export function LoginPage() {
             </a>
           </FormAlert>
         )}
+
+        {emailProblem === "suspended" && <FormAlert tone="error">{SUSPENDED_MESSAGE}</FormAlert>}
 
         <fieldset className="auth-form__fieldset" disabled={isBusy}>
           <legend className="visually-hidden">Log in with your email</legend>
@@ -181,7 +187,7 @@ export function LoginPage() {
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
               setEmail(event.target.value);
               setEmailError("");
-              setHasNoAccount(false);
+              setEmailProblem(null);
             }}
           />
         </fieldset>
