@@ -4,6 +4,13 @@ from email.message import EmailMessage  # إنشاء رسالة البريد ا�
 
 
 def send_otp_email(to_address, code):
+    if os.getenv("EMAIL_MODE") == "console":
+        print(f"[EMAIL_MODE=console] AstroThread code for {to_address}: {code}", flush=True)
+        return
+
+    if not os.getenv("SMTP_USER") or not os.getenv("SMTP_PASSWORD"):
+        raise OSError("SMTP_USER and SMTP_PASSWORD are not set")
+
     message = EmailMessage()  # إنشاء رسالة جديدة
     message["Subject"] = "Your AstroThread verification code"  # عنوان الرسالة
     message["From"] = os.getenv("SMTP_USER")  # البريد الإلكتروني للمرسل

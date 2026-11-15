@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, KeyboardEvent } from "react";
 import { Button } from "../Button/Button";
+import { askAboutPaper } from "../../services/research/askService";
+import { searchSource } from "../../services/search/searchService";
 import type { PaperDetails } from "../../types/research";
 import "./ResearchAssistant.css";
 
@@ -25,8 +27,12 @@ const QUICK_QUESTIONS = [
   "Explain the limitations",
 ] as const;
 
+const USES_AI = searchSource === "api";
+const LIVE_NOTE = "Written by AI from this paper’s abstract.";
+const ERROR_NOTE = "No answer this time. You can ask again.";
 const DEMO_NOTE = "Answer from this paper’s details. Live AI answers aren’t connected yet.";
 const THINKING_DELAY_MS = 600;
+const MAX_QUESTION_LENGTH = 300;
 
 function answerFromPaper(paper: PaperDetails, question: string): string {
   const q = question.toLowerCase();
@@ -90,9 +96,13 @@ export function ResearchAssistant({
   const bodyRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(1);
   const timer = useRef<number | undefined>(undefined);
+  const controller = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    return () => window.clearTimeout(timer.current);
+    return () => {
+      window.clearTimeout(timer.current);
+      controller.current?.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -102,6 +112,31 @@ export function ResearchAssistant({
       body.scrollTop = body.scrollHeight;
     }
   }, [messages, isThinking]);
+
+  function addAnswer(text: string, note: string) {
+    setMessages((current) => [
+      ...current,
+      { id: nextId.current++, role: "assistant", text, note },
+    ]);
+    setIsThinking(false);
+  }
+
+  async function askTheAi(question: string) {
+    const request = new AbortController();
+    controller.current = request;
+
+    try {
+      const answer = await askAboutPaper(paper.id, question, request.signal);
+      addAnswer(answer, LIVE_NOTE);
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      addAnswer(message, ERROR_NOTE);
+    }
+  }
 
   function ask(question: string) {
     const text = question.trim();
@@ -116,17 +151,13 @@ export function ResearchAssistant({
     ]);
     setIsThinking(true);
 
+    if (USES_AI) {
+      void askTheAi(text);
+      return;
+    }
+
     timer.current = window.setTimeout(() => {
-      setMessages((current) => [
-        ...current,
-        {
-          id: nextId.current++,
-          role: "assistant",
-          text: answerFromPaper(paper, text),
-          note: DEMO_NOTE,
-        },
-      ]);
-      setIsThinking(false);
+      addAnswer(answerFromPaper(paper, text), DEMO_NOTE);
     }, THINKING_DELAY_MS);
   }
 
@@ -247,6 +278,7 @@ export function ResearchAssistant({
             className="assistant__input"
             rows={1}
             value={input}
+            maxLength={MAX_QUESTION_LENGTH}
             disabled={!isSignedIn}
             placeholder={isSignedIn ? "Ask a question about this paper" : "Log in to ask about this paper"}
             onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setInput(event.target.value)}

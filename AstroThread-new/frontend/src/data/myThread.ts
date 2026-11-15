@@ -1,3 +1,11 @@
+import { apiBaseUrl, searchSource } from "../services/search/searchService";
+
+// "My Thread": a signed-in user's saved topics and research journey.
+// The pages read and change the copy in localStorage straight away (so they never wait).
+// With the backend on, every change is also sent to /api/my-thread, which keeps the real
+// copy in PostgreSQL, and syncMyThread() reloads that copy when the website opens or
+// after signing in. In sample mode, localStorage is the only copy.
+
 export interface SavedTopic {
   topic: string;
   savedAt: string;
@@ -18,6 +26,7 @@ export interface MyThread {
   journey: JourneyStep[];
 }
 
+const USES_BACKEND = searchSource === "api";
 const STORAGE_PREFIX = "astrothread-my-thread:";
 const MAX_JOURNEY_STEPS = 100;
 const MAX_NOTE_LENGTH = 500;
@@ -52,6 +61,68 @@ export function getMyThread(email: string): MyThread {
   return { topics: [], journey: [] };
 }
 
+function send(method: "POST" | "PATCH" | "DELETE", path: string, body?: unknown) {
+  if (!USES_BACKEND) {
+    return;
+  }
+
+  fetch(`${apiBaseUrl}/my-thread${path}`, {
+    method,
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    keepalive: true,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        console.warn(`My Thread change wasn't saved on the server (status ${response.status}).`);
+      }
+    })
+    .catch(() => {
+      console.warn("My Thread change wasn't saved: the server can't be reached.");
+    });
+}
+
+function isMyThread(value: unknown): value is MyThread {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    Array.isArray((value as MyThread).topics) &&
+    Array.isArray((value as MyThread).journey)
+  );
+}
+
+export async function syncMyThread(email: string | undefined): Promise<void> {
+  if (!USES_BACKEND || !email) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/my-thread`, {
+      headers: { Accept: "application/json" },
+    });
+
+    if (response.ok) {
+      const data: unknown = await response.json();
+
+      if (isMyThread(data)) {
+        saveMyThread(email, data);
+      }
+    }
+  } catch {
+  }
+}
+
+export function forgetMyThread(email: string) {
+  if (!USES_BACKEND) {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem(storageKey(email));
+  } catch {
+  }
+}
+
 function saveMyThread(email: string, thread: MyThread): MyThread {
   try {
     window.localStorage.setItem(storageKey(email), JSON.stringify(thread));
@@ -78,6 +149,8 @@ export function saveTopic(email: string, topic: string): MyThread {
     return thread;
   }
 
+  send("POST", "/topics", { topic: topic.trim() });
+
   return saveMyThread(email, {
     ...thread,
     topics: [{ topic: topic.trim(), savedAt: new Date().toISOString() }, ...thread.topics],
@@ -86,6 +159,8 @@ export function saveTopic(email: string, topic: string): MyThread {
 
 export function removeTopic(email: string, topic: string): MyThread {
   const thread = getMyThread(email);
+
+  send("DELETE", `/topics/${encodeURIComponent(topic.trim())}`);
 
   return saveMyThread(email, {
     ...thread,
@@ -105,6 +180,14 @@ function addStep(email: string, step: JourneyStep): MyThread {
   if (isRepeat) {
     return thread;
   }
+
+  send(
+    "POST",
+    "/steps",
+    step.type === "search"
+      ? { id: step.id, type: "search", query: step.query }
+      : { id: step.id, type: "paper", paperId: step.paperId, topic: step.topic },
+  );
 
   return saveMyThread(email, {
     ...thread,
@@ -139,6 +222,8 @@ export function setStepNote(email: string, stepId: string, note: string): MyThre
   const thread = getMyThread(email);
   const text = note.trim().slice(0, MAX_NOTE_LENGTH);
 
+  send("PATCH", `/steps/${encodeURIComponent(stepId)}`, { note: text });
+
   return saveMyThread(email, {
     ...thread,
     journey: thread.journey.map((step) => {
@@ -160,6 +245,8 @@ export function setStepNote(email: string, stepId: string, note: string): MyThre
 
 export function removeJourneyStep(email: string, stepId: string): MyThread {
   const thread = getMyThread(email);
+
+  send("DELETE", `/steps/${encodeURIComponent(stepId)}`);
 
   return saveMyThread(email, {
     ...thread,
