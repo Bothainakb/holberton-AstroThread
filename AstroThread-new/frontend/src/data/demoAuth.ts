@@ -19,7 +19,9 @@ export const LOGIN_CODE_LENGTH = 6;
 
 const ACCOUNTS_STORAGE_KEY = "astrothread-demo-accounts";
 const SESSION_STORAGE_KEY = "astrothread-demo-session";
+const MY_THREAD_STORAGE_PREFIX = "astrothread-my-thread:";
 const DEMO_DELAY_MS = 700;
+const DEMO_SAVE_DELAY_MS = 400;
 
 const builtInAccounts: DemoSession[] = [
   {
@@ -49,20 +51,21 @@ function readSavedAccounts(): DemoSession[] {
   }
 }
 
-function saveAccount(account: DemoSession) {
+function writeSavedAccounts(accounts: DemoSession[]) {
   try {
-    const accounts = readSavedAccounts().filter((item) => item.email !== account.email);
-    window.localStorage.setItem(
-      ACCOUNTS_STORAGE_KEY,
-      JSON.stringify([...accounts, account]),
-    );
+    window.localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
   } catch {
   }
 }
 
+function saveAccount(account: DemoSession) {
+  const accounts = readSavedAccounts().filter((item) => item.email !== account.email);
+  writeSavedAccounts([...accounts, account]);
+}
+
 function findAccount(email: string): DemoSession | undefined {
   const normalizedEmail = normalizeEmail(email);
-  return [...builtInAccounts, ...readSavedAccounts()].find(
+  return [...readSavedAccounts(), ...builtInAccounts].find(
     (account) => account.email === normalizedEmail,
   );
 }
@@ -151,4 +154,41 @@ export async function verifySignUpCode(
   saveSession(account);
 
   return { ok: true, session: account };
+}
+
+export async function updateFullName(email: string, fullName: string): Promise<DemoSession> {
+  await wait(DEMO_SAVE_DELAY_MS);
+
+  const current = findAccount(email);
+  const account: DemoSession = {
+    fullName: fullName.trim(),
+    email: normalizeEmail(email),
+    accountType: current?.accountType ?? "user",
+  };
+
+  saveAccount(account);
+  saveSession(account);
+
+  return account;
+}
+
+export async function deleteAccount(email: string): Promise<void> {
+  await wait(DEMO_DELAY_MS);
+
+  const normalizedEmail = normalizeEmail(email);
+
+  if (normalizedEmail === DEMO_ADMIN_EMAIL) {
+    return;
+  }
+
+  writeSavedAccounts(
+    readSavedAccounts().filter((account) => account.email !== normalizedEmail),
+  );
+
+  try {
+    window.localStorage.removeItem(`${MY_THREAD_STORAGE_PREFIX}${normalizedEmail}`);
+  } catch {
+  }
+
+  signOut();
 }

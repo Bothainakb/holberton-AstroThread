@@ -4,6 +4,7 @@ import { SignUpPage } from './pages/SignUp/SignUpPage'
 import { SearchPage } from './pages/Search/SearchPage'
 import { PaperDetailsPage } from './pages/PaperDetails/PaperDetailsPage'
 import { MyThreadPage } from './pages/MyThread/MyThreadPage'
+import { ProfilePage } from './pages/Profile/ProfilePage'
 import { NotFoundPage } from './pages/NotFound/NotFoundPage'
 import { getRouteId, routes, useLocation, useInternalLinkNavigation } from './lib/router'
 
@@ -30,6 +31,10 @@ function App() {
 
   if (pathname === routes.myThread) {
     return <MyThreadPage />
+  }
+
+  if (pathname === routes.profile) {
+    return <ProfilePage />
   }
 
   const paperId = getRouteId(pathname, routes.papers)

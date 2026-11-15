@@ -1,4 +1,3 @@
-
 import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import logoIcon from "../../assets/brand/astrothread-icon.svg";
@@ -131,6 +130,11 @@ function AccountMenu({ session, onSignOut }: AccountMenuProps) {
         </div>
 
         <ul className="account-menu__list">
+          <li>
+            <a className="account-menu__item" href={routes.profile}>
+              Profile
+            </a>
+          </li>
           <li>
             <a className="account-menu__item" href={routes.myThread}>
               My Thread
