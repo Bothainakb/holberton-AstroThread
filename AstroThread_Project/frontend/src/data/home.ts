@@ -17,15 +17,10 @@ export const popularTopics = [
   'Black Holes',
   'Exoplanets',
   'Dark Matter',
-  'Gravitational Waves',
-  'Quantum Physics',
 ]
 
-/** Number of thread cards in the Home page grid (one row of three). */
-export const HOME_THREAD_LIMIT = 3
-
 /** "Black Holes" -> "black-holes", the id used by the Thread Details routes. */
-function slugify(title: string) {
+export function slugify(title: string) {
   return title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -38,7 +33,7 @@ function slugify(title: string) {
  */
 export function toHomeThread(thread: ApiThread): ResearchThreadCardData {
   return {
-    id: slugify(thread.title) || String(thread.id),
+    id: thread.slug ?? (slugify(thread.title) || String(thread.id)),
     title: thread.title,
     category: thread.category,
     description: thread.description,

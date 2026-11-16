@@ -29,10 +29,18 @@ export interface DetailStage {
 }
 
 export interface RelatedPaper {
-  year: number
+  /** Database id; sample papers from the design have none. */
+  id?: number
+  year: number | null
   title: string
   authors: string
-  summary: string
+  summary?: string
+  /** Shown instead of the summary when it is known to be missing (e.g. OpenAlex has no abstract). */
+  missingSummary?: string
+  /** Link to the paper (DOI or arXiv), when known. */
+  url?: string
+  /** A hand-picked sample from the database, labelled on the card. */
+  illustrative?: boolean
 }
 
 export interface EvidenceStat {
@@ -54,7 +62,7 @@ export interface ThreadDetail {
   papers: RelatedPaper[]
   evidence: {
     chartTitle: string
-    chartNote: string
+    chartNote?: string
     chart: ChartPoint[]
     status: { label: string; source: string }
     keyDiscovery: { title: string; text: string }
@@ -151,7 +159,6 @@ export const threadDetails: Record<string, ThreadDetail> = {
     ],
     evidence: {
       chartTitle: 'Observations over time',
-      chartNote: 'Illustrative data',
       // Relative heights of the six points in Figma (0 = axis, 1 = top).
       chart: [
         { year: 1970, value: 0.293 },

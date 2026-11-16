@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { homePathFor, signIn, useAuth } from '../../auth/auth'
 import Icon from '../../components/Icon/Icon'
-import { navigate } from '../../router/router'
+import Link from '../../router/Link'
+import { navigate, routes, safeReturnPath, useSearchParam, withReturnPath } from '../../router/router'
 import { ApiError } from '../../services/api'
 import './LoginPage.css'
 
@@ -23,10 +24,6 @@ function validate(email: string, password: string): FieldErrors {
   return errors
 }
 
-/** Shown instead of a fake sign-in: Google sign-in has no backend support. */
-const GOOGLE_NOT_CONNECTED =
-  "Google sign-in isn't available yet. Sign in with your email and password instead."
-
 function loginErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
     if (error.status === 401) return 'Incorrect email or password. Please try again.'
@@ -40,6 +37,7 @@ function loginErrorMessage(error: unknown) {
 
 /** Figma "05-login-session"; field states follow "08-login-form-states". */
 function LoginPage() {
+  const returnTo = safeReturnPath(useSearchParam('next'))
   const auth = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -81,8 +79,9 @@ function LoginPage() {
     setLoading(true)
     try {
       const user = await signIn(email.trim(), password, remember)
-      // The destination comes from the role the server verified.
-      navigate(homePathFor(user.role))
+      // Back to the thread that asked for sign-in (e.g. to save it), else the
+      // destination for the role the server verified.
+      navigate(returnTo ?? homePathFor(user.role))
     } catch (error) {
       setLoading(false)
       setNotice({ kind: 'error', message: loginErrorMessage(error) })
@@ -214,28 +213,10 @@ function LoginPage() {
 
           <p className="login-card__signup">
             Don&apos;t have an account?
-            {/* The Create Account page (Figma "09-sign-up") is not built yet. */}
-            <a className="login-card__signup-link" href="#">
+            <Link className="login-card__signup-link" href={withReturnPath(routes.signUp, returnTo)}>
               Create Account
-            </a>
+            </Link>
           </p>
-
-          <div className="login-divider" aria-hidden="true">
-            <span className="login-divider__line" />
-            <span className="login-divider__text">OR</span>
-            <span className="login-divider__line" />
-          </div>
-
-          <button
-            type="button"
-            className="login-google"
-            onClick={() => setNotice({ kind: 'info', message: GOOGLE_NOT_CONNECTED })}
-          >
-            <span className="login-google__badge" aria-hidden="true">
-              G
-            </span>
-            Continue with Google
-          </button>
         </form>
       </section>
     </main>

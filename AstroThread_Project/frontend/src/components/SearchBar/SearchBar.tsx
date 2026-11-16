@@ -13,6 +13,10 @@ interface SearchBarProps {
   /** Show a clear button while the (controlled) input has text. */
   clearable?: boolean
   maxLength?: number
+  /** Text of a submit button inside the bar (Figma "01-Home"); omitted, the bar has none. */
+  submitLabel?: string
+  /** Icon inside the field; Figma "01-Home" uses a larger, darker one (22 x 22). */
+  icon?: { src: string; size: number }
 }
 
 /** Figma "Search Bar": search input for research topics and papers. */
@@ -25,6 +29,8 @@ function SearchBar({
   onSearch,
   clearable = false,
   maxLength,
+  submitLabel,
+  icon = { src: searchIcon, size: 17.25 },
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const showClear = clearable && Boolean(value)
@@ -42,7 +48,12 @@ function SearchBar({
 
   return (
     <form
-      className={['search-bar', clearable && 'search-bar--clearable', className]
+      className={[
+        'search-bar',
+        clearable && 'search-bar--clearable',
+        submitLabel && 'search-bar--with-submit',
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
       role="search"
@@ -51,7 +62,7 @@ function SearchBar({
       <label className="visually-hidden" htmlFor={id}>
         {placeholder.replace(/\.+$/, '')}
       </label>
-      <img className="search-bar__icon" src={searchIcon} alt="" width={17.25} height={17.25} />
+      <img className="search-bar__icon" src={icon.src} alt="" width={icon.size} height={icon.size} />
       <input
         ref={inputRef}
         id={id}
@@ -74,6 +85,11 @@ function SearchBar({
               strokeLinecap="round"
             />
           </svg>
+        </button>
+      )}
+      {submitLabel && (
+        <button type="submit" className="search-bar__submit">
+          {submitLabel}
         </button>
       )}
     </form>

@@ -1,32 +1,38 @@
-import searchIcon from '../../assets/icons/search.svg'
-import userIcon from '../../assets/icons/user.svg'
+import { useEffect, useId, useRef, useState } from 'react'
 import { signOut, useAuth } from '../../auth/auth'
 import Link from '../../router/Link'
 import { navigate, routes } from '../../router/router'
+import type { AuthUser } from '../../services/api'
+import { initialsFor, shortName } from '../../services/profileFormat'
 import Logo from '../Logo/Logo'
 import './Navbar.css'
 
 interface NavLink {
   label: string
   href: string
-  /** "Plans" is marked optional in Figma and shown in a dimmer color. */
-  optional?: boolean
 }
 
+// Figma "02-Login" header order. Search is reached from the footer and pages.
 const navLinks: NavLink[] = [
   { label: 'Home', href: routes.home },
-  { label: 'Research Threads', href: routes.researchThreads },
+  { label: 'Browse Threads', href: routes.researchThreads },
+  { label: 'Plans', href: '#' },
   { label: 'AI Assistant', href: '#' },
-  { label: 'Plans', href: '#', optional: true },
 ]
 
 interface NavbarProps {
   activeHref?: string
+  /**
+   * "minimal" is Figma "01-Home": no bar, only the outlined Sign In pill at
+   * the top right. "full" is the header of every other frame.
+   */
+  variant?: 'full' | 'minimal'
 }
 
-function Navbar({ activeHref = routes.home }: NavbarProps) {
+function Navbar({ activeHref = routes.home, variant = 'full' }: NavbarProps) {
   const auth = useAuth()
   const user = auth.status === 'signed-in' ? auth.user : null
+  const minimal = variant === 'minimal'
 
   async function handleSignOut() {
     try {
@@ -38,26 +44,45 @@ function Navbar({ activeHref = routes.home }: NavbarProps) {
     navigate(routes.home)
   }
 
+  const authControl = user ? (
+    <UserMenu user={user} onSignOut={handleSignOut} />
+  ) : (
+    <Link
+      className={[
+        'navbar__login',
+        activeHref === routes.login && 'navbar__login--active',
+        // Hidden (but keeping its space) until the session check finishes.
+        auth.status === 'loading' && 'navbar__login--pending',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      href={routes.login}
+      aria-current={activeHref === routes.login ? 'page' : undefined}
+    >
+      {minimal ? 'Sign In' : 'Login'}
+    </Link>
+  )
+
+  if (minimal) {
+    return (
+      <header className="navbar navbar--minimal">
+        <div className="navbar__inner">{authControl}</div>
+      </header>
+    )
+  }
+
   return (
     <header className="navbar">
-      <div className="navbar__inner container">
+      <div className="navbar__inner">
         <Logo />
 
         <nav className="navbar__links" aria-label="Main">
           {navLinks.map((link) => {
             const isActive = link.href === activeHref
-            const classes = [
-              'navbar__link',
-              isActive && 'navbar__link--active',
-              link.optional && 'navbar__link--optional',
-            ]
-              .filter(Boolean)
-              .join(' ')
-
             return (
               <Link
                 key={link.label}
-                className={classes}
+                className={isActive ? 'navbar__link navbar__link--active' : 'navbar__link'}
                 href={link.href}
                 aria-current={isActive ? 'page' : undefined}
               >
@@ -68,47 +93,83 @@ function Navbar({ activeHref = routes.home }: NavbarProps) {
         </nav>
 
         <div className="navbar__actions">
-          <Link
-            className="navbar__icon-button"
-            href={routes.researchSearch}
-            aria-label="Search"
-            aria-current={activeHref === routes.researchSearch ? 'page' : undefined}
-          >
-            <img src={searchIcon} alt="" width={17.25} height={17.25} />
-          </Link>
-          <a
-            className="navbar__icon-button"
-            href="#"
-            aria-label={user ? `Profile (signed in as ${user.email})` : 'Profile'}
-            title={user ? `Signed in as ${user.email}` : undefined}
-          >
-            <img src={userIcon} alt="" width={16.7505} height={17.7502} />
-          </a>
-          {/* Display only: owner access is checked by the backend. */}
-          {user?.role === 'owner' && <span className="navbar__role">Owner</span>}
-          {user ? (
-            <button type="button" className="navbar__login" onClick={handleSignOut}>
-              Log out
-            </button>
-          ) : (
-            <Link
-              className={[
-                'navbar__login',
-                activeHref === routes.login && 'navbar__login--active',
-                // Hidden (but keeping its space) until the session check finishes.
-                auth.status === 'loading' && 'navbar__login--pending',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              href={routes.login}
-              aria-current={activeHref === routes.login ? 'page' : undefined}
-            >
-              Login
-            </Link>
-          )}
+          {/* Display only: admin access (the `owner` role) is checked by the backend. */}
+          {user?.role === 'owner' && <span className="navbar__role">Admin</span>}
+          {authControl}
         </div>
       </div>
     </header>
+  )
+}
+
+/**
+ * Figma "08-Profile" header: initials, first name and a chevron. Opens a
+ * small menu with Profile and Log out. The name comes from the email, since
+ * the auth endpoints return only id, email and role.
+ */
+function UserMenu({ user, onSignOut }: { user: AuthUser; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false)
+  const menuId = useId()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handlePointer(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false)
+        buttonRef.current?.focus()
+      }
+    }
+    document.addEventListener('pointerdown', handlePointer)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointer)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [open])
+
+  return (
+    <div className="navbar__user" ref={rootRef}>
+      <button
+        type="button"
+        ref={buttonRef}
+        className="navbar__user-button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-controls={menuId}
+        aria-label={`Account menu for ${user.email}`}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="navbar__user-initials" aria-hidden="true">
+          {initialsFor(null, user.email)}
+        </span>
+        <span className="navbar__user-name">{shortName(null, user.email)}</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" className="navbar__user-chevron">
+          <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open && (
+        <div className="navbar__user-menu" id={menuId}>
+          <Link className="navbar__user-item" href={routes.profile} onClick={() => setOpen(false)}>
+            Profile
+          </Link>
+          <button
+            type="button"
+            className="navbar__user-item navbar__user-item--danger"
+            onClick={() => {
+              setOpen(false)
+              onSignOut()
+            }}
+          >
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -2,10 +2,13 @@
   position: relative;
   min-height: 100vh;
   overflow-x: clip;
-  background: var(--color-bg);
+  /* Figma frames: #172a4f with a soft indigo glow centered on the page (825 x 420 at 1440 x 900). */
+  background:
+    radial-gradient(825px 46.67% at 50% 50%, var(--color-glow), rgb(58 63 143 / 0%)),
+    var(--color-bg);
 }
 
-/* Keep page content above the decorative star field. */
+/* Keep page content above the background. */
 .app > main,
 .app > footer {
   position: relative;

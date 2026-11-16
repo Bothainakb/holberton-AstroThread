@@ -69,44 +69,24 @@ def get_threads():
             }
         ), 400
 
+    # THREAD_LIST_SQL adds the slug, paper and stage counts the Research
+    # Threads cards show (imported with the blueprints at the end of the file).
+    # Signed-in users also get their own completed stages; visitors get 0.
+    user_id = session.get("user_id")
+    params = {"user_id": user_id if isinstance(user_id, int) else None}
+
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 if query:
-                    pattern = word_start_pattern(query)
-                    cur.execute(
-                        """
-                        SELECT id, title, category, description
-                        FROM research_threads
-                        WHERE title ~* %(pattern)s
-                           OR category ~* %(pattern)s
-                           OR description ~* %(pattern)s
-                        ORDER BY id;
-                        """,
-                        {"pattern": pattern},
-                    )
+                    params["pattern"] = word_start_pattern(query)
+                    cur.execute(THREAD_LIST_SQL.format(where=SEARCH_WHERE), params)
                 else:
-                    cur.execute(
-                        """
-                        SELECT id, title, category, description
-                        FROM research_threads
-                        ORDER BY id;
-                        """
-                    )
+                    cur.execute(THREAD_LIST_SQL.format(where=""), params)
 
                 rows = cur.fetchall()
 
-        threads = [
-            {
-                "id": row[0],
-                "title": row[1],
-                "category": row[2],
-                "description": row[3],
-            }
-            for row in rows
-        ]
-
-        return jsonify(threads)
+        return jsonify([thread_to_json(row) for row in rows])
 
     except (psycopg.Error, RuntimeError):
         app.logger.exception("Database query failed")
@@ -120,6 +100,9 @@ ROLES = ("user", "owner")
 MAX_EMAIL_LENGTH = 254
 MAX_PASSWORD_LENGTH = 1024
 INVALID_CREDENTIALS = "Invalid email or password"
+MAX_NAME_LENGTH = 100
+MIN_PASSWORD_LENGTH = 8
+EMAIL_TAKEN = "An account with this email already exists"
 EMAIL_PATTERN = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 
 DUMMY_PASSWORD_HASH = generate_password_hash(
@@ -262,6 +245,89 @@ def login():
     return jsonify({"user": user_to_json(row)})
 
 
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+    """Creates a standard `user` account and signs it in with a session cookie."""
+    if not app.secret_key:
+        app.logger.error("SECRET_KEY is not set, so sign-up is disabled")
+        return jsonify(
+            {"error": "Sign-up is not available right now"}
+        ), 503
+
+    # JSON only: a cross-site form cannot send it without a CORS preflight.
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(
+            {"error": "Request body must be a JSON object"}
+        ), 400
+
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+
+    if (
+        not isinstance(name, str)
+        or not isinstance(email, str)
+        or not isinstance(password, str)
+        or not name.strip()
+        or not email.strip()
+        or not password
+    ):
+        return jsonify(
+            {"error": "Name, email and password are required"}
+        ), 400
+
+    name = name.strip()
+    email = normalize_email(email)
+
+    if len(name) > MAX_NAME_LENGTH:
+        return jsonify(
+            {"error": f"Name must be at most {MAX_NAME_LENGTH} characters"}
+        ), 400
+
+    if len(email) > MAX_EMAIL_LENGTH or not EMAIL_PATTERN.fullmatch(email):
+        return jsonify({"error": "Enter a valid email address"}), 400
+
+    if not MIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
+        return jsonify(
+            {
+                "error": (
+                    f"Password must be {MIN_PASSWORD_LENGTH}-"
+                    f"{MAX_PASSWORD_LENGTH} characters"
+                )
+            }
+        ), 400
+
+    # The role is fixed: owner access is only granted with manage.py set-role.
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO users (name, email, password_hash, role)
+                    VALUES (%s, %s, %s, 'user')
+                    ON CONFLICT (lower(email)) DO NOTHING
+                    RETURNING id, email, role;
+                    """,
+                    (name, email, generate_password_hash(password)),
+                )
+                row = cur.fetchone()
+    except (psycopg.Error, RuntimeError):
+        app.logger.exception("Registration query failed")
+        return jsonify(
+            {"error": "Unable to create your account right now"}
+        ), 500
+
+    if row is None:
+        return jsonify({"error": EMAIL_TAKEN}), 409
+
+    session.clear()
+    session["user_id"] = row[0]
+    session.permanent = False
+
+    return jsonify({"user": user_to_json(row)}), 201
+
+
 @app.route("/api/auth/logout", methods=["POST"])
 def logout():
     if app.secret_key:
@@ -275,6 +341,36 @@ def logout():
 def current_user():
     return jsonify({"user": g.user})
 
+
+# Profile and Thread Details routes. The profile routes use login_required and
+# MAX_NAME_LENGTH from this module, so they are imported only after both are
+# defined. GET /api/threads/<id>, its /nasa-media and /openalex-papers are public, like
+# GET /api/threads. GET /api/threads/<slug> (threads_bp) is the slug-based
+# details route; numeric ids still go to thread_details_bp (<int:> wins).
+from app.api.v1.bookmarks import bookmarks_bp  # noqa: E402
+from app.api.v1.ai_assistant import ai_assistant_bp  # noqa: E402
+from app.api.v1.nasa_media import nasa_media_bp  # noqa: E402
+from app.api.v1.openalex_papers import openalex_papers_bp  # noqa: E402
+from app.api.v1.owner_threads import owner_threads_bp  # noqa: E402
+from app.api.v1.profile import profile_bp  # noqa: E402
+from app.api.v1.thread_details import thread_details_bp  # noqa: E402
+from app.api.v1.threads import (  # noqa: E402
+    SEARCH_WHERE,
+    THREAD_LIST_SQL,
+    thread_to_json,
+    threads_bp,
+)
+
+app.register_blueprint(profile_bp)
+app.register_blueprint(bookmarks_bp)
+app.register_blueprint(thread_details_bp)
+app.register_blueprint(nasa_media_bp)
+app.register_blueprint(openalex_papers_bp)
+app.register_blueprint(threads_bp)
+# Owner Dashboard: /api/owner/... (owner role only)
+app.register_blueprint(owner_threads_bp)
+# AI Research Assistant: /api/ai/... (signed-in users)
+app.register_blueprint(ai_assistant_bp)
 
 if __name__ == "__main__":
     app.run(

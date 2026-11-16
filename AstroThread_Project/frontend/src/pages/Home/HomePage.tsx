@@ -1,58 +1,87 @@
 import { useEffect, useRef, useState } from 'react'
+import searchFieldIcon from '../../assets/icons/search-field.svg'
+import logoMark from '../../assets/logo.svg'
 import Button from '../../components/Button/Button'
-import DataChart from '../../components/DataChart/DataChart'
+import Icon from '../../components/Icon/Icon'
+import { usePaperCounts } from '../../components/ResearchThreadCard/usePaperCounts'
 import ResearchThreadCard, {
   type ResearchThreadCardData,
 } from '../../components/ResearchThreadCard/ResearchThreadCard'
 import SearchBar from '../../components/SearchBar/SearchBar'
 import SectionHeader from '../../components/SectionHeader/SectionHeader'
-import Tag from '../../components/Tag/Tag'
-import Timeline from '../../components/Timeline/Timeline'
-import {
-  HOME_THREAD_LIMIT,
-  blackHoleMassData,
-  blackHoleTimeline,
-  popularTopics,
-  toHomeThread,
-} from '../../data/home'
+import { popularTopics } from '../../data/home'
+import { databaseSlug, designOnlyMatches, rankSearchResults } from '../../data/threadSearch'
 import { replaceSearchParam, routes, useSearchParam } from '../../router/router'
-import { ApiError, fetchThreads } from '../../services/api'
+import { ApiError, fetchThreads, type ApiThread } from '../../services/api'
 import './HomePage.css'
 
 const SEARCH_INPUT_ID = 'search-research'
-/** Wait this long after the last keystroke before searching. */
-const SEARCH_DELAY_MS = 300
 /** Matches MAX_QUERY_LENGTH in backend/app.py. */
 const MAX_QUERY_LENGTH = 100
 
-type ThreadsResult =
+/** One search result, shown as a Research Threads card; `id` is the Thread Details slug. */
+type SearchResultData = ResearchThreadCardData & {
+  /** Design-only thread with no database record yet. */
+  preview?: boolean
+}
+
+type SearchState =
   | { status: 'error'; message: string }
-  | { status: 'success'; threads: ResearchThreadCardData[] }
+  | { status: 'success'; results: SearchResultData[]; matches: ApiThread[] }
 
 /**
- * Loads the Home page threads from GET /api/threads, searching title, category
- * and description when `query` is set. Without a query only the first row of
- * threads is shown.
+ * Searches research threads with GET /api/threads?q= (title, category and
+ * description, matched at the start of a word) and ranks the matches, best
+ * first. Design-only threads (data/threads.ts) that match and have no
+ * database record yet are listed after them as previews.
  */
-function useHomeThreads(query: string) {
+function useSearchResults(query: string) {
   const [attempt, setAttempt] = useState(0)
   // The result remembers which request produced it, so a new query or retry
   // shows the loading state until its own response arrives.
-  const [result, setResult] = useState<ThreadsResult & { request: string }>()
+  const [result, setResult] = useState<SearchState & { request: string }>()
   const request = `${attempt}:${query}`
 
   useEffect(() => {
     const controller = new AbortController()
 
-    fetchThreads({ query, signal: controller.signal })
-      .then((threads) => {
-        const shown = query ? threads : threads.slice(0, HOME_THREAD_LIMIT)
-        setResult({ request, status: 'success', threads: shown.map(toHomeThread) })
+    // Every database thread is also needed, to know which design threads
+    // have no record (and so are previews, not duplicates).
+    Promise.all([
+      fetchThreads({ query, signal: controller.signal }),
+      fetchThreads({ signal: controller.signal }),
+    ])
+      .then(([matches, allThreads]) => {
+        // Same card fields as the Research Threads page: the signed-in user's
+        // stage progress (0 for visitors) from the API; the paper count is
+        // added when rendering (usePaperCounts).
+        const found: SearchResultData[] = matches.map((thread) => {
+          const totalStages = thread.totalStages || undefined
+          return {
+            id: databaseSlug(thread),
+            title: thread.title,
+            category: thread.category,
+            description: thread.description,
+            completedStages: totalStages
+              ? Math.min(thread.completedStages ?? 0, totalStages)
+              : undefined,
+            totalStages, // no bar for a thread without stages
+          }
+        })
+        const previews: SearchResultData[] = designOnlyMatches(query, allThreads).map(
+          ({ id, title, category, description }) => ({ id, title, category, description, preview: true }),
+        )
+        setResult({
+          request,
+          status: 'success',
+          results: [...rankSearchResults(found, query), ...rankSearchResults(previews, query)],
+          matches,
+        })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         const message =
-          error instanceof ApiError ? error.message : 'Something went wrong while loading threads.'
+          error instanceof ApiError ? error.message : 'Something went wrong while searching.'
         setResult({ request, status: 'error', message })
       })
 
@@ -63,24 +92,25 @@ function useHomeThreads(query: string) {
   return { state, retry: () => setAttempt((value) => value + 1) }
 }
 
+const NO_THREADS: ApiThread[] = []
+
 function resultLabel(count: number) {
   return `${count} ${count === 1 ? 'result' : 'results'}`
 }
 
-interface HomeThreadsProps {
+interface SearchResultsProps {
   query: string
   onClearSearch: () => void
 }
 
-function HomeThreads({ query, onClearSearch }: HomeThreadsProps) {
-  const { state, retry } = useHomeThreads(query)
+function SearchResults({ query, onClearSearch }: SearchResultsProps) {
+  const { state, retry } = useSearchResults(query)
+  const paperCounts = usePaperCounts(state.status === 'success' ? state.matches : NO_THREADS)
 
   if (state.status === 'loading') {
     return (
       <div className="home-threads__status" role="status">
-        <p className="home-threads__status-title">
-          {query ? `Searching for "${query}"…` : 'Loading research threads…'}
-        </p>
+        <p className="home-threads__status-title">Searching for "{query}"…</p>
       </div>
     )
   }
@@ -88,7 +118,7 @@ function HomeThreads({ query, onClearSearch }: HomeThreadsProps) {
   if (state.status === 'error') {
     return (
       <div className="home-threads__status home-threads__status--error" role="alert">
-        <p className="home-threads__status-title">Research threads could not be loaded</p>
+        <p className="home-threads__status-title">Search results could not be loaded</p>
         <p className="home-threads__status-text">{state.message} Please try again.</p>
         <button
           type="button"
@@ -101,47 +131,57 @@ function HomeThreads({ query, onClearSearch }: HomeThreadsProps) {
     )
   }
 
-  if (state.threads.length === 0) {
-    if (query) {
-      return (
-        <div className="home-threads__status" role="status">
-          <p className="home-threads__status-title">No research threads match "{query}"</p>
-          <p className="home-threads__status-text">
-            Try another keyword from a thread's title, category or description.
-          </p>
-          <button
-            type="button"
-            className="button button--secondary home-threads__retry"
-            onClick={onClearSearch}
-          >
-            Clear search
-          </button>
-        </div>
-      )
-    }
+  const { results } = state
 
+  if (results.length === 0) {
     return (
       <div className="home-threads__status" role="status">
-        <p className="home-threads__status-title">No research threads yet</p>
+        <p className="home-threads__status-title">No results for "{query}"</p>
         <p className="home-threads__status-text">
-          New research threads will appear here once they are added.
+          Check the spelling or try another topic, such as {popularTopics.join(', ')}. Words are
+          matched from their start, so "dark" finds Dark Matter.
         </p>
+        <button
+          type="button"
+          className="button button--secondary home-threads__retry"
+          onClick={onClearSearch}
+        >
+          Clear search
+        </button>
       </div>
     )
   }
 
+  const threads = results.filter((result) => !result.preview)
+  const previews = results.filter((result) => result.preview)
+
+  // Each result is a Research Threads card; its Explore Thread link opens the thread.
   return (
     <>
-      {query && (
-        <p className="visually-hidden" role="status">
-          {resultLabel(state.threads.length)} for "{query}"
-        </p>
+      <p className="search-results-count" role="status">
+        {resultLabel(results.length)} for "{query}"
+      </p>
+      {threads.length > 0 && (
+        <div className="home-threads__grid">
+          {threads.map((thread) => (
+            <ResearchThreadCard key={thread.id} thread={{ ...thread, paperCount: paperCounts.get(thread.id) }} />
+          ))}
+        </div>
       )}
-      <div className="home-threads__grid">
-        {state.threads.map((thread) => (
-          <ResearchThreadCard key={thread.id} thread={thread} />
-        ))}
-      </div>
+      {previews.length > 0 && (
+        <div className="home-threads__previews">
+          <p className="home-threads__preview-note">
+            Design {previews.length === 1 ? 'preview' : 'previews'}: not in the AstroThread
+            database yet, so {previews.length === 1 ? 'this thread has' : 'these threads have'} no
+            papers, NASA images or charts.
+          </p>
+          <div className="home-threads__grid">
+            {previews.map((thread) => (
+              <ResearchThreadCard key={thread.id} thread={thread} />
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -151,7 +191,8 @@ function HomePage() {
   // survives a reload and returning with the browser's Back button.
   const query = useSearchParam('q').trim()
   const setQuery = (value: string) => replaceSearchParam('q', value)
-  // `input` is what the user is typing.
+  // `input` is what the user is typing; like a search engine, results only
+  // change when a search is submitted (Enter, the Search button or a topic).
   const [input, setInput] = useState(query)
   const threadsRef = useRef<HTMLElement>(null)
 
@@ -162,33 +203,26 @@ function HomePage() {
     if (input.trim() !== query) setInput(query)
   }
 
+  // The results section only renders once a query is set, so scroll after that
+  // render. Smooth scrolling (and its reduced-motion opt-out) comes from index.css.
+  const [scrollRequest, setScrollRequest] = useState(0)
   useEffect(() => {
-    const timer = window.setTimeout(() => replaceSearchParam('q', input.trim()), SEARCH_DELAY_MS)
-    return () => window.clearTimeout(timer)
-  }, [input])
+    if (scrollRequest) threadsRef.current?.scrollIntoView()
+  }, [scrollRequest])
 
-  // Smooth scrolling (and its reduced-motion opt-out) comes from index.css.
   function showResults() {
-    threadsRef.current?.scrollIntoView()
+    setScrollRequest((value) => value + 1)
   }
 
   function handleInputChange(value: string) {
     setInput(value)
-    // Clearing the field shows the default threads right away.
+    // Clearing the field (or its clear button) also clears the results.
     if (!value.trim()) setQuery('')
   }
 
   function handleSearch(value: string) {
     setQuery(value)
     showResults()
-  }
-
-  function handleTopicClick(topic: string) {
-    const isActive = query.toLowerCase() === topic.toLowerCase()
-    const next = isActive ? '' : topic
-    setInput(next)
-    setQuery(next)
-    if (!isActive) showResults()
   }
 
   function clearSearch() {
@@ -199,98 +233,60 @@ function HomePage() {
 
   return (
     <main className="home">
-      <section className="home-hero container" aria-labelledby="home-hero-title">
-        <Tag className="home-hero__label">Astronomy &amp; Physics Research</Tag>
-        <h1 className="home-hero__title" id="home-hero-title">
-          Explore the Universe
+      <section
+        className={`home-hero container${query ? ' home-hero--searching' : ''}`}
+        aria-labelledby="home-hero-title"
+      >
+        {/* Figma "01-Home": the brand mark and wordmark are the page heading. */}
+        <h1 className="home-hero__brand" id="home-hero-title">
+          <img className="home-hero__brand-mark" src={logoMark} alt="" width={112} height={57} />
+          <span className="home-hero__brand-text">ASTROTHREAD</span>
         </h1>
-        <p className="home-hero__description">
-          Explore the evolution of scientific discoveries. Follow research threads that connect
-          ideas, observations and discoveries over time.
-        </p>
 
         <div className="home-hero__search" id="search">
           <SearchBar
             id={SEARCH_INPUT_ID}
+            placeholder="Search scientific research"
             value={input}
             onChange={handleInputChange}
             onSearch={handleSearch}
             clearable
             maxLength={MAX_QUERY_LENGTH}
+            submitLabel="Search"
+            icon={{ src: searchFieldIcon, size: 22 }}
           />
         </div>
 
-        <div className="home-hero__actions">
-          <Button href={routes.researchThreads}>Explore Research</Button>
-          <Button variant="secondary" href="#latest-discoveries">
-            View Timeline
+        {/* Entry point to every topic, right under the search bar. */}
+        <div className="home-hero__browse">
+          <Button variant="secondary" className="home-hero__browse-button" href={routes.researchThreads}>
+            Browse Threads
+            <Icon name="arrow-right" />
           </Button>
-        </div>
-
-        <div className="home-hero__popular" role="group" aria-label="Popular topics">
-          <span className="home-hero__popular-label">Popular:</span>
-          {popularTopics.map((topic) => (
-            <Tag
-              key={topic}
-              pressed={query.toLowerCase() === topic.toLowerCase()}
-              onClick={() => handleTopicClick(topic)}
-            >
-              {topic}
-            </Tag>
-          ))}
+          <span className="home-hero__browse-label">Browse all research topics</span>
         </div>
       </section>
 
-      <section
-        ref={threadsRef}
-        className="home-threads container"
-        aria-labelledby="research-threads"
-      >
-        <SectionHeader
-          id="research-threads"
-          title="Research Threads"
-          subtitle={
-            query
-              ? `Results for "${query}" in titles, categories and descriptions.`
-              : 'Research connects ideas, observations, and discoveries.'
-          }
-          action={
-            <Button variant="secondary" href={routes.researchThreads}>
-              View all threads
-            </Button>
-          }
-        />
-        <HomeThreads query={query} onClearSearch={clearSearch} />
-      </section>
-
-      <section className="home-latest container" aria-labelledby="latest-discoveries">
-        <SectionHeader
-          id="latest-discoveries"
-          title="Latest Discoveries"
-          subtitle="Black Holes thread: from the first observation to the latest research."
-        />
-        <div className="home-latest__timeline">
-          <Timeline events={blackHoleTimeline} />
-        </div>
-      </section>
-
-      <section className="home-data container" aria-labelledby="home-data-title">
-        <div className="home-data__content">
-          <Tag>Data</Tag>
-          <h2 className="home-data__title" id="home-data-title">
-            See the data behind every discovery
-          </h2>
-          <p className="home-data__description">
-            Each research thread includes the measurements and trends that shaped it, shown in
-            clear charts.
-          </p>
-          <Button className="home-data__button" href={routes.researchThreads}>
-            Explore Research
-          </Button>
-        </div>
-
-        <DataChart title="Black Hole Mass" note="Illustrative data" data={blackHoleMassData} />
-      </section>
+      {/* Figma "01-Home" shows only the search; results appear once a search is active. */}
+      {query && (
+        <section
+          ref={threadsRef}
+          className="home-threads container"
+          aria-labelledby="research-threads"
+        >
+          <SectionHeader
+            id="research-threads"
+            title="Search results"
+            subtitle="Research threads whose title, category or description match your search."
+            action={
+              <Button variant="secondary" href={routes.researchThreads}>
+                View all threads
+              </Button>
+            }
+          />
+          <SearchResults query={query} onClearSearch={clearSearch} />
+        </section>
+      )}
     </main>
   )
 }

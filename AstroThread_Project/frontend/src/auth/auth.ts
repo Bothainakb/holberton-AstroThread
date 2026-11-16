@@ -3,7 +3,7 @@
 // displays: the backend checks the stored role on every protected request.
 import { useSyncExternalStore } from 'react'
 import { routes } from '../router/router'
-import { fetchCurrentUser, login, logout, type AuthUser, type Role } from '../services/api'
+import { fetchCurrentUser, login, logout, register, type AuthUser, type Role } from '../services/api'
 
 export type AuthState =
   | { status: 'loading' }
@@ -44,6 +44,13 @@ export async function signIn(email: string, password: string, remember: boolean)
   return user
 }
 
+/** Creates an account; the server signs it in, so the UI switches to signed-in. */
+export async function signUp(name: string, email: string, password: string) {
+  const user = await register(name, email, password)
+  setState({ status: 'signed-in', user })
+  return user
+}
+
 export async function signOut() {
   try {
     await logout()
@@ -53,9 +60,10 @@ export async function signOut() {
 }
 
 /**
- * Page opened after signing in, by verified role. There is no Owner Dashboard
- * yet, so owners land on the same page as users; point `owner` at the
- * dashboard route once it exists.
+ * Page opened after signing in, by verified role. There is no Admin Dashboard
+ * page yet (only its /api/owner/... endpoints), so owners (shown as "Admin")
+ * land on the same page as users; point `owner` at the dashboard route once
+ * it exists.
  */
 const HOME_PATH_BY_ROLE: Record<Role, string> = {
   user: routes.researchThreads,

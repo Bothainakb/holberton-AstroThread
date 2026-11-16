@@ -36,7 +36,7 @@
   text-align: center;
 }
 
-/* "Not connected" notice, laid out like the Figma success banner. */
+/* Notice above the form (sign-in errors, signed-in status), laid out like the Figma success banner. */
 .login-notice {
   display: flex;
   align-items: flex-start;
@@ -261,60 +261,6 @@
 .login-card__signup-link {
   margin-left: 14px;
   font-weight: 700;
-}
-
-/* OR divider */
-.login-divider {
-  display: flex;
-  align-items: center;
-  gap: 17px;
-  margin-top: 19px;
-}
-
-.login-divider__line {
-  flex: 1;
-  height: 1px;
-  background: var(--color-surface-light);
-}
-
-.login-divider__text {
-  font-size: 12px;
-  line-height: 15px;
-  color: var(--color-text-subtle);
-}
-
-/* Continue with Google */
-.login-google {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  width: 100%;
-  height: 48px;
-  margin-top: 20px;
-  border: 1px solid var(--color-surface-light);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: border-color 180ms ease;
-}
-
-.login-google:hover {
-  border-color: var(--color-text-muted);
-}
-
-.login-google__badge {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--color-text-muted);
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
 }
 
 @media (max-width: 640px) {

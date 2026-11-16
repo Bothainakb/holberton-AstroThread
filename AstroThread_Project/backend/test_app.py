@@ -7,6 +7,7 @@ backend/.env and is skipped if the database is not reachable.
 import os
 import re
 import unittest
+from datetime import datetime
 from unittest import mock
 
 import psycopg
@@ -72,7 +73,10 @@ class ThreadsQueryTests(unittest.TestCase):
         self.cursor = connection.__enter__.return_value.cursor.return_value
         self.cursor = self.cursor.__enter__.return_value
         self.cursor.fetchall.return_value = [
-            (1, "Black Holes", "Astrophysics", "Explore black holes."),
+            (
+                1, "black-holes", "Black Holes", "Astrophysics",
+                "Explore black holes.", datetime(2026, 10, 12, 19, 16), 3, 5, 2, None,
+            ),
         ]
         patcher = mock.patch.object(
             backend, "get_db_connection", return_value=connection
@@ -89,9 +93,15 @@ class ThreadsQueryTests(unittest.TestCase):
             [
                 {
                     "id": 1,
+                    "slug": "black-holes",
                     "title": "Black Holes",
                     "category": "Astrophysics",
                     "description": "Explore black holes.",
+                    "updatedAt": "2026-10-12T19:16:00",
+                    "paperCount": 3,
+                    "completedStages": 2,
+                    "totalStages": 5,
+                    "openAlexPaperCount": None,
                 }
             ],
         )
@@ -101,7 +111,20 @@ class ThreadsQueryTests(unittest.TestCase):
 
         sql, params = self.cursor.execute.call_args.args
         self.assertIn("~*", sql)
-        self.assertEqual(params, {"pattern": "\\mC\\+\\+ \\(2\\.0\\)"})
+        self.assertEqual(params, {"user_id": None, "pattern": "\\mC\\+\\+ \\(2\\.0\\)"})
+
+    def test_visitors_get_no_progress_and_users_get_their_own(self):
+        self.client.get("/api/threads")
+        self.assertEqual(self.cursor.execute.call_args.args[1], {"user_id": None})
+
+        with mock.patch.dict(backend.app.config, {"SECRET_KEY": "test-secret"}):
+            with self.client.session_transaction() as saved:
+                saved["user_id"] = 7
+            self.client.get("/api/threads")
+
+        sql, params = self.cursor.execute.call_args.args
+        self.assertEqual(params, {"user_id": 7})
+        self.assertIn("thread_progress", sql)
 
     def test_too_long_search_is_rejected_without_querying(self):
         query = "a" * (backend.MAX_QUERY_LENGTH + 1)
@@ -120,8 +143,9 @@ class ThreadsQueryTests(unittest.TestCase):
     def test_blank_search_lists_all_threads(self):
         self.client.get("/api/threads", query_string={"q": "   "})
 
-        self.assertEqual(len(self.cursor.execute.call_args.args), 1)
-        self.assertNotIn("WHERE", self.cursor.execute.call_args.args[0])
+        sql, params = self.cursor.execute.call_args.args
+        self.assertNotIn("~*", sql)
+        self.assertNotIn("pattern", params)
 
 
 class WordStartPatternTests(unittest.TestCase):
@@ -161,11 +185,17 @@ class ThreadsIntegrationTests(unittest.TestCase):
         self.assertIsInstance(threads, list)
         for thread in threads:
             self.assertEqual(
-                set(thread), {"id", "title", "category", "description"}
+                set(thread),
+                {
+                    "id", "slug", "title", "category", "description",
+                    "updatedAt", "paperCount", "completedStages", "totalStages",
+                    "openAlexPaperCount",
+                },
             )
             self.assertIsInstance(thread["id"], int)
-        ids = [thread["id"] for thread in threads]
-        self.assertEqual(ids, sorted(ids))
+        # Newest first; threads updated at the same time keep id order.
+        order = [(thread["updatedAt"] or "", -thread["id"]) for thread in threads]
+        self.assertEqual(order, sorted(order, reverse=True))
 
     def search(self, query):
         response = backend.app.test_client().get(
@@ -192,16 +222,25 @@ class ThreadsIntegrationTests(unittest.TestCase):
 
     def test_physics_matches_whole_word_not_astrophysics(self):
         # Black Holes has the category "Astrophysics", which must not match.
-        titles = self.titles("physics")
-        self.assertIn("Gravitational Waves", titles)
-        self.assertNotIn("Black Holes", titles)
-        self.assertEqual(self.search("PHYSICS"), self.search("physics"))
+        self.assertNotIn("Black Holes", self.titles("physics"))
+        self.assertIn("Black Holes", self.titles("astrophysics"))
+        self.assertEqual(self.search("ASTROPHYSICS"), self.search("astrophysics"))
 
     def test_partial_word_matches_while_typing(self):
         self.assertIn("Black Holes", self.titles("blac"))
 
-    def test_dark_matter_has_no_results(self):
-        self.assertEqual(self.search("Dark Matter"), [])
+    def test_dark_matter_is_found(self):
+        self.assertEqual(self.titles("Dark Matter"), ["Dark Matter"])
+
+    def test_removed_topics_are_not_listed(self):
+        titles = self.titles("")
+        for removed in ("Gravitational Waves", "Neutron Stars", "The Expanding Universe"):
+            self.assertNotIn(removed, titles)
+
+    def test_every_thread_has_five_stages(self):
+        for thread in self.search(""):
+            self.assertEqual(thread["totalStages"], 5, thread["title"])
+            self.assertTrue(0 <= thread["completedStages"] <= 5)
 
     def test_search_matches_title_category_and_description(self):
         threads = backend.app.test_client().get("/api/threads").get_json()
@@ -501,6 +540,220 @@ class OwnerAuthorizationTests(AuthTestCase):
         self.cursor.execute.assert_not_called()
 
 
+NEW_ACCOUNT = {"name": "Ada", "email": "ada@example.com", "password": PASSWORD}
+
+
+class RegisterTests(AuthTestCase):
+    def setUp(self):
+        super().setUp()
+        self.cursor.fetchone.return_value = (1, "ada@example.com", "user")
+
+    def register(self, **fields):
+        return self.client.post("/api/auth/register", json={**NEW_ACCOUNT, **fields})
+
+    def test_new_account_is_created_and_signed_in(self):
+        response = self.register()
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.get_json(),
+            {"user": {"id": 1, "email": "ada@example.com", "role": "user"}},
+        )
+        header = response.headers["Set-Cookie"]
+        self.assertIn("HttpOnly", header)
+        self.assertIn("SameSite=Lax", header)
+        with self.client.session_transaction() as session:
+            self.assertEqual(dict(session), {"_permanent": False, "user_id": 1})
+
+    def test_password_is_stored_as_a_hash(self):
+        self.register()
+
+        sql, params = self.cursor.execute.call_args.args
+        self.assertIn("INSERT INTO users", sql)
+        name, email, password_hash = params
+        self.assertEqual((name, email), ("Ada", "ada@example.com"))
+        self.assertNotEqual(password_hash, PASSWORD)
+        self.assertNotIn(PASSWORD, sql)
+        self.assertTrue(backend.check_password_hash(password_hash, PASSWORD))
+
+    def test_role_is_always_user(self):
+        self.register(role="owner")
+
+        sql, params = self.cursor.execute.call_args.args
+        self.assertIn("'user'", sql)
+        self.assertNotIn("owner", params)
+
+    def test_name_and_email_are_normalized(self):
+        self.register(name="  Ada Lovelace ", email="  Ada@Example.COM ")
+
+        _, params = self.cursor.execute.call_args.args
+        self.assertEqual(params[:2], ("Ada Lovelace", "ada@example.com"))
+
+    def test_duplicate_email_is_rejected(self):
+        # ON CONFLICT DO NOTHING returns no row for an existing email.
+        self.cursor.fetchone.return_value = None
+
+        response = self.register()
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.get_json(), {"error": backend.EMAIL_TAKEN})
+        self.assertIsNone(self.client.get_cookie(SESSION_COOKIE))
+
+    def test_invalid_input_is_rejected_without_querying(self):
+        cases = [
+            {"name": ""},
+            {"name": "   "},
+            {"name": None},
+            {"name": "a" * (backend.MAX_NAME_LENGTH + 1)},
+            {"email": ""},
+            {"email": "not-an-email"},
+            {"email": "a@b"},
+            {"email": "a b@example.com"},
+            {"email": "a" * 250 + "@example.com"},
+            {"email": ["ada@example.com"]},
+            {"password": ""},
+            {"password": "short"},
+            {"password": "x" * (backend.MAX_PASSWORD_LENGTH + 1)},
+            {"password": 12345678},
+        ]
+        for fields in cases:
+            with self.subTest(fields=fields):
+                response = self.register(**fields)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("error", response.get_json())
+        self.cursor.execute.assert_not_called()
+        self.assertIsNone(self.client.get_cookie(SESSION_COOKIE))
+
+    def test_non_json_body_is_rejected(self):
+        # A cross-site HTML form can only send form or text bodies.
+        for kwargs in (
+            {"data": "name=Ada&email=ada@example.com&password=x"},
+            {"data": '{"name": "Ada"}', "content_type": "text/plain"},
+            {"json": ["Ada", "ada@example.com", PASSWORD]},
+        ):
+            with self.subTest(kwargs=kwargs):
+                response = self.client.post("/api/auth/register", **kwargs)
+                self.assertEqual(response.status_code, 400)
+        self.cursor.execute.assert_not_called()
+
+    def test_database_error_returns_json_500(self):
+        error = psycopg.OperationalError("connection refused")
+        with mock.patch.object(backend, "get_db_connection", side_effect=error):
+            response = self.register()
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.get_json(), {"error": "Unable to create your account right now"}
+        )
+
+    def test_register_is_disabled_without_secret_key(self):
+        with mock.patch.dict(backend.app.config, {"SECRET_KEY": None}):
+            response = self.register()
+
+        self.assertEqual(response.status_code, 503)
+        self.cursor.execute.assert_not_called()
+
+    def test_registering_replaces_an_existing_session(self):
+        self.login(OWNER_ROW)
+        self.cursor.fetchone.return_value = (3, "new@example.com", "user")
+
+        self.register(email="new@example.com")
+
+        with self.client.session_transaction() as session:
+            self.assertEqual(session["user_id"], 3)
+
+    def test_me_and_logout_work_after_registering(self):
+        self.register()
+        self.set_stored_user((1, "ada@example.com", "user"))
+
+        me = self.client.get("/api/auth/me")
+        self.assertEqual(me.status_code, 200)
+        self.assertEqual(me.get_json()["user"]["role"], "user")
+
+        self.assertEqual(self.client.post("/api/auth/logout").status_code, 204)
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+
+
+class RollbackConnection:
+    """One real connection whose work is rolled back, so tests leave no rows."""
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def __call__(self):
+        return self
+
+    def __enter__(self):
+        return self.conn
+
+    def __exit__(self, *exc):
+        return False
+
+
+class RegisterIntegrationTests(unittest.TestCase):
+    """Signs up, in and out against the real users table, then rolls back."""
+
+    def setUp(self):
+        try:
+            conn = backend.get_db_connection()
+        except (psycopg.Error, RuntimeError) as error:
+            self.skipTest(f"Database not reachable: {error}")
+        self.addCleanup(conn.close)
+        self.addCleanup(conn.rollback)
+        self.conn = conn
+
+        config = mock.patch.dict(backend.app.config, {"SECRET_KEY": "test-secret"})
+        config.start()
+        self.addCleanup(config.stop)
+        patcher = mock.patch.object(
+            backend, "get_db_connection", RollbackConnection(conn)
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.client = backend.app.test_client()
+        self.email = "signup-test@astrothread.invalid"
+
+    def test_sign_up_then_me_logout_and_login(self):
+        # The extra role field must be ignored: public sign-up only makes users.
+        response = self.client.post(
+            "/api/auth/register",
+            json={
+                "name": "Signup Test",
+                "email": self.email,
+                "password": PASSWORD,
+                "role": "owner",
+            },
+        )
+        self.assertEqual(response.status_code, 201, response.get_json())
+        user = response.get_json()["user"]
+        self.assertEqual((user["email"], user["role"]), (self.email, "user"))
+
+        name, role, password_hash = self.conn.execute(
+            "SELECT name, role, password_hash FROM users WHERE id = %s;",
+            (user["id"],),
+        ).fetchone()
+        self.assertEqual((name, role), ("Signup Test", "user"))
+        self.assertNotEqual(password_hash, PASSWORD)
+        self.assertTrue(backend.check_password_hash(password_hash, PASSWORD))
+
+        self.assertEqual(self.client.get("/api/auth/me").get_json(), {"user": user})
+
+        duplicate = self.client.post(
+            "/api/auth/register",
+            json={"name": "Again", "email": self.email.upper(), "password": PASSWORD},
+        )
+        self.assertEqual(duplicate.status_code, 409)
+
+        self.assertEqual(self.client.post("/api/auth/logout").status_code, 204)
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+
+        login = self.client.post(
+            "/api/auth/login", json={"email": self.email, "password": PASSWORD}
+        )
+        self.assertEqual(login.status_code, 200)
+        self.assertEqual(self.client.get("/api/auth/me").get_json(), {"user": user})
+
+
 class UsersTableIntegrationTests(unittest.TestCase):
     """Checks the migrated `users` table (read-only)."""
 
@@ -525,7 +778,11 @@ class UsersTableIntegrationTests(unittest.TestCase):
     def test_users_table_has_expected_columns(self):
         self.assertEqual(
             self.columns,
-            {"id", "name", "email", "password_hash", "role", "created_at", "updated_at"},
+            {
+                "id", "name", "email", "password_hash", "role", "created_at", "updated_at",
+                # Profile columns added by migrations/003_create_profile_tables.sql
+                "bio", "avatar_url", "email_notifications", "language",
+            },
         )
 
     def test_roles_are_limited_to_user_and_owner(self):
