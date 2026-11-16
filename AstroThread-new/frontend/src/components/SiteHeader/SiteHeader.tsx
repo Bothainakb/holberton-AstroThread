@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import logoIcon from "../../assets/brand/astrothread-icon.svg";
+import logo from "../../assets/brand/astrothread-logo.svg";
 import { getCurrentSession, signOut } from "../../data/demoAuth";
 import type { DemoSession } from "../../data/demoAuth";
 import { navigate, routes, useLocation } from "../../lib/router";
@@ -216,10 +216,10 @@ export function SiteHeader({
           <a className="site-header__brand" href={homeHref}>
             <img
               className="site-header__brand-icon"
-              src={logoIcon}
+              src={logo}
               alt=""
-              width={40}
-              height={40}
+              width={52}
+              height={27}
             />
             <span className="site-header__brand-text">
               <span className="site-header__brand-name">AstroThread</span>

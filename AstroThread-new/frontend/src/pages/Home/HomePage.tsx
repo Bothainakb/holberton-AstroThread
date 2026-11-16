@@ -1,5 +1,5 @@
 import { useState } from "react";
-import logoIcon from "../../assets/brand/astrothread-icon.svg";
+import logo from "../../assets/brand/astrothread-logo.svg";
 import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
 import { SearchBox } from "../../components/SearchBox/SearchBox";
 import { PopularTopics } from "../../components/PopularTopics/PopularTopics";
@@ -53,10 +53,10 @@ export function HomePage() {
             <div className="home-page__brand">
               <img
                 className="home-page__logo"
-                src={logoIcon}
+                src={logo}
                 alt=""
-                width={72}
-                height={72}
+                width={120}
+                height={63}
               />
               <h1 id="home-page-title" className="home-page__title">
                 AstroThread

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import logoIcon from "../../assets/brand/astrothread-icon.svg";
+import logo from "../../assets/brand/astrothread-logo.svg";
 import { getCurrentSession } from "../../data/demoAuth";
 import { getMyThread, isTopicSaved, removeTopic, saveTopic } from "../../data/myThread";
 import type { TopicAnswer as TopicAnswerData, TopicFigure } from "../../data/topicAnswers";
@@ -197,7 +197,7 @@ export function TopicAnswer({ answer, returnHref }: TopicAnswerProps) {
       <div className="topic-answer__source">
         <div className="topic-answer__brand">
           <span className="topic-answer__tile" aria-hidden="true">
-            <img src={logoIcon} alt="" width={22} height={22} />
+             <img src={logo} alt="" width={26} height={14} />
           </span>
           <span className="topic-answer__brand-text">
             <strong>AstroThread Topics</strong>

@@ -22,8 +22,9 @@
 }
 
 .site-header__brand-icon {
-  width: 2.5rem;
-  height: 2.5rem;
+  display: block;
+  width: 3.25rem;
+  height: auto;
 }
 
 .site-header__brand-text {

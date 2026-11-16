@@ -34,8 +34,9 @@
 }
 
 .home-page__logo {
-  width: 4.5rem;
-  height: 4.5rem;
+  display: block;
+  width: 7.5rem;
+  height: auto;
 }
 
 .home-page__title {
@@ -89,8 +90,7 @@
   }
 
   .home-page__logo {
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 5.5rem;
   }
 
   .home-page__tagline {
