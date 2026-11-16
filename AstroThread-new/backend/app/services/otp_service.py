@@ -5,11 +5,30 @@ from werkzeug.security import check_password_hash, generate_password_hash  # ت�
 CODE_LENGTH = 6  # طول رمز التحقق
 EXPIRY_MINUTES = 10  # مدة صلاحية الرمز بالدقائق
 MAX_ATTEMPTS = 5  # الحد الأقصى لمحاولات إدخال الرمز
+RESEND_WAIT_SECONDS = 30  # أقل مدة انتظار قبل طلب رمز جديد (نفس مؤقت صفحة الرمز في الواجهة)
 
 
 def generate_code():
     # إنشاء رمز تحقق عشوائي مكون من 6 أرقام
     return f"{secrets.randbelow(10 ** CODE_LENGTH):0{CODE_LENGTH}d}"
+
+
+def seconds_until_resend(cur, user_id):
+    # حساب عدد الثواني المتبقية قبل السماح بإرسال رمز جديد
+    # (وقت إنشاء آخر رمز + مدة الانتظار) - الوقت الحالي
+    cur.execute(
+        "SELECT CEIL(EXTRACT(EPOCH FROM ("
+        "created_at + %s * INTERVAL '1 second' - CURRENT_TIMESTAMP))) "
+        "FROM otp_codes WHERE user_id = %s ORDER BY id DESC LIMIT 1",
+        (RESEND_WAIT_SECONDS, user_id),
+    )
+    row = cur.fetchone()  # جلب نتيجة الحساب
+
+    # لا يوجد رمز سابق أو انتهت مدة الانتظار
+    if row is None or row[0] is None or row[0] <= 0:
+        return 0
+
+    return int(row[0])  # عدد الثواني المتبقية
 
 
 def create_otp(cur, user_id):

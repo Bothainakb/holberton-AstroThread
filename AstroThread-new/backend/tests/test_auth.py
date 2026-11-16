@@ -34,6 +34,7 @@ class AuthRouteTests(unittest.TestCase):
             "send": mock.patch.object(auth, "send_otp_email"),
             "create": mock.patch.object(otp_service, "create_otp", return_value="123456"),
             "check": mock.patch.object(otp_service, "verify_otp", return_value="ok"),
+            "cooldown": mock.patch.object(otp_service, "seconds_until_resend", return_value=0),
         }
         for name, patcher in patches.items():
             setattr(self, name, patcher.start())
@@ -121,6 +122,30 @@ class AuthRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.create.assert_called_once()
         self.send.assert_called_once_with("sara@example.com", "123456")
+
+    def test_login_too_soon_after_the_last_code_is_429(self):
+        # آخر رمز أُرسل قبل قليل: يجب الانتظار 20 ثانية أخرى
+        self.use_database((5,))
+        self.cooldown.return_value = 20
+
+        response = self.client.post("/api/auth/login", json={"email": "sara@example.com"})
+
+        self.assertEqual(response.status_code, 429)
+        self.assertIn("20 seconds", response.get_json()["error"])
+        self.create.assert_not_called()  # لم يتم إلغاء الرمز القديم
+        self.send.assert_not_called()  # لم يتم إرسال بريد جديد
+
+    def test_signup_too_soon_after_the_last_code_is_429(self):
+        # نفس الحالة عند التسجيل لحساب لم يتم تأكيده بعد
+        self.use_database(None, (5,))
+        self.cooldown.return_value = 12
+
+        response = self.client.post("/api/auth/signup", json={
+            "fullName": "Sara Alharbi", "email": "sara@example.com",
+        })
+
+        self.assertEqual(response.status_code, 429)
+        self.send.assert_not_called()
 
     def test_login_without_an_account_is_404(self):
         self.use_database(None)

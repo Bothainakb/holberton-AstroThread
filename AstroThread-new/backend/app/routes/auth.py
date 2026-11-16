@@ -61,6 +61,11 @@ def validate_signup(full_name, email, account_type, invitation_code):
     return None  # جميع البيانات صحيحة
 
 
+def wait_error(seconds):
+    # رسالة خطأ عند طلب رمز جديد قبل انتهاء مدة الانتظار
+    return error(f"Please wait {seconds} seconds before asking for a new code.", 429, "email")
+
+
 @auth_bp.post("/api/auth/signup")  # تحديد مسار إنشاء حساب جديد
 def signup():
     data = request.get_json(silent=True) or {}  # استقبال البيانات بصيغة JSON
@@ -112,6 +117,11 @@ def signup():
                         (full_name, email, account_type),
                     )
                     user_id = cur.fetchone()[0]  # حفظ رقم المستخدم الجديد
+
+                # منع إرسال رمز جديد قبل انتهاء مدة الانتظار
+                wait = otp_service.seconds_until_resend(cur, user_id)
+                if wait:
+                    return wait_error(wait)
 
                 code = otp_service.create_otp(cur, user_id)  # إنشاء رمز تحقق جديد
                 send_otp_email(email, code)  # إرسال رمز التحقق إلى البريد الإلكتروني
@@ -218,6 +228,11 @@ def login():
                 user = cur.fetchone()
                 if user is None:
                     return error("No account uses this email. Create one instead.", 404, "email")
+
+                # منع إرسال رمز جديد قبل انتهاء مدة الانتظار
+                wait = otp_service.seconds_until_resend(cur, user[0])
+                if wait:
+                    return wait_error(wait)
 
                 code = otp_service.create_otp(cur, user[0])
                 send_otp_email(email, code)
