@@ -20,6 +20,9 @@ MAX_NAME_LENGTH = 100  # أقصى عدد أحرف للاسم
 MAX_EMAIL_LENGTH = 254  # أقصى طول للبريد الإلكتروني
 ACCOUNT_TYPES = ("user", "admin")  # أنواع الحسابات المسموح بها
 
+# رسالة تظهر عند محاولة دخول حساب موقوف (نفس الرسالة الموجودة في الواجهة)
+SUSPENDED_MESSAGE = "This account is suspended. Contact the AstroThread team for help."
+
 
 def error(message, status, field=None):
     body = {"error": message}  # إنشاء رسالة الخطأ
@@ -152,7 +155,7 @@ def verify():
             with conn.cursor() as cur:
                 # البحث عن المستخدم باستخدام البريد الإلكتروني
                 cur.execute(
-                    "SELECT id, full_name, account_type FROM users WHERE email = %s",
+                    "SELECT id, full_name, account_type, status FROM users WHERE email = %s",
                     (email,),
                 )
                 user = cur.fetchone()  # جلب بيانات المستخدم
@@ -161,7 +164,11 @@ def verify():
                 if user is None:
                     return error("This code isn't valid. Check it and try again.", 400, "code")
 
-                user_id, full_name, account_type = user  # استخراج بيانات المستخدم
+                user_id, full_name, account_type, status = user  # استخراج بيانات المستخدم
+
+                # منع الحساب الموقوف من تسجيل الدخول (قبل فحص الرمز حتى لا يُستهلك)
+                if status == "suspended":
+                    return error(SUSPENDED_MESSAGE, 403, "code")
 
                 # التحقق من صحة رمز OTP
                 result = otp_service.verify_otp(cur, user_id, code)
@@ -222,12 +229,16 @@ def login():
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT id FROM users WHERE email = %s AND email_verified_at IS NOT NULL",
+                    "SELECT id, status FROM users WHERE email = %s AND email_verified_at IS NOT NULL",
                     (email,),
                 )
                 user = cur.fetchone()
                 if user is None:
                     return error("No account uses this email. Create one instead.", 404, "email")
+
+                # لا نرسل رمزاً إلى حساب موقوف
+                if user[1] == "suspended":
+                    return error(SUSPENDED_MESSAGE, 403, "email")
 
                 # منع إرسال رمز جديد قبل انتهاء مدة الانتظار
                 wait = otp_service.seconds_until_resend(cur, user[0])
@@ -259,7 +270,7 @@ def me():
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT full_name, email, account_type FROM users WHERE id = %s",
+                    "SELECT full_name, email, account_type, status FROM users WHERE id = %s",
                     (user_id,),
                 )
                 user = cur.fetchone()
@@ -267,11 +278,12 @@ def me():
         current_app.logger.exception("Loading the signed-in user failed")
         return error("Unable to check your account right now.", 500)
 
-    if user is None:
+    # الحساب محذوف أو موقوف: تسجيل خروج المستخدم
+    if user is None or user[3] == "suspended":
         session.clear()  
         return error("Not signed in.", 401)
 
-    full_name, email, account_type = user
+    full_name, email, account_type, _status = user
     return jsonify({"fullName": full_name, "email": email, "accountType": account_type})
 
 

@@ -10,7 +10,7 @@ from app import create_app
 from app.routes import auth
 from app.services import email_service, otp_service
 
-USER = (5, "Sara Alharbi", "user")   
+USER = (5, "Sara Alharbi", "user", "active")   
 
 
 def fake_database(*rows):
@@ -115,7 +115,7 @@ class AuthRouteTests(unittest.TestCase):
                     self.assertNotIn("user_id", session)
 
     def test_login_emails_a_code_to_a_verified_account(self):
-        self.use_database((5,))
+        self.use_database((5, "active"))
 
         response = self.client.post("/api/auth/login", json={"email": "Sara@Example.com"})
 
@@ -125,7 +125,7 @@ class AuthRouteTests(unittest.TestCase):
 
     def test_login_too_soon_after_the_last_code_is_429(self):
         # آخر رمز أُرسل قبل قليل: يجب الانتظار 20 ثانية أخرى
-        self.use_database((5,))
+        self.use_database((5, "active"))
         self.cooldown.return_value = 20
 
         response = self.client.post("/api/auth/login", json={"email": "sara@example.com"})
@@ -146,6 +146,27 @@ class AuthRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 429)
         self.send.assert_not_called()
+
+    def test_login_for_a_suspended_account_is_403(self):
+        # الحساب الموقوف لا يحصل على رمز
+        self.use_database((5, "suspended"))
+
+        response = self.client.post("/api/auth/login", json={"email": "sara@example.com"})
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("suspended", response.get_json()["error"])
+        self.send.assert_not_called()
+
+    def test_verify_for_a_suspended_account_is_403(self):
+        # حتى مع رمز صحيح لا يتم تسجيل الدخول، ولا يُفحص الرمز أصلاً
+        self.use_database((5, "Sara Alharbi", "user", "suspended"))
+
+        response = self.client.post("/api/auth/verify", json={"email": "sara@example.com", "code": "123456"})
+
+        self.assertEqual(response.status_code, 403)
+        self.check.assert_not_called()
+        with self.client.session_transaction() as session:
+            self.assertNotIn("user_id", session)
 
     def test_login_without_an_account_is_404(self):
         self.use_database(None)
@@ -177,7 +198,7 @@ class AuthRouteTests(unittest.TestCase):
 
     def test_me_returns_the_signed_in_user(self):
         self.sign_in()
-        self.use_database(("Sara Alharbi", "sara@example.com", "user"))
+        self.use_database(("Sara Alharbi", "sara@example.com", "user", "active"))
 
         response = self.client.get("/api/auth/me")
 
@@ -187,6 +208,15 @@ class AuthRouteTests(unittest.TestCase):
     def test_me_for_a_deleted_account_signs_out(self):
         self.sign_in()
         self.use_database(None)
+
+        self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+        with self.client.session_transaction() as session:
+            self.assertNotIn("user_id", session)
+
+    def test_me_for_a_suspended_account_signs_out(self):
+        # المستخدم الذي أُوقف حسابه أثناء تسجيل دخوله يخرج عند التحقق التالي
+        self.sign_in()
+        self.use_database(("Sara Alharbi", "sara@example.com", "user", "suspended"))
 
         self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
         with self.client.session_transaction() as session:
