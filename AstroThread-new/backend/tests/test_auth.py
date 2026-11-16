@@ -200,6 +200,45 @@ class AuthRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 204)
         self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
 
+    # Change name and delete account
+
+    def test_change_name_without_signing_in_is_401(self):
+        response = self.client.patch("/api/auth/me", json={"fullName": "Sara Ali"})
+        self.assertEqual(response.status_code, 401)
+        self.connect.assert_not_called()
+
+    def test_change_name_saves_the_new_name(self):
+        self.sign_in()
+        self.use_database(("Sara Ali", "sara@example.com", "user"))
+
+        response = self.client.patch("/api/auth/me", json={"fullName": "  Sara Ali  "})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(),
+                         {"fullName": "Sara Ali", "email": "sara@example.com", "accountType": "user"})
+
+    def test_change_name_rejects_a_too_short_name(self):
+        self.sign_in()
+
+        response = self.client.patch("/api/auth/me", json={"fullName": "S"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["field"], "fullName")
+        self.connect.assert_not_called()
+
+    def test_delete_account_signs_out(self):
+        self.sign_in()
+
+        response = self.client.delete("/api/auth/me")
+
+        self.assertEqual(response.status_code, 204)
+        with self.client.session_transaction() as session:
+            self.assertNotIn("user_id", session)
+
+    def test_delete_without_signing_in_is_401(self):
+        self.assertEqual(self.client.delete("/api/auth/me").status_code, 401)
+        self.connect.assert_not_called()
+
 
 class EmailServiceTests(unittest.TestCase):
     def test_console_mode_prints_the_code_instead_of_emailing(self):

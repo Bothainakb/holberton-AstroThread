@@ -280,3 +280,66 @@ def logout():
     """Forget who is signed in."""
     session.clear()
     return "", 204
+
+
+def validate_full_name(full_name):
+    # نفس قواعد الاسم المستخدمة عند التسجيل
+    if len(full_name) < MIN_NAME_LENGTH:
+        return "Your name must be at least 2 characters."
+
+    if len(full_name) > MAX_NAME_LENGTH:
+        return "Your name must be 100 characters or fewer."
+
+    return None  # الاسم صحيح
+
+
+@auth_bp.patch("/api/auth/me")  # تعديل اسم المستخدم المسجل دخوله
+@login_required  # فقط للمستخدم المسجل دخوله
+def update_me():
+    data = request.get_json(silent=True) or {}  # استقبال البيانات بصيغة JSON
+    full_name = str(data.get("fullName", "")).strip()  # استخراج الاسم الجديد وتنظيفه
+
+    # التحقق من صحة الاسم الجديد
+    problem = validate_full_name(full_name)
+    if problem:
+        return error(problem, 400, "fullName")
+
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                # تحديث الاسم وإرجاع بيانات المستخدم بعد التعديل
+                cur.execute(
+                    "UPDATE users SET full_name = %s WHERE id = %s "
+                    "RETURNING full_name, email, account_type",
+                    (full_name, session["user_id"]),
+                )
+                user = cur.fetchone()  # جلب البيانات بعد التحديث
+
+    except psycopg.Error:
+        current_app.logger.exception("Updating the name failed")  # تسجيل خطأ قاعدة البيانات
+        return error("Unable to save your name right now. Please try again.", 500)
+
+    # الحساب لم يعد موجوداً (تم حذفه)
+    if user is None:
+        session.clear()
+        return error("Not signed in.", 401)
+
+    full_name, email, account_type = user  # استخراج بيانات المستخدم
+    return jsonify({"fullName": full_name, "email": email, "accountType": account_type})
+
+
+@auth_bp.delete("/api/auth/me")  # حذف حساب المستخدم المسجل دخوله
+@login_required  # فقط للمستخدم المسجل دخوله
+def delete_me():
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                # حذف المستخدم، وتُحذف رموزه ومواضيعه المحفوظة تلقائياً (ON DELETE CASCADE)
+                cur.execute("DELETE FROM users WHERE id = %s", (session["user_id"],))
+
+    except psycopg.Error:
+        current_app.logger.exception("Deleting the account failed")  # تسجيل خطأ قاعدة البيانات
+        return error("Unable to delete your account right now. Please try again.", 500)
+
+    session.clear()  # تسجيل خروج المستخدم بعد حذف حسابه
+    return "", 204  # تم الحذف بنجاح بدون محتوى

@@ -1,86 +1,97 @@
-import { useEffect, useId, useState } from "react";
-import type { FormEvent } from "react";
-import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
-import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
-import { SearchBox } from "../../components/SearchBox/SearchBox";
-import { Button } from "../../components/Button/Button";
-import { FormAlert } from "../../components/FormAlert/FormAlert";
+import { useEffect, useId, useState } from "react"; // أدوات React لإدارة الحالة والمعرفات
+import type { FormEvent } from "react"; // نوع حدث إرسال النموذج
+import { SiteHeader } from "../../components/SiteHeader/SiteHeader"; // الشريط العلوي للموقع
+import { SiteFooter } from "../../components/SiteFooter/SiteFooter"; // تذييل الموقع
+import { SearchBox } from "../../components/SearchBox/SearchBox"; // مربع البحث
+import { Button } from "../../components/Button/Button"; // مكون الزر
+import { FormAlert } from "../../components/FormAlert/FormAlert"; // رسائل التنبيه (نجاح أو خطأ)
 import {
-  DEMO_ADMIN_EMAIL,
-  deleteAccount,
-  getCurrentSession,
-  signOut,
-  updateFullName,
+  DEMO_ADMIN_EMAIL, // بريد حساب المدير التجريبي
+  deleteAccount, // حذف الحساب
+  getCurrentSession, // جلب المستخدم المسجل دخوله
+  signOut, // تسجيل الخروج
+  updateFullName, // تعديل الاسم
 } from "../../data/demoAuth";
-import type { DemoSession } from "../../data/demoAuth";
-import { getMyThread, getReadPaperIds } from "../../data/myThread";
-import { navigate, routes } from "../../lib/router";
-import { clearRecentSearches, getRecentSearches } from "../../lib/recentSearches";
-import "./ProfilePage.css";
+import type { DemoSession } from "../../data/demoAuth"; // نوع بيانات المستخدم
+import { getMyThread, getReadPaperIds } from "../../data/myThread"; // بيانات My Thread للإحصائيات
+import { navigate, routes } from "../../lib/router"; // التنقل بين الصفحات
+import { clearRecentSearches, getRecentSearches } from "../../lib/recentSearches"; // عمليات البحث الأخيرة
+import "./ProfilePage.css"; // تنسيقات الصفحة
 
-const NAME_MIN_LENGTH = 2;
-const NAME_MAX_LENGTH = 60;
+const NAME_MIN_LENGTH = 2; // أقل عدد أحرف للاسم
+const NAME_MAX_LENGTH = 60; // أقصى عدد أحرف للاسم في الواجهة
 
 function searchHref(query: string) {
+  // إنشاء رابط صفحة البحث مع كلمة البحث
   return `${routes.search}?${new URLSearchParams({ q: query }).toString()}`;
 }
 
 function getInitials(fullName: string) {
+  // استخراج أول حرفين من الاسم لعرضهما في الصورة الرمزية
   return fullName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
+    .trim() // حذف المسافات الزائدة
+    .split(/\s+/) // تقسيم الاسم إلى كلمات
+    .slice(0, 2) // أخذ أول كلمتين فقط
+    .map((part) => part[0]?.toUpperCase() ?? "") // أول حرف من كل كلمة بحرف كبير
+    .join(""); // دمج الحرفين
 }
 
 function validateName(value: string): string {
-  const trimmed = value.trim();
+  const trimmed = value.trim(); // حذف المسافات من البداية والنهاية
 
+  // التحقق من الحد الأدنى لطول الاسم
   if (trimmed.length < NAME_MIN_LENGTH) {
     return `Enter at least ${NAME_MIN_LENGTH} characters.`;
   }
 
+  // التحقق من الحد الأقصى لطول الاسم
   if (trimmed.length > NAME_MAX_LENGTH) {
     return `Use ${NAME_MAX_LENGTH} characters or fewer.`;
   }
 
-  return "";
+  return ""; // الاسم صحيح
 }
 
+// الخصائص التي يستقبلها قسم بيانات الحساب
 interface AccountDetailsProps {
-  session: DemoSession;
-  onSaved: (session: DemoSession) => void;
+  session: DemoSession; // المستخدم الحالي
+  onSaved: (session: DemoSession) => void; // تُستدعى بعد حفظ الاسم بنجاح
 }
 
 function AccountDetails({ session, onSaved }: AccountDetailsProps) {
-  const nameId = useId();
-  const errorId = useId();
-  const [name, setName] = useState(session.fullName);
-  const [error, setError] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const nameId = useId(); // معرف فريد لحقل الاسم
+  const errorId = useId(); // معرف فريد لرسالة الخطأ
+  const [name, setName] = useState(session.fullName); // الاسم المكتوب في الحقل
+  const [error, setError] = useState(""); // رسالة الخطأ
+  const [isSaving, setIsSaving] = useState(false); // هل الحفظ جارٍ الآن؟
+  const [saved, setSaved] = useState(false); // هل تم الحفظ بنجاح؟
 
-  const isUnchanged = name.trim() === session.fullName;
+  const isUnchanged = name.trim() === session.fullName; // الاسم لم يتغير
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    event.preventDefault(); // منع إعادة تحميل الصفحة
 
-    const message = validateName(name);
-    setError(message);
-    setSaved(false);
+    const message = validateName(name); // التحقق من الاسم
+    setError(message); // عرض الخطأ إن وجد
+    setSaved(false); // إخفاء رسالة النجاح السابقة
 
     if (message || isUnchanged) {
-      return;
+      return; // لا نرسل شيئاً إذا كان هناك خطأ أو لم يتغير الاسم
     }
 
-    setIsSaving(true);
-    const nextSession = await updateFullName(session.email, name);
-    setIsSaving(false);
+    setIsSaving(true); // إظهار حالة "جارٍ الحفظ"
 
-    setName(nextSession.fullName);
-    setSaved(true);
-    onSaved(nextSession);
+    try {
+      const nextSession = await updateFullName(session.email, name); // حفظ الاسم الجديد
+      setName(nextSession.fullName); // عرض الاسم كما حُفظ
+      setSaved(true); // إظهار رسالة النجاح
+      onSaved(nextSession); // تحديث بيانات المستخدم في الصفحة
+    } catch (saveError) {
+      // عرض رسالة الخطأ القادمة من الخادم تحت حقل الاسم
+      setError(saveError instanceof Error ? saveError.message : "We couldn’t save your name.");
+    } finally {
+      setIsSaving(false); // إيقاف حالة الحفظ في جميع الحالات
+    }
   }
 
   return (
@@ -89,6 +100,7 @@ function AccountDetails({ session, onSaved }: AccountDetailsProps) {
         Account
       </h2>
 
+      {/* الصورة الرمزية واسم المستخدم ونوع الحساب */}
       <div className="profile__identity">
         <span className="profile__avatar" aria-hidden="true">
           {getInitials(session.fullName)}
@@ -101,12 +113,14 @@ function AccountDetails({ session, onSaved }: AccountDetailsProps) {
         </div>
       </div>
 
+      {/* رسالة النجاح بعد حفظ الاسم */}
       {saved && (
         <FormAlert tone="success" title="Profile updated">
           Your name was saved.
         </FormAlert>
       )}
 
+      {/* نموذج تعديل الاسم */}
       <form className="profile__form" onSubmit={handleSubmit} noValidate>
         <div className="profile__field">
           <label className="profile__label" htmlFor={nameId}>
@@ -122,13 +136,14 @@ function AccountDetails({ session, onSaved }: AccountDetailsProps) {
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             onChange={(event) => {
-              setName(event.target.value);
-              setSaved(false);
+              setName(event.target.value); // تحديث الاسم أثناء الكتابة
+              setSaved(false); // إخفاء رسالة النجاح عند التعديل
               if (error) {
-                setError(validateName(event.target.value));
+                setError(validateName(event.target.value)); // إعادة التحقق إذا كان هناك خطأ ظاهر
               }
             }}
           />
+          {/* رسالة الخطأ تحت حقل الاسم */}
           {error && (
             <p id={errorId} className="profile__error">
               {error}
@@ -136,6 +151,7 @@ function AccountDetails({ session, onSaved }: AccountDetailsProps) {
           )}
         </div>
 
+        {/* البريد الإلكتروني (للعرض فقط) */}
         <div className="profile__field">
           <span className="profile__label">Email</span>
           <p className="profile__value">{session.email}</p>
@@ -144,6 +160,7 @@ function AccountDetails({ session, onSaved }: AccountDetailsProps) {
           </p>
         </div>
 
+        {/* زر الحفظ: معطل أثناء الحفظ أو إذا لم يتغير الاسم */}
         <div className="profile__actions">
           <Button type="submit" disabled={isSaving || isUnchanged}>
             {isSaving ? "Saving…" : "Save changes"}
@@ -154,16 +171,18 @@ function AccountDetails({ session, onSaved }: AccountDetailsProps) {
   );
 }
 
+// الخصائص التي يستقبلها قسم النشاط
 interface ActivitySummaryProps {
-  email: string;
+  email: string; // بريد المستخدم لجلب بياناته
 }
 
 function ActivitySummary({ email }: ActivitySummaryProps) {
-  const thread = getMyThread(email);
+  const thread = getMyThread(email); // بيانات My Thread الخاصة بالمستخدم
+  // الإحصائيات المعروضة في الصفحة
   const stats = [
-    { label: "Saved topics", value: thread.topics.length },
-    { label: "Papers read", value: getReadPaperIds(thread).size },
-    { label: "Searches", value: thread.journey.filter((step) => step.type === "search").length },
+    { label: "Saved topics", value: thread.topics.length }, // عدد المواضيع المحفوظة
+    { label: "Papers read", value: getReadPaperIds(thread).size }, // عدد الأوراق المقروءة
+    { label: "Searches", value: thread.journey.filter((step) => step.type === "search").length }, // عدد عمليات البحث
   ];
 
   return (
@@ -172,6 +191,7 @@ function ActivitySummary({ email }: ActivitySummaryProps) {
         Activity
       </h2>
 
+      {/* عرض كل إحصائية مع عنوانها */}
       <dl className="profile__stats">
         {stats.map((stat) => (
           <div key={stat.label} className="profile__stat">
@@ -189,13 +209,13 @@ function ActivitySummary({ email }: ActivitySummaryProps) {
 }
 
 function PrivacySettings() {
-  const [count, setCount] = useState(() => getRecentSearches().length);
-  const [cleared, setCleared] = useState(false);
+  const [count, setCount] = useState(() => getRecentSearches().length); // عدد عمليات البحث المحفوظة
+  const [cleared, setCleared] = useState(false); // هل تم مسح السجل؟
 
   function handleClear() {
-    clearRecentSearches();
-    setCount(0);
-    setCleared(true);
+    clearRecentSearches(); // مسح سجل البحث من المتصفح
+    setCount(0); // تصفير العدد
+    setCleared(true); // إظهار رسالة المسح
   }
 
   return (
@@ -207,6 +227,7 @@ function PrivacySettings() {
       <div className="profile__row">
         <div>
           <p className="profile__row-title">Recent searches</p>
+          {/* نص يوضح عدد عمليات البحث المحفوظة على هذا الجهاز */}
           <p className="profile__hint">
             {count > 0
               ? `${count} recent ${count === 1 ? "search is" : "searches are"} saved on this device.`
@@ -218,6 +239,7 @@ function PrivacySettings() {
         </Button>
       </div>
 
+      {/* رسالة يقرأها قارئ الشاشة بعد المسح */}
       <p className="profile__status" role="status">
         {cleared ? "Search history cleared." : ""}
       </p>
@@ -225,24 +247,36 @@ function PrivacySettings() {
   );
 }
 
+// الخصائص التي يستقبلها قسم إجراءات الحساب
 interface AccountActionsProps {
-  session: DemoSession;
+  session: DemoSession; // المستخدم الحالي
 }
 
 function AccountActions({ session }: AccountActionsProps) {
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const isDemoAdmin = session.email === DEMO_ADMIN_EMAIL;
+  const [isConfirming, setIsConfirming] = useState(false); // هل تظهر رسالة تأكيد الحذف؟
+  const [isDeleting, setIsDeleting] = useState(false); // هل الحذف جارٍ الآن؟
+  const [deleteError, setDeleteError] = useState(""); // رسالة خطأ الحذف
+  const isDemoAdmin = session.email === DEMO_ADMIN_EMAIL; // حساب المدير التجريبي لا يمكن حذفه
 
   function handleSignOut() {
-    signOut();
-    navigate(routes.home);
+    signOut(); // تسجيل الخروج
+    navigate(routes.home); // الانتقال إلى الصفحة الرئيسية
   }
 
   async function handleDelete() {
-    setIsDeleting(true);
-    await deleteAccount(session.email);
-    navigate(routes.home);
+    setIsDeleting(true); // إظهار حالة "جارٍ الحذف"
+    setDeleteError(""); // إخفاء أي خطأ سابق
+
+    try {
+      await deleteAccount(session.email); // حذف الحساب
+      navigate(routes.home); // الانتقال إلى الصفحة الرئيسية بعد الحذف
+    } catch (deleteProblem) {
+      setIsDeleting(false); // إعادة تفعيل الأزرار
+      // عرض رسالة الخطأ القادمة من الخادم
+      setDeleteError(
+        deleteProblem instanceof Error ? deleteProblem.message : "We couldn’t delete your account.",
+      );
+    }
   }
 
   return (
@@ -251,6 +285,7 @@ function AccountActions({ session }: AccountActionsProps) {
         Account actions
       </h2>
 
+      {/* تسجيل الخروج */}
       <div className="profile__row">
         <div>
           <p className="profile__row-title">Log out</p>
@@ -261,6 +296,7 @@ function AccountActions({ session }: AccountActionsProps) {
         </Button>
       </div>
 
+      {/* حذف الحساب */}
       <div className="profile__row profile__row--danger">
         <div>
           <p className="profile__row-title">Delete account</p>
@@ -270,6 +306,7 @@ function AccountActions({ session }: AccountActionsProps) {
               : "Permanently delete your account, saved topics and research journey."}
           </p>
         </div>
+        {/* زر الحذف يختفي عند ظهور رسالة التأكيد */}
         {!isConfirming && (
           <Button
             variant="secondary"
@@ -282,12 +319,15 @@ function AccountActions({ session }: AccountActionsProps) {
         )}
       </div>
 
+      {/* رسالة تأكيد الحذف */}
       {isConfirming && (
         <div className="profile__confirm" role="alert">
           <p className="profile__confirm-title">Delete your account?</p>
           <p className="profile__hint">
             This removes {session.email} and all of its My Thread data. You can’t undo this.
           </p>
+          {/* رسالة الخطأ إذا فشل الحذف */}
+          {deleteError && <FormAlert tone="error">{deleteError}</FormAlert>}
           <div className="profile__confirm-actions">
             <Button
               className="profile__danger-button profile__danger-button--solid"
@@ -311,23 +351,24 @@ function AccountActions({ session }: AccountActionsProps) {
 }
 
 export function ProfilePage() {
-  const [session, setSession] = useState<DemoSession | null>(getCurrentSession);
-  const [query, setQuery] = useState("");
+  const [session, setSession] = useState<DemoSession | null>(getCurrentSession); // المستخدم الحالي
+  const [query, setQuery] = useState(""); // نص البحث في الشريط العلوي
 
   useEffect(() => {
-    document.title = "Profile | AstroThread";
+    document.title = "Profile | AstroThread"; // عنوان تبويب المتصفح
   }, []);
 
   function runSearch(nextQuery: string) {
-    const trimmed = nextQuery.trim();
+    const trimmed = nextQuery.trim(); // حذف المسافات
 
     if (trimmed) {
-      navigate(searchHref(trimmed));
+      navigate(searchHref(trimmed)); // الانتقال إلى صفحة نتائج البحث
     }
   }
 
   return (
     <div className="profile-page">
+      {/* key يعيد رسم الشريط العلوي عند تغير الاسم ليظهر الاسم الجديد */}
       <SiteHeader
         key={session?.fullName ?? "signed-out"}
         search={
@@ -342,6 +383,7 @@ export function ProfilePage() {
 
       <main className="profile-page__main">
         <div className="profile">
+          {/* إذا لم يكن المستخدم مسجل دخوله نطلب منه تسجيل الدخول */}
           {!session ? (
             <div className="profile__signed-out">
               <h1 className="profile__title">Profile</h1>
@@ -355,6 +397,7 @@ export function ProfilePage() {
               <h1 className="profile__title">Profile</h1>
               <p className="profile__lead">Your account details and research activity.</p>
 
+              {/* أقسام صفحة الملف الشخصي */}
               <AccountDetails session={session} onSaved={setSession} />
               <ActivitySummary email={session.email} />
               <PrivacySettings />
