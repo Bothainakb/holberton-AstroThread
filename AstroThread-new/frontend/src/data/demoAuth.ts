@@ -283,6 +283,10 @@ export async function requestLoginCode(email: string): Promise<CodeRequestResult
         return { ok: false, reason: "no-account" }; // لا يوجد حساب بهذا البريد
       }
 
+      if (status === 403) {
+        return { ok: false, reason: "suspended" }; // الحساب موقوف من قبل المدير
+      }
+
       return { ok: false, reason: "error", message: errorText(data, SERVER_DOWN_MESSAGE) }; // خطأ آخر
     } catch {
       return { ok: false, reason: "error", message: SERVER_DOWN_MESSAGE }; // تعذر الوصول إلى الخادم

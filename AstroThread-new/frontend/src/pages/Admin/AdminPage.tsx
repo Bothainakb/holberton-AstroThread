@@ -1,34 +1,41 @@
-import { useEffect, useState } from "react";
-import { SiteHeader } from "../../components/SiteHeader/SiteHeader";
-import { SiteFooter } from "../../components/SiteFooter/SiteFooter";
-import { SearchBox } from "../../components/SearchBox/SearchBox";
-import { EmptyState } from "../../components/EmptyState/EmptyState";
-import { Button } from "../../components/Button/Button";
-import { getAccounts, getCurrentSession } from "../../data/demoAuth";
+import { useEffect, useState } from "react"; // أدوات React لإدارة الحالة والتأثيرات
+import { SiteHeader } from "../../components/SiteHeader/SiteHeader"; // الشريط العلوي للموقع
+import { SiteFooter } from "../../components/SiteFooter/SiteFooter"; // تذييل الموقع
+import { SearchBox } from "../../components/SearchBox/SearchBox"; // مربع البحث
+import { EmptyState } from "../../components/EmptyState/EmptyState"; // رسالة الصفحة الفارغة
+import { Button } from "../../components/Button/Button"; // مكون الزر
+import { FormAlert } from "../../components/FormAlert/FormAlert"; // رسائل التنبيه (مثل الأخطاء)
+import { getCurrentSession } from "../../data/demoAuth"; // المستخدم المسجل دخوله
 import {
-  deletePaper,
-  getPaperStatus,
-  getSearchActivity,
-  isAccountSuspended,
-  isPaperDeleted,
-  resetAdminDemo,
-  setAccountStatus,
-  setPaperStatus,
+  deletePaper, // حذف ورقة (تجريبي)
+  getPaperStatus, // حالة الورقة: ظاهرة أو مخفية
+  getSearchActivity, // إحصائيات البحث (تجريبي)
+  isPaperDeleted, // هل الورقة محذوفة؟
+  resetAdminDemo, // إعادة ضبط البيانات التجريبية
+  setPaperStatus, // إخفاء الورقة أو إظهارها
 } from "../../data/demoAdmin";
-import type { PaperStatus } from "../../data/demoAdmin";
-import { navigate, paperPath, routes } from "../../lib/router";
-import type { PaperSummary } from "../../types/research";
-import "./AdminPage.css";
+import type { PaperStatus } from "../../data/demoAdmin"; // نوع حالة الورقة
+import {
+  ACCOUNTS_ARE_LIVE, // هل الحسابات قادمة من الخادم الحقيقي؟
+  changeAccountStatus, // إيقاف الحساب أو إعادة تفعيله
+  loadAccounts, // تحميل قائمة الحسابات
+} from "../../services/admin/adminService";
+import type { AdminAccount } from "../../services/admin/adminService"; // نوع بيانات الحساب في لوحة المدير
+import { navigate, paperPath, routes } from "../../lib/router"; // التنقل بين الصفحات
+import type { PaperSummary } from "../../types/research"; // نوع بيانات الورقة البحثية
+import "./AdminPage.css"; // تنسيقات الصفحة
 
-type AdminView = "overview" | "papers" | "accounts";
-type StatusFilter = "all" | PaperStatus;
+type AdminView = "overview" | "papers" | "accounts"; // أقسام لوحة المدير
+type StatusFilter = "all" | PaperStatus; // فلتر حالة الأوراق
 
+// أزرار التبديل بين الأقسام
 const VIEWS: { id: AdminView; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "papers", label: "Papers" },
   { id: "accounts", label: "Accounts" },
 ];
 
+// تنسيق الوقت المعروض (مثل: Nov 16, 3:45 PM)
 const timeFormat = new Intl.DateTimeFormat("en", {
   month: "short",
   day: "numeric",
@@ -37,28 +44,47 @@ const timeFormat = new Intl.DateTimeFormat("en", {
 });
 
 function searchHref(query: string) {
+  // إنشاء رابط صفحة البحث مع كلمة البحث
   return `${routes.search}?${new URLSearchParams({ q: query }).toString()}`;
 }
 
 function matches(text: string, filter: string) {
+  // هل يحتوي النص على كلمة الفلتر؟ (بدون اعتبار لحالة الأحرف)
   return text.toLowerCase().includes(filter.trim().toLowerCase());
 }
 
-function Overview({ papers }: { papers: readonly PaperSummary[] }) {
-  const accounts = getAccounts();
-  const suspended = accounts.filter((account) => isAccountSuspended(account.email)).length;
-  const hidden = papers.filter((paper) => getPaperStatus(paper.id) === "hidden").length;
-  const activity = getSearchActivity();
-  const maxCount = Math.max(1, ...activity.top.map((item) => item.count));
+function errorMessage(problem: unknown, fallback: string) {
+  // استخراج رسالة الخطأ أو استخدام الرسالة الاحتياطية
+  return problem instanceof Error ? problem.message : fallback;
+}
 
+// الخصائص التي يستقبلها قسم النظرة العامة
+interface OverviewProps {
+  papers: readonly PaperSummary[]; // الأوراق البحثية
+  accounts: readonly AdminAccount[] | null; // الحسابات (null أثناء التحميل)
+}
+
+function Overview({ papers, accounts }: OverviewProps) {
+  // عدد الحسابات الموقوفة (صفر أثناء التحميل)
+  const suspended = (accounts ?? []).filter((account) => account.status === "suspended").length;
+  const hidden = papers.filter((paper) => getPaperStatus(paper.id) === "hidden").length; // عدد الأوراق المخفية
+  const activity = getSearchActivity(); // إحصائيات البحث
+  const maxCount = Math.max(1, ...activity.top.map((item) => item.count)); // أعلى عدد لرسم الأشرطة
+
+  // البطاقات الثلاث في أعلى الصفحة
   const stats = [
-    { label: "Accounts", value: accounts.length, detail: `${suspended} suspended` },
+    {
+      label: "Accounts",
+      value: accounts === null ? "…" : accounts.length, // "…" أثناء التحميل
+      detail: `${suspended} suspended`,
+    },
     { label: "Papers", value: papers.length, detail: `${hidden} hidden` },
     { label: "Searches", value: activity.total, detail: "by signed-in users" },
   ];
 
   return (
     <>
+      {/* بطاقات الإحصائيات */}
       <dl className="admin-stats">
         {stats.map((stat) => (
           <div key={stat.label} className="admin-stats__item">
@@ -70,6 +96,7 @@ function Overview({ papers }: { papers: readonly PaperSummary[] }) {
       </dl>
 
       <div className="admin-columns">
+        {/* أكثر عمليات البحث تكراراً */}
         <section className="admin-panel" aria-labelledby="admin-top-title">
           <h2 id="admin-top-title" className="admin-panel__title">
             Most searched
@@ -83,6 +110,7 @@ function Overview({ papers }: { papers: readonly PaperSummary[] }) {
                   <a className="admin-link" href={searchHref(item.query)}>
                     {item.query}
                   </a>
+                  {/* شريط طوله يتناسب مع عدد مرات البحث */}
                   <span className="admin-top__bar" aria-hidden="true">
                     <span style={{ width: `${Math.round((item.count / maxCount) * 100)}%` }} />
                   </span>
@@ -93,6 +121,7 @@ function Overview({ papers }: { papers: readonly PaperSummary[] }) {
           )}
         </section>
 
+        {/* آخر عمليات البحث */}
         <section className="admin-panel" aria-labelledby="admin-recent-title">
           <h2 id="admin-recent-title" className="admin-panel__title">
             Recent searches
@@ -118,10 +147,11 @@ function Overview({ papers }: { papers: readonly PaperSummary[] }) {
 }
 
 function PapersView({ papers, onChange }: { papers: readonly PaperSummary[]; onChange: () => void }) {
-  const [filter, setFilter] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState(""); // نص الفلتر
+  const [status, setStatus] = useState<StatusFilter>("all"); // فلتر الحالة
+  const [confirmingId, setConfirmingId] = useState<string | null>(null); // الورقة التي ننتظر تأكيد حذفها
 
+  // الأوراق التي تطابق الفلتر والحالة المختارة
   const rows = papers.filter((paper) => {
     const paperStatus = getPaperStatus(paper.id);
     return (
@@ -140,6 +170,7 @@ function PapersView({ papers, onChange }: { papers: readonly PaperSummary[]; onC
         not add one.
       </p>
 
+      {/* أدوات الفلترة */}
       <div className="admin-controls">
         <label className="admin-field">
           <span className="visually-hidden">Filter papers</span>
@@ -183,11 +214,12 @@ function PapersView({ papers, onChange }: { papers: readonly PaperSummary[]; onC
             </thead>
             <tbody>
               {rows.map((paper) => {
-                const paperStatus = getPaperStatus(paper.id);
-                const isConfirming = confirmingId === paper.id;
+                const paperStatus = getPaperStatus(paper.id); // حالة هذه الورقة
+                const isConfirming = confirmingId === paper.id; // هل ننتظر تأكيد حذفها؟
 
                 return (
                   <tr key={paper.id}>
+                    {/* عنوان الورقة: رابط فقط إذا كانت ظاهرة */}
                     <td className="admin-table__title">
                       {paperStatus === "visible" ? (
                         <a className="admin-link" href={paperPath(paper.id)}>
@@ -208,6 +240,7 @@ function PapersView({ papers, onChange }: { papers: readonly PaperSummary[]; onC
                       <div className="admin-actions">
                         {isConfirming ? (
                           <>
+                            {/* تأكيد الحذف أو الإلغاء */}
                             <Button
                               className="admin-button admin-button--danger"
                               onClick={() => {
@@ -228,6 +261,7 @@ function PapersView({ papers, onChange }: { papers: readonly PaperSummary[]; onC
                           </>
                         ) : (
                           <>
+                            {/* إخفاء الورقة أو إظهارها */}
                             <Button
                               variant="secondary"
                               className="admin-button"
@@ -239,6 +273,7 @@ function PapersView({ papers, onChange }: { papers: readonly PaperSummary[]; onC
                             >
                               {paperStatus === "visible" ? "Hide" : "Show"}
                             </Button>
+                            {/* زر الحذف يطلب التأكيد أولاً */}
                             <Button
                               variant="secondary"
                               className="admin-button admin-button--danger-outline"
@@ -262,9 +297,38 @@ function PapersView({ papers, onChange }: { papers: readonly PaperSummary[]; onC
   );
 }
 
-function AccountsView({ onChange }: { onChange: () => void }) {
-  const [filter, setFilter] = useState("");
-  const rows = getAccounts().filter(
+// الخصائص التي يستقبلها قسم الحسابات
+interface AccountsViewProps {
+  accounts: readonly AdminAccount[] | null; // الحسابات (null أثناء التحميل)
+  loadError: string; // رسالة خطأ التحميل إن وجدت
+  onAccountChange: (account: AdminAccount) => void; // تُستدعى بعد تغيير حالة حساب
+}
+
+function AccountsView({ accounts, loadError, onAccountChange }: AccountsViewProps) {
+  const [filter, setFilter] = useState(""); // نص الفلتر
+  const [busyId, setBusyId] = useState<string | null>(null); // الحساب الذي يتم تغييره الآن
+  const [actionError, setActionError] = useState(""); // رسالة خطأ الإيقاف أو التفعيل
+
+  async function toggleStatus(account: AdminAccount) {
+    setBusyId(account.id); // تعطيل زر هذا الحساب أثناء الطلب
+    setActionError(""); // إخفاء أي خطأ سابق
+
+    try {
+      // إيقاف الحساب النشط، أو إعادة تفعيل الحساب الموقوف
+      const updated = await changeAccountStatus(
+        account,
+        account.status === "suspended" ? "active" : "suspended",
+      );
+      onAccountChange(updated); // تحديث الحساب في القائمة
+    } catch (problem) {
+      setActionError(errorMessage(problem, "We couldn’t change this account.")); // عرض سبب الفشل
+    } finally {
+      setBusyId(null); // إعادة تفعيل الزر
+    }
+  }
+
+  // الحسابات التي تطابق الفلتر (بالاسم أو البريد)
+  const rows = (accounts ?? []).filter(
     (account) => matches(account.fullName, filter) || matches(account.email, filter),
   );
 
@@ -276,6 +340,9 @@ function AccountsView({ onChange }: { onChange: () => void }) {
       <p className="admin-note">
         A suspended account can’t log in until you reactivate it. Admin accounts can’t be suspended.
       </p>
+
+      {/* رسالة الخطأ عند فشل الإيقاف أو التفعيل */}
+      {actionError && <FormAlert tone="error">{actionError}</FormAlert>}
 
       <div className="admin-controls">
         <label className="admin-field">
@@ -290,7 +357,14 @@ function AccountsView({ onChange }: { onChange: () => void }) {
         </label>
       </div>
 
-      {rows.length === 0 ? (
+      {/* حالات العرض: خطأ في التحميل، جارٍ التحميل، لا نتائج، أو جدول الحسابات */}
+      {loadError ? (
+        <FormAlert tone="error">{loadError}</FormAlert>
+      ) : accounts === null ? (
+        <p className="admin-panel__empty" role="status">
+          Loading accounts…
+        </p>
+      ) : rows.length === 0 ? (
         <p className="admin-panel__empty">No accounts match.</p>
       ) : (
         <div className="admin-table-wrap">
@@ -308,11 +382,11 @@ function AccountsView({ onChange }: { onChange: () => void }) {
             </thead>
             <tbody>
               {rows.map((account) => {
-                const suspended = isAccountSuspended(account.email);
-                const isAdmin = account.accountType === "admin";
+                const suspended = account.status === "suspended"; // هل الحساب موقوف؟
+                const isAdmin = account.accountType === "admin"; // حسابات المدراء لا تُوقف
 
                 return (
-                  <tr key={account.email}>
+                  <tr key={account.id}>
                     <td className="admin-table__title">{account.fullName}</td>
                     <td className="admin-table__email">{account.email}</td>
                     <td>{isAdmin ? "Admin" : "User"}</td>
@@ -330,12 +404,10 @@ function AccountsView({ onChange }: { onChange: () => void }) {
                             variant="secondary"
                             className={suspended ? "admin-button" : "admin-button admin-button--danger-outline"}
                             aria-label={`${suspended ? "Reactivate" : "Suspend"} ${account.fullName}`}
-                            onClick={() => {
-                              setAccountStatus(account.email, suspended ? "active" : "suspended");
-                              onChange();
-                            }}
+                            disabled={busyId === account.id}
+                            onClick={() => void toggleStatus(account)}
                           >
-                            {suspended ? "Reactivate" : "Suspend"}
+                            {busyId === account.id ? "Saving…" : suspended ? "Reactivate" : "Suspend"}
                           </Button>
                         )}
                       </div>
@@ -354,24 +426,28 @@ function AccountsView({ onChange }: { onChange: () => void }) {
 /* Page */
 
 export function AdminPage() {
-  const [session] = useState(getCurrentSession);
-  const [view, setView] = useState<AdminView>("overview");
-  const [query, setQuery] = useState("");
-  const [allPapers, setAllPapers] = useState<PaperSummary[] | null>(null);
-  const [, setVersion] = useState(0);
-  const isAdmin = session?.accountType === "admin";
+  const [session] = useState(getCurrentSession); // المستخدم المسجل دخوله
+  const [view, setView] = useState<AdminView>("overview"); // القسم المعروض حالياً
+  const [query, setQuery] = useState(""); // نص البحث في الشريط العلوي
+  const [allPapers, setAllPapers] = useState<PaperSummary[] | null>(null); // الأوراق (null أثناء التحميل)
+  const [accounts, setAccounts] = useState<AdminAccount[] | null>(null); // الحسابات (null أثناء التحميل)
+  const [accountsError, setAccountsError] = useState(""); // خطأ تحميل الحسابات
+  const [accountsVersion, setAccountsVersion] = useState(0); // زيادته تعيد تحميل الحسابات
+  const [, setVersion] = useState(0); // زيادته تعيد رسم الصفحة بعد التغييرات التجريبية
+  const isAdmin = session?.accountType === "admin"; // هل المستخدم مدير؟
 
   useEffect(() => {
-    document.title = "Admin dashboard | AstroThread";
+    document.title = "Admin dashboard | AstroThread"; // عنوان تبويب المتصفح
   }, []);
 
   useEffect(() => {
     if (!isAdmin) {
-      return;
+      return; // لا نحمل البيانات لغير المدير
     }
 
-    let active = true;
+    let active = true; // لتجاهل النتيجة إذا غادر المستخدم الصفحة
 
+    // تحميل الأوراق التجريبية
     import("../../services/search/sampleSearchData").then(({ samplePapers }) => {
       if (active) {
         setAllPapers([...samplePapers]);
@@ -383,20 +459,55 @@ export function AdminPage() {
     };
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      return; // لا نحمل الحسابات لغير المدير
+    }
+
+    let active = true; // لتجاهل النتيجة إذا غادر المستخدم الصفحة
+    setAccounts(null); // إظهار حالة التحميل
+    setAccountsError(""); // إخفاء أي خطأ سابق
+
+    // تحميل الحسابات من الخادم (أو من المتصفح في الوضع التجريبي)
+    loadAccounts()
+      .then((list) => {
+        if (active) {
+          setAccounts(list);
+        }
+      })
+      .catch((problem: unknown) => {
+        if (active) {
+          setAccountsError(errorMessage(problem, "We couldn’t load the accounts."));
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isAdmin, accountsVersion]);
+
   function runSearch(nextQuery: string) {
-    const trimmed = nextQuery.trim();
+    const trimmed = nextQuery.trim(); // حذف المسافات
 
     if (trimmed) {
-      navigate(searchHref(trimmed));
+      navigate(searchHref(trimmed)); // الانتقال إلى صفحة نتائج البحث
     }
   }
 
-  const refresh = () => setVersion((value) => value + 1);
-  const papers = (allPapers ?? []).filter((paper) => !isPaperDeleted(paper.id));
+  function replaceAccount(updated: AdminAccount) {
+    // استبدال الحساب القديم بالحساب بعد التعديل
+    setAccounts((current) =>
+      current ? current.map((account) => (account.id === updated.id ? updated : account)) : current,
+    );
+  }
 
-  let content;
+  const refresh = () => setVersion((value) => value + 1); // إعادة رسم الصفحة
+  const papers = (allPapers ?? []).filter((paper) => !isPaperDeleted(paper.id)); // الأوراق غير المحذوفة
+
+  let content; // محتوى الصفحة حسب صلاحية المستخدم
 
   if (!isAdmin) {
+    // المستخدم ليس مديراً
     content = (
       <EmptyState
         headingLevel="h1"
@@ -416,7 +527,13 @@ export function AdminPage() {
         <p className="admin__lead">Watch what people search for and manage papers and accounts.</p>
 
         <div className="admin__bar">
-          <p className="admin__sample">Sample data. The admin endpoints aren’t connected yet.</p>
+          {/* ملاحظة توضح أي البيانات حقيقية وأيها تجريبية */}
+          <p className="admin__sample">
+            {ACCOUNTS_ARE_LIVE
+              ? "Accounts are live. Papers and search activity are still sample data."
+              : "Sample data. The admin endpoints aren’t connected yet."}
+          </p>
+          {/* أزرار التبديل بين الأقسام */}
           <div className="admin-switch" role="group" aria-label="View">
             {VIEWS.map((item) => (
               <button
@@ -438,23 +555,36 @@ export function AdminPage() {
           </p>
         ) : (
           <>
-            {view === "overview" && <Overview papers={papers} />}
+            {/* القسم المختار */}
+            {view === "overview" && <Overview papers={papers} accounts={accounts} />}
             {view === "papers" && <PapersView papers={papers} onChange={refresh} />}
-            {view === "accounts" && <AccountsView onChange={refresh} />}
+            {view === "accounts" && (
+              <AccountsView
+                accounts={accounts}
+                loadError={accountsError}
+                onAccountChange={replaceAccount}
+              />
+            )}
           </>
         )}
 
+        {/* إعادة ضبط البيانات التجريبية المحفوظة في المتصفح */}
         <div className="admin__foot">
-          <span>Demo changes are saved in this browser only.</span>
+          <span>
+            {ACCOUNTS_ARE_LIVE
+              ? "Paper changes are saved in this browser only."
+              : "Demo changes are saved in this browser only."}
+          </span>
           <button
             type="button"
             className="admin__reset"
             onClick={() => {
-              resetAdminDemo();
-              refresh();
+              resetAdminDemo(); // حذف التغييرات التجريبية
+              setAccountsVersion((value) => value + 1); // إعادة تحميل الحسابات
+              refresh(); // إعادة رسم الصفحة
             }}
           >
-            Reset hidden, deleted and suspended
+            {ACCOUNTS_ARE_LIVE ? "Reset hidden and deleted papers" : "Reset hidden, deleted and suspended"}
           </button>
         </div>
       </div>
