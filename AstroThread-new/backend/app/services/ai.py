@@ -5,7 +5,7 @@ import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_URL = "https://api.groq.com/openai/v1/chat/completions"
 TIMEOUT_SECONDS = 30
 MAX_RESPONSE_BYTES = 1_000_000
 MAX_ANSWER_TOKENS = 2000
