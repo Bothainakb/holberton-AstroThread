@@ -1,0 +1,71 @@
+.popular-topics {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.popular-topics__title {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.5;
+}
+
+.popular-topics__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.popular-topics__item {
+  display: flex;
+}
+
+.popular-topics__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-navy);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.popular-topics__button:hover {
+  background-color: var(--color-background);
+  border-color: var(--color-border-strong);
+}
+
+.popular-topics__button:focus-visible {
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.popular-topics__button:active {
+  background-color: var(--color-navy);
+  border-color: var(--color-navy);
+  color: var(--color-surface);
+}
+
+@media (max-width: 40rem) {
+  .popular-topics__button {
+    padding: 0 var(--space-4);
+    font-size: var(--font-size-sm);
+  }
+}

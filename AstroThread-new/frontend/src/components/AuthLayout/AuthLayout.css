@@ -1,0 +1,114 @@
+.auth-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--color-surface);
+}
+
+.auth-layout__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--page-gutter) var(--space-16);
+}
+
+.auth-layout__card {
+  width: 100%;
+  max-width: 25rem;
+}
+
+.auth-layout__title {
+  color: var(--color-navy);
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.auth-layout__title:focus,
+.auth-layout__title:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.auth-layout__description {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+.auth-layout__description strong {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.auth-layout__body {
+  margin-top: var(--space-6);
+}
+
+.auth-layout__footer {
+  margin-top: var(--space-5);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.auth-layout .form-field__input {
+  min-height: 2.875rem;
+  padding: 0 var(--space-4);
+  border-radius: 0.625rem;
+}
+
+.auth-layout .button--primary {
+  min-height: 2.875rem;
+  border-radius: 0.625rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.auth-form__fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.auth-link {
+  margin-left: var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  transition:
+    color var(--transition-fast),
+    text-decoration-color var(--transition-fast);
+}
+
+.auth-link:hover {
+  color: var(--color-navy);
+  text-decoration-color: currentColor;
+}
+
+@media (max-width: 40rem) {
+  .auth-layout__main {
+    align-items: flex-start;
+    padding: var(--space-8) var(--page-gutter) var(--space-10);
+  }
+
+  .auth-layout__body {
+    margin-top: var(--space-5);
+  }
+}

@@ -1,0 +1,19 @@
+.sign-up-page__terms .checkbox-field {
+  align-items: flex-start;
+  min-height: 0;
+}
+
+.sign-up-page__terms .checkbox-field__input {
+  margin-top: 0.125rem;
+}
+
+.sign-up-page__terms .checkbox-field__label {
+  color: var(--color-text-muted);
+}
+
+.sign-up-page__terms-error {
+  margin-top: var(--space-2);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
