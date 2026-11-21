@@ -73,13 +73,21 @@ def get_paper(cur, paper_id):
     })
     return paper
 
-
+def find_by_title(cur, title, year=None):
+    if year:
+        cur.execute(
+            
+            (title, year - 1, year + 1),
+        )
+    else:
+        cur.execute(
+           
+            (title,),
+        )
+    row = cur.fetchone()
+    return row[0] if row else None
 def to_details(paper):
-    """A paper from get_paper -> the frontend's PaperDetails.
-
-    Missing explanations are sent as null; the page shows "Not available for
-    this paper yet." for them.
-    """
+   
     return {
         **to_summary(paper, paper.get("search_topic")),
         "method": paper.get("method"),
@@ -89,24 +97,14 @@ def to_details(paper):
 
 
 def save_details(cur, paper_id, details):
-    """Store the AI explanations, unless another request stored them first."""
     cur.execute(
-        """
-        UPDATE research_papers
-        SET method = %s, main_finding = %s, why_it_matters = %s,
-            details_generated_at = NOW()
-        WHERE id = %s AND method IS NULL;
-        """,
+      
         (details["method"], details["main_finding"], details["why_it_matters"], paper_id),
     )
 
 
 def get_related(cur, paper):
-    """Up to RELATED_LIMIT other papers found by the same searches, most similar first.
-
-    Similar = shares keywords (2 points each) and the same topic (3 points);
-    ties go to the newer paper.
-    """
+   
     cur.execute(
         f"""
         SELECT DISTINCT {PAPER_COLUMNS}
