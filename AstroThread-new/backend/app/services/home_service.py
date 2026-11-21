@@ -2,7 +2,7 @@ import json
 import re
 
 POPULAR_LIMIT = 3
-PAPER_CACHE_DAYS = 7         
+PAPER_CACHE_DAYS = 7
 MAX_SLUG_LENGTH = 100
 
 NOT_LETTERS_OR_DIGITS = re.compile(r"[^a-z0-9]+")
@@ -14,17 +14,14 @@ PAPER_COLUMNS = """
 
 
 def slugify(text):
-    """'Black  Holes!' -> 'black-holes', so every spelling finds the same topic."""
     return NOT_LETTERS_OR_DIGITS.sub("-", text.lower()).strip("-")[:MAX_SLUG_LENGTH].strip("-")
 
 
 def display_title(query):
-    """'black holes' -> 'Black Holes'; text with capitals ('JWST') is kept as typed."""
     return query.title() if query.islower() else query
 
 
 def json_list(value):
-    """A JSONB list from the database as a Python list of strings."""
     if isinstance(value, str):
         try:
             value = json.loads(value)
@@ -34,7 +31,6 @@ def json_list(value):
 
 
 def row_to_paper(row):
-    """One row of PAPER_COLUMNS -> a paper dict."""
     return {
         "id": row[0],
         "title": row[1],
@@ -51,7 +47,6 @@ def row_to_paper(row):
 
 
 def get_popular_topics(cur):
-    """The most searched topics: [{id, label, query}] (the shape the Home page uses)."""
     cur.execute(
         """
         SELECT slug, title
@@ -66,11 +61,6 @@ def get_popular_topics(cur):
 
 
 def find_topic(cur, slug):
-    """{id, slug, title, fresh} for a topic searched before, or None.
-
-    fresh is True when its papers were fetched within PAPER_CACHE_DAYS, so
-    OpenAlex does not need to be asked again.
-    """
     cur.execute(
         """
         SELECT id, slug, title,
@@ -87,7 +77,6 @@ def find_topic(cur, slug):
 
 
 def get_topic_papers(cur, topic_id):
-    """The papers stored for a topic, in the order the search found them."""
     cur.execute(
         f"""
         SELECT {PAPER_COLUMNS}
@@ -102,7 +91,6 @@ def get_topic_papers(cur, topic_id):
 
 
 def record_search(cur, slug, title):
-    """Count one search for the topic, creating it the first time. Returns its id."""
     cur.execute(
         """
         INSERT INTO research_threads (slug, title, search_count, last_searched_at)
@@ -117,41 +105,42 @@ def record_search(cur, slug, title):
     return cur.fetchone()[0]
 
 
+def save_paper(cur, paper):
+    values = {
+        **paper,
+        "keywords": json.dumps(paper.get("keywords") or []),
+        "author_list": json.dumps(paper.get("author_list") or []),
+        "venue": paper.get("venue"),
+        "topic": paper.get("topic"),
+    }
+    cur.execute(
+        """
+        INSERT INTO research_papers
+            (openalex_id, title, authors, publication_year, abstract, url,
+             cited_by_count, venue, topic, keywords, author_list)
+        VALUES (%(openalex_id)s, %(title)s, %(authors)s, %(publication_year)s,
+                %(abstract)s, %(url)s, %(cited_by_count)s, %(venue)s, %(topic)s,
+                %(keywords)s::jsonb, %(author_list)s::jsonb)
+        ON CONFLICT (openalex_id) DO UPDATE
+        SET title = EXCLUDED.title,
+            authors = EXCLUDED.authors,
+            publication_year = EXCLUDED.publication_year,
+            abstract = EXCLUDED.abstract,
+            url = EXCLUDED.url,
+            cited_by_count = EXCLUDED.cited_by_count,
+            venue = EXCLUDED.venue,
+            topic = EXCLUDED.topic,
+            keywords = EXCLUDED.keywords,
+            author_list = EXCLUDED.author_list
+        RETURNING id;
+        """,
+        values,
+    )
+    return cur.fetchone()[0]
+
+
 def save_papers(cur, topic_id, papers):
-    """Store the papers OpenAlex found and make them the topic's results."""
-    paper_ids = []
-    for paper in papers:
-        values = {
-            **paper,
-            "keywords": json.dumps(paper.get("keywords") or []),
-            "author_list": json.dumps(paper.get("author_list") or []),
-            "venue": paper.get("venue"),
-            "topic": paper.get("topic"),
-        }
-        cur.execute(
-            """
-            INSERT INTO research_papers
-                (openalex_id, title, authors, publication_year, abstract, url,
-                 cited_by_count, venue, topic, keywords, author_list)
-            VALUES (%(openalex_id)s, %(title)s, %(authors)s, %(publication_year)s,
-                    %(abstract)s, %(url)s, %(cited_by_count)s, %(venue)s, %(topic)s,
-                    %(keywords)s::jsonb, %(author_list)s::jsonb)
-            ON CONFLICT (openalex_id) DO UPDATE
-            SET title = EXCLUDED.title,
-                authors = EXCLUDED.authors,
-                publication_year = EXCLUDED.publication_year,
-                abstract = EXCLUDED.abstract,
-                url = EXCLUDED.url,
-                cited_by_count = EXCLUDED.cited_by_count,
-                venue = EXCLUDED.venue,
-                topic = EXCLUDED.topic,
-                keywords = EXCLUDED.keywords,
-                author_list = EXCLUDED.author_list
-            RETURNING id;
-            """,
-            values,
-        )
-        paper_ids.append(cur.fetchone()[0])
+    paper_ids = [save_paper(cur, paper) for paper in papers]
 
     cur.execute("DELETE FROM thread_papers WHERE thread_id = %s;", (topic_id,))
     for rank, paper_id in enumerate(dict.fromkeys(paper_ids), start=1):
@@ -166,10 +155,7 @@ def save_papers(cur, topic_id, papers):
 
 
 def get_overview(cur, slug):
-    """{id, title, overview, generated_at} for a topic, or None if it was never searched.
 
-    overview is None until the AI has written one.
-    """
     cur.execute(
         """
         SELECT id, title, overview, to_char(overview_generated_at, 'YYYY-MM-DD"T"HH24:MI:SS')
@@ -185,10 +171,7 @@ def get_overview(cur, slug):
 
 
 def save_overview(cur, topic_id, overview):
-    """Store the AI overview, unless another request stored one first.
 
-    Returns the overview that is now stored (ours, or the one already there).
-    """
     cur.execute(
         """
         UPDATE research_threads
