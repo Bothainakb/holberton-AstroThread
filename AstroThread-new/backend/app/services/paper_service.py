@@ -14,13 +14,11 @@ OBSERVATIONAL_WORDS = re.compile(
 
 
 def paper_type(paper):
-    """'observational' or 'theoretical', estimated from the title and abstract."""
     text = f"{paper.get('title') or ''} {paper.get('abstract') or ''}"
     return "observational" if OBSERVATIONAL_WORDS.search(text) else "theoretical"
 
 
 def author_names(paper):
-    """The full author list, or the short 'A, B et al.' text split into names."""
     if paper.get("author_list"):
         return paper["author_list"]
     short = (paper.get("authors") or "").removesuffix(" et al.")
@@ -28,7 +26,6 @@ def author_names(paper):
 
 
 def to_summary(paper, fallback_topic=None):
-    """A stored paper -> the frontend's PaperSummary (plus url and citedByCount)."""
     return {
         "id": str(paper["id"]),
         "title": paper["title"],
@@ -45,7 +42,6 @@ def to_summary(paper, fallback_topic=None):
 
 
 def get_paper(cur, paper_id):
-    """A stored paper with its AI explanations and the topic that found it, or None."""
     cur.execute(
         f"""
         SELECT {PAPER_COLUMNS},
@@ -73,21 +69,33 @@ def get_paper(cur, paper_id):
     })
     return paper
 
+
 def find_by_title(cur, title, year=None):
     if year:
         cur.execute(
-            
+            """
+            SELECT id FROM research_papers
+            WHERE LOWER(title) = LOWER(%s) AND publication_year BETWEEN %s AND %s
+            ORDER BY cited_by_count DESC NULLS LAST
+            LIMIT 1;
+            """,
             (title, year - 1, year + 1),
         )
     else:
         cur.execute(
-           
+            """
+            SELECT id FROM research_papers
+            WHERE LOWER(title) = LOWER(%s)
+            ORDER BY cited_by_count DESC NULLS LAST
+            LIMIT 1;
+            """,
             (title,),
         )
     row = cur.fetchone()
     return row[0] if row else None
+
+
 def to_details(paper):
-   
     return {
         **to_summary(paper, paper.get("search_topic")),
         "method": paper.get("method"),
@@ -98,13 +106,17 @@ def to_details(paper):
 
 def save_details(cur, paper_id, details):
     cur.execute(
-      
+        """
+        UPDATE research_papers
+        SET method = %s, main_finding = %s, why_it_matters = %s,
+            details_generated_at = NOW()
+        WHERE id = %s AND method IS NULL;
+        """,
         (details["method"], details["main_finding"], details["why_it_matters"], paper_id),
     )
 
 
 def get_related(cur, paper):
-   
     cur.execute(
         f"""
         SELECT DISTINCT {PAPER_COLUMNS}
