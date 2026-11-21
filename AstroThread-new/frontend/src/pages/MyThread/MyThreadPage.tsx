@@ -34,6 +34,7 @@ import type {
   StepProgress,
 } from "../../data/learningPaths";
 import { navigate, paperPath, routes } from "../../lib/router";
+import { setPathRead, usePathReads } from "../../data/pathReads";
 import "./MyThreadPage.css";
 
 type ThreadView = "overview" | "journey" | "map";
@@ -172,6 +173,8 @@ function ProgressBar({ label, value, max }: { label: string; value: number; max:
 }
 
 function PaperList({ papers, readIds }: { papers: readonly PathPaper[]; readIds: ReadonlySet<string> }) {
+  const session = getCurrentSession();
+
   return (
     <ul className="path-papers">
       {papers.map((paper) => {
@@ -179,9 +182,17 @@ function PaperList({ papers, readIds }: { papers: readonly PathPaper[]; readIds:
 
         return (
           <li key={paper.id} className={isRead ? "path-papers__item path-papers__item--read" : "path-papers__item"}>
-            <span className="path-papers__check" aria-hidden="true">
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={isRead}
+              aria-label={`Read: ${paper.title}`}
+              className="path-papers__check"
+              disabled={!session}
+              onClick={() => session && setPathRead(session.email, paper.id, !isRead)}
+            >
               {isRead && <CheckIcon />}
-            </span>
+            </button>
             <a className="my-thread__link" href={paperPath(paper.id)}>
               {paper.title}
             </a>
@@ -906,6 +917,7 @@ export function MyThreadPage() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const pathReads = usePathReads(session?.email);
 
   useEffect(() => {
     document.title = "My Thread | AstroThread";
@@ -943,7 +955,18 @@ export function MyThreadPage() {
     );
   } else {
     const email = session.email;
-    const readIds = getReadPaperIds(thread);
+    const readIds = new Set([...getReadPaperIds(thread), ...pathReads]);
+    const pathTitles = new Map(
+      getLearningPaths()
+        .flatMap((item) => item.steps.flatMap((step) => step.papers))
+        .map((paper): [string, string] => [paper.id, paper.title]),
+    );
+    const readTitles = thread.journey.flatMap((step) => (step.type === "paper" ? [step.title] : []));
+    const readCount =
+      getReadPaperIds(thread).size +
+      [...pathReads].filter(
+        (id) => !readTitles.some((title) => sameText(title, pathTitles.get(id) ?? "")),
+      ).length;
     const notesCount = thread.journey.filter((step) => step.note).length;
     const ordered = oldestFirst(thread.topics);
     const currentTopic = findCurrentTopic(ordered, thread.journey, chosenTopic);
@@ -1077,7 +1100,7 @@ export function MyThreadPage() {
               <b>{thread.topics.length}</b> saved {thread.topics.length === 1 ? "topic" : "topics"}
             </span>
             <span>
-              <b>{readIds.size}</b> {readIds.size === 1 ? "paper read" : "papers read"}
+              <b>{readCount}</b> {readCount === 1 ? "paper read" : "papers read"}
             </span>
             <span>
               <b>{notesCount}</b> {notesCount === 1 ? "note" : "notes"}
