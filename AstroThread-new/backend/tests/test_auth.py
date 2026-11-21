@@ -1,8 +1,10 @@
 import io
+import json
 import os
 import unittest
 from contextlib import redirect_stdout
 from unittest import mock
+from urllib.error import HTTPError
 
 import psycopg
 
@@ -274,17 +276,63 @@ class EmailServiceTests(unittest.TestCase):
     def test_console_mode_prints_the_code_instead_of_emailing(self):
         output = io.StringIO()
         with mock.patch.dict(os.environ, {"EMAIL_MODE": "console"}), redirect_stdout(output), \
-                mock.patch.object(email_service.smtplib, "SMTP") as smtp:
+                mock.patch.object(email_service.smtplib, "SMTP") as smtp, \
+                mock.patch.object(email_service, "urlopen") as urlopen:
             email_service.send_otp_email("sara@example.com", "123456")
 
         self.assertIn("123456", output.getvalue())
         smtp.assert_not_called()
+        urlopen.assert_not_called()
 
-    def test_missing_smtp_settings_raise_os_error(self):
-        settings = {"EMAIL_MODE": "", "SMTP_USER": "", "SMTP_PASSWORD": ""}
+    def test_missing_settings_raise_os_error(self):
+        settings = {"EMAIL_MODE": "", "RESEND_API_KEY": "", "SMTP_USER": "", "SMTP_PASSWORD": ""}
         with mock.patch.dict(os.environ, settings), self.assertRaises(OSError):
             email_service.send_otp_email("sara@example.com", "123456")
 
+    def test_resend_is_used_when_its_key_is_set(self):
+        settings = {"EMAIL_MODE": "", "RESEND_API_KEY": "re_test", "EMAIL_FROM": "",
+                    "SMTP_USER": "a@gmail.com", "SMTP_PASSWORD": "x"}
+        with mock.patch.dict(os.environ, settings), \
+                mock.patch.object(email_service, "urlopen") as urlopen, \
+                mock.patch.object(email_service.smtplib, "SMTP") as smtp:
+            email_service.send_otp_email("sara@example.com", "123456")
 
-if __name__ == "__main__":
-    unittest.main()
+        request = urlopen.call_args.args[0]
+        body = json.loads(request.data)
+        self.assertEqual(request.full_url, "https://api.resend.com/emails")
+        self.assertEqual(request.get_header("Authorization"), "Bearer re_test")
+        self.assertEqual(body["to"], ["sara@example.com"])
+        self.assertEqual(body["from"], "AstroThread <onboarding@resend.dev>")
+        self.assertIn("123456", body["text"])
+        smtp.assert_not_called()  # Gmail لا يُستخدم عندما يوجد مفتاح Resend
+
+    def test_resend_uses_email_from_when_set(self):
+        settings = {"EMAIL_MODE": "", "RESEND_API_KEY": "re_test",
+                    "EMAIL_FROM": "AstroThread <codes@astrothread.com>"}
+        with mock.patch.dict(os.environ, settings), \
+                mock.patch.object(email_service, "urlopen") as urlopen:
+            email_service.send_otp_email("sara@example.com", "123456")
+
+        body = json.loads(urlopen.call_args.args[0].data)
+        self.assertEqual(body["from"], "AstroThread <codes@astrothread.com>")
+
+    def test_resend_refusal_becomes_os_error(self):
+        refusal = HTTPError("https://api.resend.com/emails", 403, "Forbidden", {}, io.BytesIO(b"domain not verified"))
+        settings = {"EMAIL_MODE": "", "RESEND_API_KEY": "re_test"}
+        with mock.patch.dict(os.environ, settings), \
+                mock.patch.object(email_service, "urlopen", side_effect=refusal), \
+                self.assertRaises(OSError) as raised:
+            email_service.send_otp_email("sara@example.com", "123456")
+
+        self.assertIn("403", str(raised.exception))
+        self.assertIn("domain not verified", str(raised.exception))
+
+    def test_gmail_is_used_without_a_resend_key(self):
+        settings = {"EMAIL_MODE": "", "RESEND_API_KEY": "", "SMTP_USER": "a@gmail.com", "SMTP_PASSWORD": "x"}
+        with mock.patch.dict(os.environ, settings), \
+                mock.patch.object(email_service, "urlopen") as urlopen, \
+                mock.patch.object(email_service.smtplib, "SMTP") as smtp:
+            email_service.send_otp_email("sara@example.com", "123456")
+
+        smtp.assert_called_once()
+        urlopen.assert_not_called()
