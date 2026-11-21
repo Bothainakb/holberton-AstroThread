@@ -16,7 +16,6 @@ MAX_TITLE_LENGTH = 300
 
 @papers_bp.get("/api/papers/lookup")
 def lookup_paper():
-    
     title = " ".join(request.args.get("title", "").split())
     if not MIN_TITLE_LENGTH <= len(title) <= MAX_TITLE_LENGTH:
         return jsonify({"error": f"Send a title of {MIN_TITLE_LENGTH} to {MAX_TITLE_LENGTH} characters"}), 400
