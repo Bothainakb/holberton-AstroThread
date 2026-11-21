@@ -5,7 +5,7 @@ from flask import Blueprint, current_app, jsonify, request, session
 
 from app.db import get_connection
 from app.routes.auth import error, login_required
-from app.services import my_thread_service
+from app.services import home_service, learning_path_service, my_thread_service
 
 my_thread_bp = Blueprint("my_thread", __name__)
 
@@ -125,3 +125,20 @@ def remove_step(step_key):
         return "", 204
 
     return run(work, "Removing a journey step failed")
+
+
+@my_thread_bp.get("/api/my-thread/paths/<path:topic>")  # مسار التعلم لموضوع معيّن
+@login_required  # للمستخدم المسجل دخوله فقط، مثل بقية My Thread
+def learning_path(topic):
+    slug = home_service.slugify(clean(topic))  # نفس طريقة تسمية المواضيع في البحث
+    if not slug:
+        return error("Choose a topic with letters or numbers.", 400)
+
+    def work(cur, user_id):
+        path = learning_path_service.get_path(cur, slug)  # بناء المسار من أوراق الموضوع
+        if path is None:
+            # لم يبحث أحد عن الموضوع بعد، أو أوراقه غير كافية
+            return error("There's no learning path for this topic yet. Search for it first.", 404)
+        return jsonify(path)
+
+    return run(work, "Loading a learning path failed")
