@@ -133,7 +133,7 @@ AstroThread follows a topic-based research discovery approach:
 | Vercel | Application deployment |
 | OpenAlex API | Scientific research paper data |
 | NASA API | Astronomy-related media and information |
-| OpenAI API | AI-assisted research functionality |
+| Groq API | AI-assisted research functionality |
 | Figma | UI/UX design and prototyping |
 
 ---
@@ -172,7 +172,7 @@ PostgreSQL stores application data, including:
 - Research topics.
 - Research papers.
 - Saved topics.
-- OTP verification records.
+- Gmail verification records.
 - User journey information.
 
 ### 4.4 Application Structure
@@ -191,85 +191,12 @@ The intended final repository structure is:
         ├── database/
         └── ...
 
-This structure represents the intended final submission layout. Verify the actual folder and file names in the submitted branch before using this structure as the final repository reference.
 
----
-
-## 5. Installation and Setup
-
-### 5.1 Prerequisites
-
-Make sure the following tools are installed:
-
-- Git
-- Node.js
-- npm
-- Python 3
-- PostgreSQL
-
-### 5.2 Clone the Repository
-
-    git clone https://github.com/Bothainakb/holberton-AstroThread.git
-
-    cd holberton-AstroThread
-
-### 5.3 Open the Final Project Folder
-
-    cd AstroThread-new
-
-### 5.4 Frontend Setup
-
-Navigate to the frontend directory:
-
-    cd frontend
-
-Install dependencies:
-
-    npm install
-
-Start the development server:
-
-    npm run dev
-
-### 5.5 Backend Setup
-
-Open another terminal and navigate to the backend directory:
-
-    cd backend
-
-Create a virtual environment:
-
-    python -m venv venv
-
-Activate it on Windows PowerShell:
-
-    .\venv\Scripts\Activate.ps1
-
-Install dependencies:
-
-    pip install -r requirements.txt
-
-Configure the required environment variables in the `.env` file.
-
-Start the Flask application using the backend entry point configured in the project.
-
-### 5.6 Database Setup
-
-1. Install and start PostgreSQL.
-2. Create the required database.
-3. Configure the database connection string.
-4. Run the database migrations in the correct order.
-5. Verify the database connection.
-
-**Important:** Environment variables, database credentials, and API keys must not be committed to the repository.
-
----
-
-## 6. Sprint Planning
+## 5. Sprint Planning
 
 The team used GitHub Projects and GitHub Issues to organize development work and track progress.
 
-### 6.1 Planning Approach
+### 5.1 Planning Approach
 
 Sprint planning was used to:
 
@@ -280,7 +207,7 @@ Sprint planning was used to:
 - Track task progress.
 - Review incomplete tasks.
 
-### 6.2 Task Management
+### 5.2 Task Management
 
 GitHub Issues were used to document development tasks and issues.
 
@@ -293,7 +220,7 @@ GitHub Projects was used to organize tasks and monitor progress.
 | Pull Requests | Code review and integration |
 | Git branches | Separate development work |
 
-### 6.3 Sprint Schedule
+### 5.3 Sprint Schedule
 
 The project planning documentation refers to the following three-sprint schedule:
 
@@ -303,62 +230,19 @@ The project planning documentation refers to the following three-sprint schedule
 | Sprint 2 | October 29–November 11, 2026 | Main feature development and integration |
 | Sprint 3 | November 12–25, 2026 | Testing, bug fixing, and final preparation |
 
-These are planned sprint dates. Actual completion dates and outcomes should be documented in the sprint reviews.
 
-### 6.4 Planning Resources
+### 5.4 Planning Resources
 
 - [GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread)
 - [GitHub Issues](https://github.com/Bothainakb/holberton-AstroThread/issues)
-- GitHub Projects: Add the direct project board URL here.
 
 ---
 
-## 7. Sprint Reviews
 
-Sprint Reviews are used to evaluate the work completed during each sprint.
-
-Each review should document:
-
-- Features completed during the sprint.
-- Demonstration of completed functionality.
-- Work that was not completed.
-- Feedback received from the team or supervisor.
-- Actions required for the next sprint.
-
-### 7.1 Sprint Review Records
-
-| Sprint | Review Status | Documentation |
-|---|---|---|
-| Sprint 1 | Pending documentation | Add the actual sprint review |
-| Sprint 2 | Pending documentation | Add the actual sprint review |
-| Sprint 3 | Pending documentation | Add the actual sprint review |
-
-### 7.2 Sprint Review Template
-
-#### Sprint [Number] Review
-
-**Date:** [Add actual date]
-
-**Completed Work:**
-- [Add completed features]
-
-**Demonstration:**
-- [Describe what was demonstrated]
-
-**Incomplete Work:**
-- [Add unfinished tasks]
-
-**Feedback:**
-- [Add feedback actually received]
-
-**Action Items:**
-- [Add agreed actions]
-
-**Note:** Complete this section using actual sprint review information. Do not report planned work as completed work.
 
 ---
 
-## 8. Retrospectives
+## 6. Retrospectives
 
 Retrospectives help the team reflect on its development process and identify improvements for future work.
 
@@ -377,37 +261,17 @@ The team can review:
 | Sprint 2 | Pending documentation | Add actual retrospective |
 | Sprint 3 | Pending documentation | Add actual retrospective |
 
-### 8.2 Retrospective Template
 
-#### Sprint [Number] Retrospective
 
-**Date:** [Add actual date]
-
-**What Went Well?**
-- [Add actual positive points]
-
-**What Did Not Go Well?**
-- [Add actual challenges]
-
-**What Can Be Improved?**
-- [Add improvement opportunities]
-
-**Action Items:**
-- [Add specific actions for the next sprint]
-
-**Note:** Retrospective records should reflect the team's real discussion and agreed improvements.
-
----
-
-## 9. Source Repository
+## 7. Source Repository
 
 The project source code is maintained using Git and GitHub.
 
-### 9.1 Repository
+### 7.1 Repository
 
 [AstroThread GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread)
 
-### 9.2 Branching Strategy
+### 7.2 Branching Strategy
 
 The team used separate branches to organize development work.
 
@@ -421,38 +285,13 @@ The intended workflow is:
 6. Merge tested work into the integration branch.
 7. Merge the verified final version into the submission branch.
 
-### 9.3 Final Submission Version
-
-The final application version was developed in the `AstroThread-new` branch and folder.
-
-Reported final version information:
-
-| Field | Details |
-|---|---|
-| Final development branch | `AstroThread-new` |
-| Latest reported commit | `0d46689` |
-| Commit date | November 21, 2026 |
-| Integration branch | `Developer` |
-| Submission branch | Confirm the final branch before submission |
-
-### 9.4 Repository Submission Checklist
-
-- [ ] Confirm the final version is available in the submission branch.
-- [ ] Confirm the README matches the submitted version.
-- [ ] Confirm required project documentation is included.
-- [ ] Confirm obsolete project folders are removed only after team verification.
-- [ ] Confirm the repository can be cloned successfully.
-- [ ] Confirm the final application can be built and run.
-
-**Important:** Update the branch information after the final version is merged. Do not describe `AstroThread-new` as the submitted `main` version until the merge has actually been completed.
-
 ---
 
-## 10. Bug Tracking
+## 8. Bug Tracking
 
 GitHub Issues were used to report and track development tasks and problems.
 
-### 10.1 Bug Tracking Process
+### 8.1 Bug Tracking Process
 
 The bug tracking process follows these steps:
 
@@ -467,7 +306,7 @@ The bug tracking process follows these steps:
 9. Retest the affected functionality.
 10. Close the issue after verification.
 
-### 10.2 Bug Report Information
+### 8.2 Bug Report Information
 
 Each bug report should include:
 
@@ -482,7 +321,7 @@ Each bug report should include:
 | Severity | Impact of the problem |
 | Status | Open, In Progress, or Closed |
 
-### 10.3 Bug Tracking Resources
+### 8.3 Bug Tracking Resources
 
 - [GitHub Issues](https://github.com/Bothainakb/holberton-AstroThread/issues)
 - [GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread)
@@ -491,13 +330,13 @@ Each bug report should include:
 
 ---
 
-## 11. Testing Evidence and Results
+## 9. Testing Evidence and Results
 
 Testing is used to verify that the application behaves as expected.
 
 The project includes backend unit tests and a manual frontend test plan.
 
-### 11.1 Testing Types
+### 9.1 Testing Types
 
 | Testing Type | Purpose |
 |---|---|
@@ -507,7 +346,7 @@ The project includes backend unit tests and a manual frontend test plan.
 | API Testing | Checks backend endpoints and responses |
 | End-to-End Testing | Tests complete user journeys |
 
-### 11.2 Backend Unit Tests
+### 9.2 Backend Unit Tests
 
 The backend contains automated test files covering different application areas.
 
@@ -524,7 +363,7 @@ The reported test environment used Python 3.13 with a minimal stand-in for `psyc
 
 Therefore, the result must be verified again using the actual project dependencies before reporting the final test status.
 
-### 11.3 Frontend Testing
+### 9.3 Frontend Testing
 
 The frontend manual test plan contains 72 test cases:
 
@@ -536,7 +375,7 @@ The frontend manual test plan contains 72 test cases:
 
 The latest reported status was that the test cases had not yet been executed.
 
-### 11.4 Test Results
+### 9.4 Test Results
 
 | Test Area | Reported Status |
 |---|---|
@@ -547,7 +386,7 @@ The latest reported status was that the test cases had not yet been executed.
 | Frontend build | Result not recorded |
 | Frontend lint | Result not recorded |
 
-### 11.5 Testing Evidence
+### 9.5 Testing Evidence
 
 Actual testing evidence should be stored in the repository.
 
@@ -568,17 +407,14 @@ Evidence may include:
 - Bug reports.
 - Retest results.
 
-Do not add screenshots or test results that were not actually produced.
 
 ---
 
-## 12. End-to-End Testing
+## 10. End-to-End Testing
 
-End-to-End (E2E) testing verifies that complete user journeys work across the application.
 
-It checks the interaction between the frontend, backend, database, and external services involved in a user action.
 
-### 12.1 Planned E2E Scenarios
+### 10.1 Planned E2E Scenarios
 
 | Test ID | Scenario | Expected Result |
 |---|---|---|
@@ -591,7 +427,7 @@ It checks the interaction between the frontend, backend, database, and external 
 | E2E-07 | Admin suspends a user account | Account status is updated |
 | E2E-08 | Admin reactivates a user account | Account becomes active again |
 
-### 12.2 E2E Test Results
+### 10.2 E2E Test Results
 
 | Test ID | Actual Result | Status |
 |---|---|---|
@@ -604,204 +440,29 @@ It checks the interaction between the frontend, backend, database, and external 
 | E2E-07 | Not Run | Not Run |
 | E2E-08 | Not Run | Not Run |
 
-### 12.3 E2E Testing Evidence
-
-After executing each scenario, record:
-
-- Test ID.
-- Test steps.
-- Expected result.
-- Actual result.
-- Pass or Fail status.
-- Screenshot or other evidence.
-
-E2E testing may be performed manually or using an automation tool such as Playwright, depending on the team's testing approach and project requirements.
-
-**Note:** The scenarios above are planned test cases, not completed test results.
-
 ---
 
-## 13. Production Environment
+## 11. Production Environment
 
 The production environment makes the application accessible through public URLs.
 
-### 13.1 Deployment Links
+### 11.1 Deployment Links
 
 | Service | URL |
 |---|---|
-| Frontend | https://astrothread-six.vercel.app/ |
+| Frontend | https://astrothread-app.vercel.app |
 | Backend Health Check | https://astrothread-api.vercel.app/api/health |
 
-### 13.2 Deployment Status
-
-The latest reported deployment information indicated:
-
-- The frontend URL was serving an older version of the application.
-- The final `AstroThread-new` frontend had not yet been deployed.
-- The backend health endpoint was responding.
-- The final frontend and backend integration still required verification.
-
-### 13.3 Production Verification Checklist
-
-- [ ] Deploy the final frontend version.
-- [ ] Verify the frontend URL displays the final application.
-- [ ] Verify the backend health endpoint.
-- [ ] Verify frontend-to-backend communication.
-- [ ] Verify database connectivity.
-- [ ] Verify authentication and email OTP.
-- [ ] Verify external API integrations.
-- [ ] Execute production smoke tests.
-- [ ] Record the final deployment URLs.
-
-**Important:** A public URL alone does not confirm that the final version is deployed. Verify the deployed application before marking production deployment as complete.
 
 ---
 
-## 14. Database
-
-AstroThread uses PostgreSQL as its relational database.
-
-### 14.1 Database Responsibilities
-
-The database stores and manages application information, including:
-
-- User accounts.
-- Research topics.
-- Research papers.
-- Saved topics.
-- OTP verification codes.
-- User journey steps.
-
-### 14.2 Database Tables
-
-The reported database migration structure creates the following seven tables:
-
-| Table | Purpose |
-|---|---|
-| `users` | Stores user account information |
-| `research_threads` | Stores scientific research topics |
-| `research_papers` | Stores research paper information |
-| `thread_papers` | Connects research topics with papers |
-| `otp_codes` | Stores email verification code records |
-| `saved_topics` | Stores topics saved by users |
-| `journey_steps` | Stores user journey information |
-
-### 14.3 Database Migrations
-
-The project uses SQL migration files to create and update database structures.
-
-Migrations should be executed in the correct order.
-
-### 14.4 Database Security
-
-- Database credentials must be stored in environment variables.
-- Sensitive information must not be committed to GitHub.
-- Production database access should be restricted.
-- User-related data should be handled securely.
-
----
-
-## 15. API Documentation
-
-The backend exposes API endpoints used by the frontend.
-
-The API handles authentication, search, research data, user information, and admin functionality.
-
-### 15.1 Main API Areas
-
-| API Area | Responsibility |
-|---|---|
-| Health | Checks backend availability |
-| Topics | Retrieves topic information |
-| Search | Processes scientific searches |
-| Papers | Retrieves research paper information |
-| Authentication | Handles user sign-in and OTP |
-| Profile | Provides user profile information |
-| Saved Topics | Manages saved research topics |
-| Admin | Handles admin account management operations |
-
-### 15.2 Health Endpoint
-
-    GET /api/health
-
-Checks whether the backend service is responding.
-
-### 15.3 Main Endpoint Groups
-
-The following endpoint groups were identified in the project:
-
-- `/api/health`
-- `/api/topics/popular`
-- `/api/search`
-- `/api/images`
-- `/api/papers`
-- `/api/papers/lookup`
-- `/api/topics/<slug>/overview`
-
-The availability and implementation status of individual endpoints should be verified against the final backend version.
-
-### 15.4 API Verification
-
-API testing should verify:
-
-- Correct HTTP status codes.
-- Valid response formats.
-- Correct handling of invalid input.
-- Authentication and authorization.
-- Database operations.
-- External API responses.
-- Error handling.
-
----
-
-## 16. Team Contributions
-
-AstroThread was developed collaboratively by the project team.
-
-Team members contributed to planning, implementation, testing, integration, and documentation.
-
-### 16.1 Team Roles
-
-| Role | Responsibility |
-|---|---|
-| Alaa | Source Control Manager |
-| Bothaina | Project Manager |
-| QA | Shared team responsibility |
-
-### 16.2 Contributions
-
-Team contributions include:
-
-- Frontend development.
-- Backend development.
-- Database implementation.
-- API integration.
-- UI/UX design.
-- Testing and bug fixing.
-- Documentation.
-- GitHub project management.
-
-### 16.3 Contribution Verification
-
-Individual contributions should be verified using:
-
-- Git commit history.
-- Pull Requests.
-- GitHub Issues.
-- Assigned tasks.
-- Project documentation.
-
-GitHub contribution counts alone do not represent the full amount of work completed by each member.
-
----
-
-## 17. Known Limitations and Future Improvements
+## 12. Known Limitations and Future Improvements
 
 The project was developed as a Minimum Viable Product (MVP).
 
 Some features and improvements may require additional development beyond the current implementation.
 
-### 17.1 Known Limitations
+### 12.1 Known Limitations
 
 Reported areas requiring further work or verification include:
 
@@ -813,7 +474,7 @@ Reported areas requiring further work or verification include:
 - Verification of production email delivery.
 - Completion and verification of some API functionality.
 
-### 17.2 Future Improvements
+### 12.2 Future Improvements
 
 Potential future improvements include:
 
@@ -829,71 +490,12 @@ Potential future improvements include:
 
 ---
 
-## 18. UI/UX Design and Prototype
 
-Figma was used to design and prototype the AstroThread user interface.
-
-The design focuses on providing a clear and accessible scientific research discovery experience.
-
-### 18.1 Design Goals
-
-- Simple and clear navigation.
-- Professional scientific appearance.
-- Consistent page layouts.
-- Readable research information.
-- Easy access to search functionality.
-- Clear presentation of research results.
-
-### 18.2 Figma Prototype
+### 13 Figma Prototype
 
 [Open AstroThread Figma Prototype](https://www.figma.com/proto/5NnyTCEOvJdC5YbM9ZnxM6/AstroThread-Research-Explorer-%E2%80%94-Prototype?node-id=2-3&t=fdl21QCf0NDZQCO2-0&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=2%3A3)
 
-### 18.3 Main UI Areas
 
-The application design includes:
-
-- Homepage and scientific search.
-- Search results.
-- Research paper details.
-- Research Assistant.
-- My Thread.
-- User authentication.
-- User profile.
-- Admin pages.
-
----
-
-## 19. Stage 4 Deliverables Checklist
-
-The following checklist summarizes the Stage 4 submission requirements.
-
-| Deliverable | Description | Status |
-|---|---|---|
-| Sprint Reviews | Records of sprint demonstrations and feedback | Pending documentation |
-| Retrospectives | Records of team reflections and improvements | Pending documentation |
-| Sprint Planning | Sprint plans and task organization | Partially documented |
-| Source Repository | GitHub source code | Available |
-| Bug Tracking | Bug reports and issue tracking | Requires verification |
-| Testing Evidence and Results | Test execution records and evidence | Not completed in reported status |
-| Production Environment | Publicly deployed final application | Final frontend deployment pending |
-
-### Final Submission Verification
-
-Before submitting the project, the team should verify:
-
-- [ ] The final source code is available in the correct submission branch.
-- [ ] The README matches the final application.
-- [ ] Sprint planning documentation is available.
-- [ ] Sprint reviews are documented.
-- [ ] Retrospectives are documented.
-- [ ] GitHub Issues are used to track confirmed bugs.
-- [ ] Manual test cases have actual execution results.
-- [ ] Backend tests have been rerun with real dependencies.
-- [ ] E2E scenarios have been executed and documented.
-- [ ] Screenshots and testing evidence are included.
-- [ ] The final frontend is deployed.
-- [ ] The backend and database are accessible.
-- [ ] Production URLs have been verified.
 
 ---
 
