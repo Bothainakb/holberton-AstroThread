@@ -24,6 +24,7 @@ MAX_ABSTRACT_LENGTH = 1200
 LOOKUP_CANDIDATES = 5
 TITLE_MATCH_RATIO = 0.85
 
+
 class OpenAlexError(Exception):
 
     status = 502
@@ -53,8 +54,7 @@ def search_papers(query):
     return [paper for paper in papers if paper is not None]
 
 
-    def find_paper(title, year=None):
-   
+def find_paper(title, year=None):
     words = " ".join(re.sub(r"[,:|]", " ", title).split())
     filters = [f"title.search:{words}"]
     if year:
@@ -83,6 +83,8 @@ def same_title(a, b):
         return " ".join(re.sub(r"[^a-z0-9]+", " ", text.lower()).split())
 
     return SequenceMatcher(None, simple(a), simple(b)).ratio() >= TITLE_MATCH_RATIO
+
+
 def get_json(url):
     headers = {"Accept": "application/json", "User-Agent": "AstroThread/1.0"}
     api_key = os.getenv("OPENALEX_API_KEY", "").strip()
