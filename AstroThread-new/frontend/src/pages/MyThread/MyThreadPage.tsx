@@ -35,6 +35,9 @@ import type {
   PathProgress,
   StepProgress,
 } from "../../data/learningPaths";
+import { setPathRead, usePathReads } from "../../data/pathReads";
+import type { PopularTopic } from "../../data/popularTopics";
+import { getPopularTopics } from "../../services/topics/topicService";
 import { navigate, paperPath, routes } from "../../lib/router";
 import "./MyThreadPage.css";
 
@@ -918,6 +921,10 @@ export function MyThreadPage() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [pathsVersion, setPathsVersion] = useState(0);
+  const pathReads = usePathReads(session?.email);
+  const topicsKey = thread.topics.map((saved) => saved.topic).join("\n");
+  const pathsReady = !PATHS_COME_FROM_SERVER || pathsVersion > 0;
 
   useEffect(() => {
     document.title = "My Thread | AstroThread";
@@ -1042,7 +1049,7 @@ export function MyThreadPage() {
 
     let body;
 
-        if (!pathsReady) {
+    if (!pathsReady) {
       // المسارات ما زالت تُحمّل من الخادم
       body = (
         <p className="my-thread__empty" role="status">
