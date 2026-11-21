@@ -236,7 +236,6 @@ The project planning documentation refers to the following three-sprint schedule
 - [GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread)
 - [GitHub Issues](https://github.com/Bothainakb/holberton-AstroThread/issues)
 
----
 
 
 
