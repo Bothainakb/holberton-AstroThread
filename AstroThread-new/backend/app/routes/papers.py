@@ -3,13 +3,49 @@ from flask import Blueprint, current_app, jsonify, request
 
 from app.db import get_connection
 from app.routes.auth import login_required
-from app.services import ai, paper_service
+from app.services import ai, home_service, openalex, paper_service
 
 papers_bp = Blueprint("papers", __name__)
 
 NOT_FOUND = {"error": "Paper not found"}
 MIN_QUESTION_LENGTH = 3
 MAX_QUESTION_LENGTH = 300
+MIN_TITLE_LENGTH = 3
+MAX_TITLE_LENGTH = 300
+
+
+@papers_bp.get("/api/papers/lookup")
+def lookup_paper():
+    
+    title = " ".join(request.args.get("title", "").split())
+    if not MIN_TITLE_LENGTH <= len(title) <= MAX_TITLE_LENGTH:
+        return jsonify({"error": f"Send a title of {MIN_TITLE_LENGTH} to {MAX_TITLE_LENGTH} characters"}), 400
+
+    year_text = request.args.get("year", "").strip()
+    year = int(year_text) if year_text.isdigit() else None
+
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                paper_id = paper_service.find_by_title(cur, title, year)
+
+        if paper_id is None:
+            try:
+                found = openalex.find_paper(title, year)
+            except openalex.OpenAlexError as error:
+                current_app.logger.warning("OpenAlex lookup for %r failed: %s", title, error)
+                return jsonify({"error": error.message}), error.status
+            if found is None:
+                return jsonify(NOT_FOUND), 404
+
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    paper_id = home_service.save_paper(cur, found)
+    except psycopg.Error:
+        current_app.logger.exception("Looking up the paper %r failed", title)
+        return jsonify({"error": "Unable to find this paper right now"}), 500
+
+    return jsonify({"id": str(paper_id)})
 
 
 @papers_bp.get("/api/papers/<int:paper_id>")
