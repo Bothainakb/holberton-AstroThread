@@ -404,53 +404,58 @@ The team used the project board to organize tasks and follow their progress thro
 
 ## 7. Sprint Reviews
 
-Sprint reviews are used to evaluate the work completed during each sprint and compare the delivered features with the planned objectives.
+Sprint reviews were used to evaluate the progress of AstroThread and review the features developed during each sprint.
 
-The team should document the actual results and feedback for each sprint.
+### Sprint 1 – Project Setup and Design
 
-### Sprint Review Records
+- Established the project idea and requirements.
+- Created the initial UI/UX design.
+- Started developing the frontend and scientific search functionality.
 
-| Sprint | Review Information |
-|---|---|
-| Sprint 1 | To be completed with the team's actual review results and feedback. |
-| Sprint 2 | To be completed with the team's actual review results and feedback. |
-| Sprint 3 | To be completed with the team's actual review results and feedback. |
+### Sprint 2 – Core Features Development
 
-### Review Discussion
+- Developed backend functionality and API integration.
+- Implemented user authentication.
+- Worked on the Research Assistant and My Thread features.
 
-Each sprint review should document:
+### Sprint 3 – Deployment and Testing
 
-- Features completed during the sprint.
-- Features that were not completed.
-- Demonstration results.
-- Feedback received from the team or supervisor.
-- Changes or actions required for the next sprint.
+- Deployed the frontend and backend.
+- Integrated the production database.
+- Tested the main user journeys.
+- Fixed deployment and application issues.
 
+**Review Outcome:** The project progressed from initial design and development to a deployed application with its main features implemented and tested.
 ---
 
 ## 8. Retrospectives
 
-Retrospectives help the team reflect on the development process and identify improvements for future work.
+The team reflected on the development process to identify successes, challenges, and possible improvements.
 
-### Retrospective Records
+### What Went Well
 
-| Sprint | Retrospective Information |
-|---|---|
-| Sprint 1 | To be completed with the team's actual retrospective notes. |
-| Sprint 2 | To be completed with the team's actual retrospective notes. |
-| Sprint 3 | To be completed with the team's actual retrospective notes. |
+- Team collaboration and task distribution.
+- Development of the main application features.
+- Integration of external APIs.
+- Successful deployment of the application.
 
-### Retrospective Discussion
+### Challenges
 
-The team should document:
+- Backend and frontend integration.
+- Production deployment configuration.
+- Database migration issues.
+- External API availability and configuration.
+- Limited development time.
 
-- What went well?
-- What challenges did the team face?
-- What could be improved?
-- What actions will the team take in the next sprint?
+### Improvements
 
-Actual team feedback and decisions should be added before final submission.
+- Improve communication and progress tracking.
+- Test features earlier during development.
+- Integrate frontend and backend continuously.
+- Document bugs and solutions.
+- Allocate more time for final testing.
 
+**Retrospective Outcome:** The team identified areas for improvement in communication, integration, testing, and time management.
 ---
 
 ## 9. Source Repository
