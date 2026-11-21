@@ -859,24 +859,6 @@ The following checklist summarizes the Stage 4 project deliverables.
 | Production Environment | [Live Application](https://astrothread-app.vercel.app) | Deployed |
 | Backend Health Check | [API Health](https://astrothread-api.vercel.app/api/health) | Available |
 
-### Final Verification Checklist
-
-Before submitting the project, the team should verify:
-
-- [ ] The `AstroThread-new` branch contains the final application.
-- [ ] This README is saved inside `AstroThread-new/` as `README.md`.
-- [ ] The GitHub Projects board contains the sprint tasks.
-- [ ] Sprint review records contain actual team results and feedback.
-- [ ] Retrospective records contain actual team discussions and actions.
-- [ ] Confirmed bugs are tracked in GitHub Issues.
-- [ ] Testing evidence is accessible in the repository.
-- [ ] E2E evidence matches the recorded test results.
-- [ ] The frontend production application is accessible.
-- [ ] The backend health endpoint responds correctly.
-- [ ] The production database connection is working.
-
----
-
 **AstroThread – Research Explorer**
 
 *Follow the thread of a scientific idea — from the first discovery to the latest research.*
