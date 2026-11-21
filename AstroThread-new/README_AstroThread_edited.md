@@ -1433,7 +1433,6 @@ include backend behaviour and may differ from the implemented screens.
 
 ------------------------------------------------------------------------
 
-`<sub>`{=html}This README describes the `AstroThread-new` version based
-on the project information supplied for commit `0d46689`. The reported
-review date is 2026-11-21. Items marked as pending must be verified and
-completed by the team before final submission.`</sub>`{=html}
+This README describes the `AstroThread-new` version based on the project information supplied for commit `0d46689`.
+
+The reported review date is 2026-11-21. Items marked as pending must be verified and completed by the team before final submission.
