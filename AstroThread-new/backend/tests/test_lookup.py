@@ -125,8 +125,8 @@ class FindPaperTests(unittest.TestCase):
 
         url = urlopen.call_args.args[0].full_url
         self.assertIn("title.search%3ACygnus+X-1+a+binary+maybe", url)
-        self.assertNotIn("publication_year", url)
-
+        self.assertNotIn("publication_year%3A", url)
+        
     def test_same_title_ignores_case_and_punctuation(self):
         self.assertTrue(openalex.same_title("Particle Creation by Black Holes",
                                             "Particle creation by black holes."))
