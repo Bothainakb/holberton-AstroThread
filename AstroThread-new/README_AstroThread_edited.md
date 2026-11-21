@@ -341,9 +341,7 @@ holberton-AstroThread/            (branch AstroThread-new)
 ├── Documentation.md
 ├── AstroThread-Technical-Documentation.md
 ├── PROTOTYPE_Figma.md
-├── Figma.fig
-├── AstroThread_Project/          # Older version; not the final submission
-└── AstroThread-new/              # Final submission
+└── AstroThread-new/             
     ├── backend/
     │   ├── app.py
     │   ├── wsgi.py
