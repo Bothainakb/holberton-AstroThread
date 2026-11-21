@@ -2,16 +2,20 @@
 
 **A scientific research discovery platform for astronomy and physics. Holberton School, Stage 4 (MVP Development).**
 
+**Live site:** https://astrothread-app.vercel.app
+
 | Field | Details |
 |---|---|
 | Project | AstroThread – Research Explorer |
 | Repository | [GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread) |
+| Branch | `AstroThread-new` |
 | Final application folder | `AstroThread-new` |
-| Latest reported commit | `0d46689` |
 | Project stage | Holberton School – Stage 4 |
 | Frontend | React, TypeScript, Vite |
 | Backend | Python, Flask |
-| Database | PostgreSQL |
+| Database | PostgreSQL (Neon) |
+| Hosting | Vercel |
+| AI | Groq, model `openai/gpt-oss-120b` |
 
 ---
 
@@ -43,9 +47,9 @@
 
 AstroThread is a scientific research discovery platform focused on astronomy and physics.
 
-The platform helps users explore scientific topics, discover relevant research papers, and follow connections between scientific ideas.
+The platform helps users explore scientific topics, discover real research papers, ask an AI assistant about a paper, and follow learning paths from beginner to advanced.
 
-Instead of searching through disconnected research papers, users can explore a topic and discover related scientific information in one place.
+Instead of searching through disconnected research papers, users explore a topic and find related papers, images, and explanations in one place.
 
 ### Project Goal
 
@@ -60,13 +64,11 @@ To make scientific research easier to discover and understand by providing a str
 
 ### Main Concept
 
-AstroThread follows a topic-based research discovery approach:
-
 1. Search for a scientific topic.
 2. Explore related research papers.
-3. Open paper details.
-4. Discover related information.
-5. Save topics and continue exploring through My Thread.
+3. Open paper details and ask the research assistant.
+4. Discover related papers and images.
+5. Save topics and continue learning through My Thread.
 
 ---
 
@@ -75,44 +77,52 @@ AstroThread follows a topic-based research discovery approach:
 ### 2.1 Scientific Topic Search
 
 - Search for astronomy and physics topics.
-- Display relevant research results.
-- Explore popular scientific topics.
-- Filter and navigate through search results.
+- Real results from the OpenAlex catalogue, filtered to the Physics and Astronomy field.
+- Results are cached in the database for 7 days.
+- Popular topics based on what users search most.
+- Filters, sorting, pagination, timeline and data views.
 
 ### 2.2 Research Papers
 
-- Discover scientific research papers.
-- View paper information and details.
-- Access available paper sources.
-- Explore related research.
+- Paper details: authors, year, journal, abstract, keywords and topic.
+- AI-written method, key findings and "why it matters", generated once and stored.
+- Related papers.
+- Copy citation.
 
 ### 2.3 Research Assistant
 
-- Provides AI-assisted support for exploring scientific topics.
-- Helps users understand research-related information.
-- Uses available AI services to generate responses.
+- Ask questions about a paper (signed-in users).
+- Answers come from Groq (`openai/gpt-oss-120b`) and use only the paper's title and abstract.
+- The prompt tells the model to say when the abstract doesn't cover the question.
 
-### 2.4 My Thread
+### 2.4 Images
 
-- Allows users to save topics.
-- Provides a personal space for saved research interests.
-- Helps users continue their research exploration.
+- Astronomy images for the searched topic from the NASA Image Library.
 
-### 2.5 User Authentication
+### 2.5 My Thread
 
-- Supports passwordless sign-in using email verification codes (OTP).
-- Provides account access for registered users.
+- Save topics to a personal thread.
+- Learning paths from beginner to advanced, built from real papers.
+- Track read papers, journey history and personal notes.
+- Overview, journey and knowledge map views.
 
-### 2.6 User Profile
+### 2.6 User Authentication
 
-- Provides a personal account area.
-- Displays user-related information.
+- Passwordless sign-up and sign-in with 6-digit email codes (OTP).
+- Codes expire after 10 minutes, with a 30-second wait between codes.
+- Secure session cookie (HttpOnly, SameSite=Lax, Secure in production) that lasts 30 days.
 
-### 2.7 Admin Features
+### 2.7 User Profile
 
-- Provides admin account functionality.
-- Allows admins to manage user accounts.
-- Supports account management actions such as suspending and reactivating accounts.
+- View account information.
+- Change display name.
+- Delete account.
+
+### 2.8 Admin Features
+
+- Admin accounts (created with an invitation code).
+- View all verified accounts.
+- Suspend and reactivate user accounts.
 
 ---
 
@@ -122,81 +132,156 @@ AstroThread follows a topic-based research discovery approach:
 |---|---|
 | React | Building the user interface |
 | TypeScript | Type-safe frontend development |
-| Vite | Frontend development and build tool |
+| Vite | Frontend development server and build tool |
 | CSS | Styling and layout |
+| oxlint | Frontend linting |
 | Python | Backend development |
 | Flask | Backend API framework |
-| PostgreSQL | Relational database |
+| psycopg 3 | PostgreSQL driver (parameterised queries) |
+| PostgreSQL (Neon) | Relational database |
 | SQL | Database queries and migrations |
-| Git | Version control |
-| GitHub | Source code hosting and collaboration |
-| Vercel | Application deployment |
+| unittest | Backend automated tests |
+| Git / GitHub | Version control and collaboration |
+| Vercel | Hosting for frontend and backend |
 | OpenAlex API | Scientific research paper data |
-| NASA API | Astronomy-related media and information |
-| Groq API | AI-assisted research functionality |
+| NASA Image Library API | Astronomy images |
+| Groq API | AI explanations and research assistant |
+| Gmail SMTP / Resend | Sending sign-in codes |
 | Figma | UI/UX design and prototyping |
 
 ---
 
 ## 4. Project Architecture
 
-AstroThread follows a frontend/backend architecture.
+```
+Browser
+  │
+  ▼
+Frontend (React + Vite) ── Vercel project: astrothread
+  │   /api/* is forwarded by vercel.json
+  ▼
+Backend (Flask) ── Vercel project: astrothread-api
+  ├── Neon PostgreSQL   (users, papers, threads, My Thread)
+  ├── OpenAlex API      (research papers)
+  ├── NASA Image API    (images)
+  ├── Groq API          (AI answers)
+  └── Email (SMTP)      (sign-in codes)
+```
+
+The browser only talks to the frontend's address. All `/api/...` requests are forwarded to the backend, so cookies work without CORS. Only the backend holds API keys.
 
 ### 4.1 Frontend
 
-The frontend is responsible for:
-
-- Displaying application pages.
-- Handling user interactions.
-- Managing search input and results.
-- Communicating with backend APIs.
-- Displaying research papers and topic information.
-- Managing authentication-related screens.
+- Displays pages and handles user interactions.
+- Manages search input, results, filters and tabs.
+- Calls the backend API.
+- Shows papers, images, the research assistant and My Thread.
+- Handles sign-up, sign-in, profile and admin screens.
 
 ### 4.2 Backend
 
-The backend is responsible for:
-
-- Handling API requests.
-- Processing search operations.
-- Communicating with external APIs.
-- Managing user-related operations.
-- Accessing and updating database records.
-- Providing data to the frontend.
+- Handles API requests (Flask blueprints: home, papers, images, topics, auth, my_thread, admin).
+- Searches OpenAlex and caches results.
+- Calls NASA and Groq.
+- Manages accounts, sessions and email codes.
+- Reads and writes the database.
 
 ### 4.3 Database
 
-PostgreSQL stores application data, including:
-
-- User accounts.
-- Research topics.
-- Research papers.
-- Saved topics.
-- Gmail verification records.
-- User journey information.
+PostgreSQL stores users, email verification codes, research topics, papers, saved topics and journey steps. See [Database](#14-database).
 
 ### 4.4 Application Structure
 
-The intended final repository structure is:
+```
+holberton-AstroThread/
+├── README.md
+├── Project_Charter.md
+├── Documentation.md
+├── AstroThread-Technical-Documentation.md
+├── PROTOTYPE_Figma.md
+└── AstroThread-new/
+    ├── README_AstroThread_edited.md
+    ├── frontend/            React + TypeScript + Vite
+    │   ├── src/
+    │   ├── vercel.json      /api forwarding + SPA routing
+    │   └── package.json
+    ├── backend/             Flask API
+    │   ├── app/
+    │   │   ├── routes/      API endpoints
+    │   │   └── services/    OpenAlex, NASA, AI, email, database logic
+    │   ├── migrations/      SQL files (001–006)
+    │   ├── tests/           unittest files
+    │   ├── manage.py        python manage.py migrate
+    │   ├── wsgi.py          Vercel entry point
+    │   └── requirements.txt
+    └── testing-evidence/
+        └── e2e/             End-to-end test screenshots
+```
 
-    holberton-AstroThread/
-    ├── README.md
-    ├── Project_Charter.md
-    ├── Documentation.md
-    ├── AstroThread-Technical-Documentation.md
-    ├── PROTOTYPE_Figma.md
-    └── AstroThread-new/
-        ├── frontend/
-        ├── backend/
-        ├── database/
-        └── ...
+---
 
+## 5. Installation and Setup
 
-## 5. Sprint Planning
+### 5.1 Requirements
 
-The team used GitHub Projects and GitHub Issues to organize development work and track progress.
+- Python 3.12+
+- Node.js 20+
+- A PostgreSQL database (local or Neon)
 
-### 5.1 Planning Approach
+### 5.2 Backend
+
+```bash
+cd AstroThread-new/backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # then fill in the values
+python manage.py migrate    # creates the tables
+python app.py               # runs on http://localhost:5000
+```
+
+Main settings in `backend/.env` (never commit this file):
+
+| Name | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `SECRET_KEY` | Signs session cookies |
+| `SESSION_COOKIE_SECURE` | `true` on HTTPS, `false` locally |
+| `EMAIL_MODE` | `console` locally prints codes in the terminal |
+| `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_HOST`, `SMTP_PORT` | Email sending (Gmail) |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Optional: send with Resend instead |
+| `OPENALEX_API_KEY` | OpenAlex access |
+| `AI_API_URL`, `AI_API_KEY`, `AI_MODEL` | Groq AI settings |
+| `ADMIN_INVITATION_CODE` | Required to create admin accounts |
+
+### 5.3 Frontend
+
+```bash
+cd AstroThread-new/frontend
+npm install
+npm run dev                 # runs on http://localhost:5173
+```
+
+`frontend/.env.development` must contain `VITE_SEARCH_SOURCE=api` to use the real backend. Vite forwards `/api` to `http://localhost:5000`.
+
+### 5.4 Run the Checks
+
+```bash
+cd AstroThread-new/backend
+python -m unittest discover tests
+
+cd ../frontend
+npm run lint
+npm run build
+```
+
+---
+
+## 6. Sprint Planning
+
+The team used GitHub Projects and GitHub Issues to organize work and track progress.
+
+### 6.1 Planning Approach
 
 Sprint planning was used to:
 
@@ -207,11 +292,7 @@ Sprint planning was used to:
 - Track task progress.
 - Review incomplete tasks.
 
-### 5.2 Task Management
-
-GitHub Issues were used to document development tasks and issues.
-
-GitHub Projects was used to organize tasks and monitor progress.
+### 6.2 Task Management
 
 | Tool | Purpose |
 |---|---|
@@ -220,61 +301,56 @@ GitHub Projects was used to organize tasks and monitor progress.
 | Pull Requests | Code review and integration |
 | Git branches | Separate development work |
 
-### 5.3 Sprint Schedule
+### 6.3 Sprint Schedule
 
-The project planning documentation refers to the following three-sprint schedule:
-
-| Sprint | Planned Dates | Main Focus |
+| Sprint | Dates | Main Focus |
 |---|---|---|
-| Sprint 1 | October 15–28, 2026 | Initial project setup and core development |
-| Sprint 2 | October 29–November 11, 2026 | Main feature development and integration |
-| Sprint 3 | November 12–25, 2026 | Testing, bug fixing, and final preparation |
+| Sprint 1 | October 15–28, 2026 | Project setup, design system, search and paper pages |
+| Sprint 2 | October 29–November 11, 2026 | Backend integration, AI, authentication, My Thread |
+| Sprint 3 | November 12–25, 2026 | Deployment, admin, learning paths, testing, bug fixing |
 
+### 6.4 Planning Resources
 
-### 5.4 Planning Resources
-
-- [GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread)
+- [GitHub Projects](TODO-add-project-board-link)
 - [GitHub Issues](https://github.com/Bothainakb/holberton-AstroThread/issues)
-
-
-
 
 ---
 
-## 6. Retrospectives
+## 7. Sprint Reviews
 
-Retrospectives help the team reflect on its development process and identify improvements for future work.
+<!-- TODO: fill each sprint with what was actually demoed and completed -->
 
-The team can review:
+| Sprint | Planned | Completed | Not Completed | Demo / Notes |
+|---|---|---|---|---|
+| Sprint 1 | TODO | TODO | TODO | TODO |
+| Sprint 2 | TODO | TODO | TODO | TODO |
+| Sprint 3 | TODO | TODO | TODO | TODO |
 
-- What went well.
-- What did not go well.
-- What could be improved.
-- Actions to apply in the next sprint.
+---
 
-### 8.1 Retrospective Records
+## 8. Retrospectives
 
-| Sprint | Retrospective Status | Documentation |
-|---|---|---|
-| Sprint 1 | Pending documentation | Add actual retrospective |
-| Sprint 2 | Pending documentation | Add actual retrospective |
-| Sprint 3 | Pending documentation | Add actual retrospective |
+Retrospectives help the team reflect on its process and improve the next sprint.
 
+<!-- TODO: fill with the team's own answers -->
 
+| Sprint | What went well | What didn't go well | What we'll improve |
+|---|---|---|---|
+| Sprint 1 | TODO | TODO | TODO |
+| Sprint 2 | TODO | TODO | TODO |
+| Sprint 3 | TODO | TODO | TODO |
 
-## 7. Source Repository
+---
 
-The project source code is maintained using Git and GitHub.
+## 9. Source Repository
 
-### 7.1 Repository
+### 9.1 Repository
 
 [AstroThread GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread)
 
-### 7.2 Branching Strategy
+### 9.2 Branching Strategy
 
-The team used separate branches to organize development work.
-
-The intended workflow is:
+The final application lives on the `AstroThread-new` branch.
 
 1. Create a feature branch.
 2. Implement the assigned feature.
@@ -286,13 +362,11 @@ The intended workflow is:
 
 ---
 
-## 8. Bug Tracking
+## 10. Bug Tracking
 
-GitHub Issues were used to report and track development tasks and problems.
+GitHub Issues were used to report and track tasks and problems.
 
-### 8.1 Bug Tracking Process
-
-The bug tracking process follows these steps:
+### 10.1 Bug Tracking Process
 
 1. Identify a problem during development or testing.
 2. Reproduce the problem.
@@ -305,9 +379,7 @@ The bug tracking process follows these steps:
 9. Retest the affected functionality.
 10. Close the issue after verification.
 
-### 8.2 Bug Report Information
-
-Each bug report should include:
+### 10.2 Bug Report Information
 
 | Field | Description |
 |---|---|
@@ -320,51 +392,57 @@ Each bug report should include:
 | Severity | Impact of the problem |
 | Status | Open, In Progress, or Closed |
 
-### 8.3 Bug Tracking Resources
+### 10.3 Notable Bugs Fixed
+
+| Problem | Cause | Fix |
+|---|---|---|
+| Backend crashed on Vercel (`No module named 'dotenv'`) | Vercel read dependencies from `pyproject.toml`, which had none | Added the dependency list to `pyproject.toml` |
+| Frontend build failed with "No Flask entrypoint found" | Frontend folder linked to the backend Vercel project | Created a separate `astrothread` project; set `framework: vite` |
+| `508 INFINITE_LOOP_DETECTED` | Frontend deployed into the backend project, so `/api` forwarded to itself | Redeployed the backend from its own folder |
+| "Unable to check your code" after sign-up | New migration (account status) not run on the production database | Ran `python manage.py migrate` against Neon |
+| AI answers unavailable | Groq retired `llama-3.3-70b-versatile` (HTTP 404) | Switched to `openai/gpt-oss-120b` |
+| Learning-path papers showed "We couldn't find this paper" | Paths used sample ids unknown to the backend | Added `/api/papers/lookup` to find the real paper on OpenAlex |
+| My Thread build failed ("Cannot find name …") | Some lines of a commit were not pushed | Restored the missing imports and state |
+| Sign-up codes not delivered with Resend | Resend free tier only sends to the account owner without a verified domain | Kept Gmail SMTP in production; Resend stays supported |
+
+### 10.4 Resources
 
 - [GitHub Issues](https://github.com/Bothainakb/holberton-AstroThread/issues)
-- [GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread)
 
-**Note:** Only confirmed bugs should be reported as bugs. A failed test must be investigated before being classified as a confirmed application defect.
+**Note:** Only confirmed bugs are reported as bugs. A failed test is investigated before it is classified as an application defect.
 
 ---
 
-## 9. Testing Evidence and Results
+## 11. Testing Evidence and Results
 
-Testing is used to verify that the application behaves as expected.
-
-The project includes backend unit tests and a manual frontend test plan.
-
-### 9.1 Testing Types
+### 11.1 Testing Types
 
 | Testing Type | Purpose |
 |---|---|
-| Unit Testing | Tests individual functions and components |
-| Integration Testing | Tests communication between application components |
-| Manual Testing | Checks application behavior through the user interface |
+| Unit Testing | Tests individual functions and routes |
+| Integration Testing | Tests communication between components |
+| Manual Testing | Checks behaviour through the user interface |
 | API Testing | Checks backend endpoints and responses |
-| End-to-End Testing | Tests complete user journeys |
+| End-to-End Testing | Tests complete user journeys on the live site |
 
-### 9.2 Backend Unit Tests
+### 11.2 Backend Unit Tests
 
-The backend contains automated test files covering different application areas.
+- 10 test files, 132 tests.
+- External services (OpenAlex, NASA, Groq, email) and the database are mocked, so tests are fast and don't need the internet.
+- Run with: `python -m unittest discover tests`
 
-Reported project test structure:
+| Run | Environment | Result |
+|---|---|---|
+| November 21, 2026 | GitHub Codespace, Python 3.14, real project dependencies | **132 tests, OK** |
 
-- 9 backend test files.
-- 114 test methods.
+### 11.3 Frontend Checks
 
-The latest reported test run had one failing test:
+| Check | Command | Result |
+|---|---|---|
+| Build | `npm run build` | **Passed** (no TypeScript errors) |
+| Lint | `npm run lint` (oxlint) | **Passed**: 0 errors, 8 warnings (React performance suggestions, no functional issues) |
 
-`test_lookup.FindPaperTests.test_commas_and_colons_are_removed_from_the_filter`
-
-The reported test environment used Python 3.13 with a minimal stand-in for `psycopg` because the real dependency was unavailable.
-
-Therefore, the result must be verified again using the actual project dependencies before reporting the final test status.
-
-### 9.3 Frontend Testing
-
-The frontend manual test plan contains 72 test cases:
+### 11.4 Frontend Manual Test Plan
 
 | Test Category | Number of Cases |
 |---|---:|
@@ -372,129 +450,268 @@ The frontend manual test plan contains 72 test cases:
 | API | 20 |
 | **Total** | **72** |
 
-The latest reported status was that the test cases had not yet been executed.
+### 11.5 Test Results Summary
 
-### 9.4 Test Results
-
-| Test Area | Reported Status |
+| Test Area | Status |
 |---|---|
-| Backend unit tests | Requires verification with real dependencies |
-| Frontend manual tests | Not Run |
-| API tests | Not Run |
-| E2E tests | Not Run |
-| Frontend build | Result not recorded |
-| Frontend lint | Result not recorded |
+| Backend unit tests | ✅ Passed (132/132) |
+| Frontend build | ✅ Passed |
+| Frontend lint | ✅ 0 errors (8 warnings) |
+| E2E tests | ✅ 4/4 passed (see [section 12](#12-end-to-end-testing)) |
 
-### 9.5 Testing Evidence
+### 11.6 Testing Evidence
 
-Actual testing evidence should be stored in the repository.
-
-Suggested structure:
-
-    AstroThread-new/
-    └── testing-evidence/
-        ├── manual-testing/
-        ├── api-testing/
-        └── e2e/
-
-Evidence may include:
-
-- Screenshots of actual test execution.
-- Test result tables.
-- API responses.
-- Error messages.
-- Bug reports.
-- Retest results.
-
+```
+AstroThread-new/
+└── testing-evidence/
+    └── e2e/
+        ├── E2E-01-search.png
+        ├── E2E-02-paper-details.png
+        ├── E2E-03-login.png
+        └── E2E-04-my-thread.png
+```
 
 ---
 
-## 10. End-to-End Testing
+## 12. End-to-End Testing
 
+Tested manually on the live site (https://astrothread-app.vercel.app), following each flow the way a user would.
 
+### 12.1 E2E Scenarios
 
-### 10.1 Planned E2E Scenarios
+| Test ID | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| E2E-01 | Search | Search "black holes" | Real papers from OpenAlex appear |
+| E2E-02 | Paper details + AI | Open a paper, ask "Summarize this paper" | Paper details and an AI answer appear |
+| E2E-03 | Login | Enter email, enter the 6-digit code, refresh | User is signed in and stays signed in |
+| E2E-04 | My Thread | Save a topic, open My Thread, tick a paper | Topic, learning path and read papers appear |
 
-| Test ID | Scenario | Expected Result |
-|---|---|---|
-| E2E-01 | Open the application | Homepage loads successfully |
-| E2E-02 | Search for a scientific topic | Relevant search results appear |
-| E2E-03 | Open a research paper | Paper details are displayed |
-| E2E-04 | Sign in using email OTP | User can access the account |
-| E2E-05 | Save a topic | Topic appears in My Thread |
-| E2E-06 | Open the user profile | Profile information is displayed |
-| E2E-07 | Admin suspends a user account | Account status is updated |
-| E2E-08 | Admin reactivates a user account | Account becomes active again |
+### 12.2 E2E Results
 
-### 10.2 E2E Test Results
+| Test ID | Result |
+|---|---|
+| E2E-01 | ✅ Pass |
+| E2E-02 | ✅ Pass |
+| E2E-03 | ✅ Pass |
+| E2E-04 | ✅ Pass |
 
-| Test ID | Actual Result | Status |
-|---|---|---|
-| E2E-01 | Not Run | Not Run |
-| E2E-02 | Not Run | Not Run |
-| E2E-03 | Not Run | Not Run |
-| E2E-04 | Not Run | Not Run |
-| E2E-05 | Not Run | Not Run |
-| E2E-06 | Not Run | Not Run |
-| E2E-07 | Not Run | Not Run |
-| E2E-08 | Not Run | Not Run |
+### 12.3 Evidence
+
+**E2E-01 Search**
+![E2E-01 Search](testing-evidence/e2e/E2E-01-search.png)
+
+**E2E-02 Paper details and AI answer**
+![E2E-02 Paper details](testing-evidence/e2e/E2E-02-paper-details.png)
+
+**E2E-03 Login**
+![E2E-03 Login](testing-evidence/e2e/E2E-03-login.png)
+
+**E2E-04 My Thread**
+![E2E-04 My Thread](testing-evidence/e2e/E2E-04-my-thread.png)
 
 ---
 
-## 11. Production Environment
+## 13. Production Environment
 
-The production environment makes the application accessible through public URLs.
-
-### 11.1 Deployment Links
+### 13.1 Deployment Links
 
 | Service | URL |
 |---|---|
-| Frontend | https://astrothread-app.vercel.app |
-| Backend Health Check | https://astrothread-api.vercel.app/api/health |
+| Live site (frontend) | https://astrothread-app.vercel.app |
+| Backend health check | https://astrothread-api.vercel.app/api/health |
 
+### 13.2 Hosting
+
+| Part | Where it runs | Notes |
+|---|---|---|
+| Frontend | Vercel project `astrothread` | Static Vite build; `vercel.json` forwards `/api/*` to the backend |
+| Backend | Vercel project `astrothread-api` | Flask on Vercel's Python runtime (`wsgi.py`, `pyproject.toml`) |
+| Database | Neon PostgreSQL | Pooled connection string in `DATABASE_URL` |
+
+Secrets are stored only in Vercel environment variables, never in GitHub.
+
+### 13.3 Local vs Production
+
+| | Local development | Production |
+|---|---|---|
+| Frontend | Vite on `localhost:5173` | `astrothread-app.vercel.app` |
+| Backend | Flask on `localhost:5000` | `astrothread-api.vercel.app` |
+| `/api` forwarding | `vite.config.ts` proxy | `vercel.json` rewrite |
+| Settings | `backend/.env` or Codespace secrets | Vercel environment variables |
+| Email codes | Printed in the terminal (`EMAIL_MODE=console`) | Sent by email (Gmail SMTP) |
+
+### 13.4 Deploying
+
+```bash
+# backend (check .vercel/project.json says astrothread-api)
+cd AstroThread-new/backend
+python -m unittest discover tests
+npx vercel --prod
+
+# frontend (check .vercel/project.json says astrothread)
+cd ../frontend
+npm run build
+npx vercel --prod
+```
+
+New migration files are applied to Neon first with `python manage.py migrate`.
 
 ---
 
-## 12. Known Limitations and Future Improvements
+## 14. Database
 
-The project was developed as a Minimum Viable Product (MVP).
+PostgreSQL on Neon. Tables are created by the SQL files in `backend/migrations/`, applied with `python manage.py migrate`. Every file can be run again safely (`IF NOT EXISTS`).
 
-Some features and improvements may require additional development beyond the current implementation.
+| Table | Purpose |
+|---|---|
+| `research_threads` | Searched topics, search counts, cache time, AI overview |
+| `research_papers` | Papers from OpenAlex, plus AI-written details |
+| `thread_papers` | Which papers belong to which topic, in rank order |
+| `users` | Accounts: name, email, account type, status (active or suspended) |
+| `otp_codes` | Email verification codes and their expiry |
+| `saved_topics` | Topics each user saved to My Thread |
+| `journey_steps` | Each user's searches and opened papers, with notes |
 
-### 12.1 Known Limitations
+| Migration | Adds |
+|---|---|
+| `001_create_tables.sql` | Topics, papers and their link |
+| `002_topic_overview.sql` | AI topic overview |
+| `003_paper_details.sql` | Venue, topic, keywords, authors, AI paper details |
+| `004_create_users.sql` | Users and OTP codes |
+| `005_my_thread.sql` | Saved topics and journey steps |
+| `006_account_status.sql` | Account status for suspension |
 
-Reported areas requiring further work or verification include:
-
-- Final frontend deployment.
-- Full frontend and backend integration testing.
-- Complete execution of the manual test plan.
-- End-to-end testing.
-- Verification of backend tests using real dependencies.
-- Verification of production email delivery.
-- Completion and verification of some API functionality.
-
-### 12.2 Future Improvements
-
-Potential future improvements include:
-
-- Expanding scientific topic coverage.
-- Improving AI-generated topic explanations.
-- Adding more research discovery features.
-- Improving search relevance.
-- Expanding learning paths.
-- Improving admin tools.
-- Adding more automated tests.
-- Establishing a continuous integration pipeline.
-- Improving API rate limiting and error handling.
+All queries use psycopg's `%s` placeholders to prevent SQL injection.
 
 ---
 
+## 15. API Documentation
 
-### 13 Figma Prototype
+Base URL: `https://astrothread-api.vercel.app` (the frontend calls it as `/api/...`). All responses are JSON. 🔒 = requires sign-in.
+
+### General
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/health` | Health check → `{"status": "ok"}` |
+| GET | `/api/topics/popular` | Most searched topics |
+| GET | `/api/search?q=<topic>` | Search papers (2–100 characters) |
+| GET | `/api/topics/<slug>/overview` | AI overview of a topic |
+| GET | `/api/images?q=<topic>` | NASA images for a topic |
+
+### Papers
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/papers/<id>` | Paper details (AI details generated on first visit) |
+| GET | `/api/papers/<id>/related` | Related papers |
+| GET | `/api/papers/lookup?title=<title>&year=<year>` | Find a paper by title; fetched from OpenAlex if new |
+| POST | `/api/papers/<id>/ask` 🔒 | Ask the AI about a paper. Body: `{"question": "..."}` |
+
+### Authentication
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/auth/signup` | Start sign-up and email a code |
+| POST | `/api/auth/verify` | Check the code and sign in |
+| POST | `/api/auth/login` | Email a sign-in code to an existing account |
+| GET | `/api/auth/me` | Current user |
+| PATCH | `/api/auth/me` 🔒 | Change display name |
+| DELETE | `/api/auth/me` 🔒 | Delete account |
+| POST | `/api/auth/logout` | Sign out |
+
+### My Thread 🔒
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/my-thread` | Saved topics and journey |
+| POST | `/api/my-thread/topics` | Save a topic |
+| DELETE | `/api/my-thread/topics/<topic>` | Remove a topic |
+| POST | `/api/my-thread/steps` | Add a journey step |
+| PATCH | `/api/my-thread/steps/<step_key>` | Edit a step's note |
+| DELETE | `/api/my-thread/steps/<step_key>` | Remove a step |
+| GET | `/api/my-thread/paths/<topic>` | Learning path for a topic |
+
+### Admin 🔒 (admin accounts only)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/admin/users` | List verified accounts |
+| PATCH | `/api/admin/users/<id>/status` | Suspend or reactivate an account |
+
+### Error Format
+
+```json
+{"error": "Short message for the user"}
+```
+
+| Status | Meaning |
+|---|---|
+| 400 | Invalid input |
+| 401 | Not signed in |
+| 403 | Not allowed (e.g. not an admin, or account suspended) |
+| 404 | Not found |
+| 500 | Database error |
+| 502 / 503 / 504 | External service failed, not configured, or too slow |
+
+---
+
+## 16. Team Contributions
+
+<!-- TODO: each member checks and corrects their own row -->
+
+| Member | Main Contributions |
+|---|---|
+| Alaa | Frontend design and pages, design system, search results views, My Thread interface |
+| Bothaina | Email sign-in (OTP), admin dashboard and account suspension, profile, learning paths from real papers, Resend support |
+| Dana | Backend features (NASA images, research assistant AI, popular topics, My Thread backend), connecting the frontend to the backend, paper lookup, deployment to Vercel and Neon, production bug fixes |
+
+---
+
+## 17. Known Limitations and Future Improvements
+
+### 17.1 Known Limitations
+
+- Email codes are sent with Gmail SMTP. Resend is supported in the code but needs a verified domain to send to all users.
+- Ticks on learning-path papers are stored in the browser, so they don't sync across devices yet.
+- The AI only reads a paper's title and abstract, not the full text.
+- Search depends on OpenAlex being available; cached results are used when it fails.
+- Lint reports 8 warnings (React Compiler performance suggestions).
+- Free-tier limits apply to Groq, Neon and Vercel.
+
+### 17.2 Future Improvements
+
+- Verify a custom domain and send email codes with Resend.
+- Store learning-path ticks in the database.
+- Resolve the remaining lint warnings.
+- Expand scientific topic coverage and learning paths.
+- Improve search relevance.
+- Add automated frontend and E2E tests.
+- Add a continuous integration pipeline.
+- Add API rate limiting.
+
+---
+
+## 18. UI/UX Design and Prototype
 
 [Open AstroThread Figma Prototype](https://www.figma.com/proto/5NnyTCEOvJdC5YbM9ZnxM6/AstroThread-Research-Explorer-%E2%80%94-Prototype?node-id=2-3&t=fdl21QCf0NDZQCO2-0&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=2%3A3)
 
+---
 
+## 19. Stage 4 Deliverables Checklist
+
+| Deliverable | Status |
+|---|---|
+| Source repository | ✅ [GitHub](https://github.com/Bothainakb/holberton-AstroThread) |
+| Deployed frontend | ✅ https://astrothread-app.vercel.app |
+| Deployed backend | ✅ https://astrothread-api.vercel.app/api/health |
+| Backend unit tests | ✅ 132 passing |
+| Frontend build | ✅ Passing |
+| Frontend lint | ✅ 0 errors (8 warnings) |
+| E2E tests and screenshots | ✅ 4/4 passed |
+| GitHub Projects link | TODO |
+| Sprint reviews | TODO |
+| Retrospectives | TODO |
 
 ---
 
