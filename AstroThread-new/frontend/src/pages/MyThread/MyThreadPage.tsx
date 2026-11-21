@@ -20,11 +20,13 @@ import {
 import type { JourneyStep, MyThread, SavedTopic } from "../../data/myThread";
 import {
   LEVEL_LABELS,
+  PATHS_COME_FROM_SERVER,
   STEP_STATUS_LABELS,
   findPathPaper,
   getLearningPath,
   getLearningPaths,
   getPathProgress,
+  loadLearningPaths,
 } from "../../data/learningPaths";
 import type {
   LearningLevel,
@@ -34,7 +36,6 @@ import type {
   StepProgress,
 } from "../../data/learningPaths";
 import { navigate, paperPath, routes } from "../../lib/router";
-import { setPathRead, usePathReads } from "../../data/pathReads";
 import "./MyThreadPage.css";
 
 type ThreadView = "overview" | "journey" | "map";
@@ -917,11 +918,31 @@ export function MyThreadPage() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
-  const pathReads = usePathReads(session?.email);
 
   useEffect(() => {
     document.title = "My Thread | AstroThread";
   }, []);
+
+  useEffect(() => {
+    if (!session || !PATHS_COME_FROM_SERVER) {
+      return; // الوضع التجريبي لا يحتاج إلى تحميل
+    }
+
+    const controller = new AbortController(); // لإلغاء الطلب إذا غادر المستخدم الصفحة
+    const savedTopics = topicsKey ? topicsKey.split("\n") : [];
+
+    // مسارات المواضيع المحفوظة + المواضيع الأكثر بحثاً (لاقتراحها على المستخدم)
+    getPopularTopics(controller.signal)
+      .catch((): PopularTopic[] => []) // إذا فشل الطلب نكمل بالمواضيع المحفوظة فقط
+      .then((popular) => loadLearningPaths([...savedTopics, ...popular.map((topic) => topic.query)]))
+      .then(() => {
+        if (!controller.signal.aborted) {
+          setPathsVersion((value) => value + 1); // إعادة رسم الصفحة بالمسارات الجديدة
+        }
+      });
+
+    return () => controller.abort();
+  }, [session, topicsKey]);
 
   function runSearch(nextQuery: string) {
     const trimmed = nextQuery.trim();
@@ -1021,7 +1042,14 @@ export function MyThreadPage() {
 
     let body;
 
-    if (!currentTopic) {
+        if (!pathsReady) {
+      // المسارات ما زالت تُحمّل من الخادم
+      body = (
+        <p className="my-thread__empty" role="status">
+          Loading your learning paths…
+        </p>
+      );
+    } else if (!currentTopic) {
       body = (
         <>
           <ChooseFirstTopic onSaveTopic={handleSaveTopic} />

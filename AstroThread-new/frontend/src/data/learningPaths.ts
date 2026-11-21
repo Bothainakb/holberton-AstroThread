@@ -1,4 +1,9 @@
-import { sameText } from "./myThread";
+import { sameText } from "./myThread"; // مقارنة نصين بدون اعتبار لحالة الأحرف
+import { apiBaseUrl, searchSource } from "../services/search/searchService"; // عنوان الخادم ومصدر البيانات
+
+// مع الخادم: المسارات تُبنى من الأوراق الحقيقية لكل موضوع (/api/my-thread/paths/<topic>)
+// بدون الخادم (الوضع التجريبي): نستخدم المسارات المكتوبة يدوياً في هذا الملف
+export const PATHS_COME_FROM_SERVER = searchSource === "api";
 
 export type LearningLevel = 1 | 2 | 3;
 
@@ -62,6 +67,7 @@ export const STEP_STATUS_LABELS: Record<StepStatus, string> = {
   todo: "Up next",
 };
 
+// المسارات التجريبية (تُستخدم فقط في الوضع التجريبي)
 const learningPaths: readonly LearningPath[] = [
   {
     topic: "Black Holes",
@@ -343,11 +349,80 @@ const learningPaths: readonly LearningPath[] = [
   },
 ];
 
+// المسارات التي حمّلناها من الخادم، حسب اسم الموضوع (بأحرف صغيرة)
+const loadedPaths = new Map<string, LearningPath>();
+// المواضيع التي طلبناها مسبقاً (حتى لا نطلبها مرة أخرى، حتى لو لم يكن لها مسار)
+const requestedTopics = new Set<string>();
+
+function pathKey(topic: string) {
+  return topic.trim().toLocaleLowerCase(); // "Black Holes" و "black holes" نفس الموضوع
+}
+
+function isLearningPath(value: unknown): value is LearningPath {
+  // التأكد من أن الرد القادم من الخادم مسار صالح قبل استخدامه
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const path = value as Partial<LearningPath>;
+  return (
+    typeof path.topic === "string" &&
+    typeof path.startPaperId === "string" &&
+    Array.isArray(path.steps) &&
+    path.steps.every((step) => Array.isArray(step?.papers)) &&
+    Array.isArray(path.next)
+  );
+}
+
+async function fetchPath(topic: string): Promise<void> {
+  // طلب مسار موضوع واحد من الخادم وحفظه
+  try {
+    const response = await fetch(`${apiBaseUrl}/my-thread/paths/${encodeURIComponent(topic)}`, {
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      return; // 404 يعني أن الموضوع ليس له مسار بعد
+    }
+
+    const data: unknown = await response.json();
+
+    if (isLearningPath(data)) {
+      loadedPaths.set(pathKey(topic), data); // بالاسم الذي طلبناه
+      loadedPaths.set(pathKey(data.topic), data); // وبالاسم الذي أرسله الخادم
+    }
+  } catch {
+    // تعذر الوصول إلى الخادم: الموضوع يظهر بدون مسار
+  }
+}
+
+export async function loadLearningPaths(topics: readonly string[]): Promise<void> {
+  // تحميل مسارات عدة مواضيع من الخادم مرة واحدة لكل موضوع
+  if (!PATHS_COME_FROM_SERVER) {
+    return; // الوضع التجريبي: المسارات موجودة في هذا الملف
+  }
+
+  const missing = [...new Set(topics.map((topic) => topic.trim()).filter(Boolean))].filter(
+    (topic) => !requestedTopics.has(pathKey(topic)),
+  );
+
+  missing.forEach((topic) => requestedTopics.add(pathKey(topic)));
+  await Promise.all(missing.map(fetchPath)); // جميع الطلبات في نفس الوقت
+}
+
 export function getLearningPaths(): readonly LearningPath[] {
-  return learningPaths;
+  if (!PATHS_COME_FROM_SERVER) {
+    return learningPaths;
+  }
+
+  return [...new Set(loadedPaths.values())]; // بدون تكرار (المسار محفوظ باسمين أحياناً)
 }
 
 export function getLearningPath(topic: string): LearningPath | undefined {
+  if (PATHS_COME_FROM_SERVER) {
+    return loadedPaths.get(pathKey(topic));
+  }
+
   return learningPaths.find((path) => sameText(path.topic, topic));
 }
 
