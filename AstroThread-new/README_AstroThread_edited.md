@@ -6,7 +6,7 @@
 |---|---|
 | Project | AstroThread – Research Explorer |
 | Repository | [GitHub Repository](https://github.com/Bothainakb/holberton-AstroThread) |
-| Final submission version | `AstroThread-new` |
+| Final application folder | `AstroThread-new` |
 | Latest reported commit | `0d46689` |
 | Project stage | Holberton School – Stage 4 |
 | Frontend | React, TypeScript, Vite |
@@ -110,7 +110,8 @@ AstroThread follows a topic-based research discovery approach:
 
 ### 2.7 Admin Features
 
-- Provides administrative account functionality.
+- Provides admin account functionality.
+- Allows admins to manage user accounts.
 - Supports account management actions such as suspending and reactivating accounts.
 
 ---
@@ -190,7 +191,7 @@ The intended final repository structure is:
         ├── database/
         └── ...
 
-The structure above describes the intended final submission layout. Confirm that the files and folders exist in the submitted branch before relying on these paths.
+This structure represents the intended final submission layout. Verify the actual folder and file names in the submitted branch before using this structure as the final repository reference.
 
 ---
 
@@ -250,7 +251,7 @@ Install dependencies:
 
 Configure the required environment variables in the `.env` file.
 
-Start the Flask application using the project's configured entry point.
+Start the Flask application using the backend entry point configured in the project.
 
 ### 5.6 Database Setup
 
@@ -260,7 +261,7 @@ Start the Flask application using the project's configured entry point.
 4. Run the database migrations in the correct order.
 5. Verify the database connection.
 
-**Important:** Environment variables and API keys must not be committed to the repository.
+**Important:** Environment variables, database credentials, and API keys must not be committed to the repository.
 
 ---
 
@@ -302,7 +303,7 @@ The project planning documentation refers to the following three-sprint schedule
 | Sprint 2 | October 29–November 11, 2026 | Main feature development and integration |
 | Sprint 3 | November 12–25, 2026 | Testing, bug fixing, and final preparation |
 
-These are the planned sprint dates. Actual completion dates and outcomes should be documented in the sprint reviews.
+These are planned sprint dates. Actual completion dates and outcomes should be documented in the sprint reviews.
 
 ### 6.4 Planning Resources
 
@@ -333,8 +334,6 @@ Each review should document:
 | Sprint 3 | Pending documentation | Add the actual sprint review |
 
 ### 7.2 Sprint Review Template
-
-Use the following structure for each actual review:
 
 #### Sprint [Number] Review
 
@@ -589,8 +588,8 @@ It checks the interaction between the frontend, backend, database, and external 
 | E2E-04 | Sign in using email OTP | User can access the account |
 | E2E-05 | Save a topic | Topic appears in My Thread |
 | E2E-06 | Open the user profile | Profile information is displayed |
-| E2E-07 | Admin suspends an account | Account status is updated |
-| E2E-08 | Admin reactivates an account | Account becomes active again |
+| E2E-07 | Admin suspends a user account | Account status is updated |
+| E2E-08 | Admin reactivates a user account | Account becomes active again |
 
 ### 12.2 E2E Test Results
 
@@ -706,7 +705,7 @@ Migrations should be executed in the correct order.
 
 The backend exposes API endpoints used by the frontend.
 
-The API handles authentication, search, research data, user information, and administrative functionality.
+The API handles authentication, search, research data, user information, and admin functionality.
 
 ### 15.1 Main API Areas
 
@@ -719,7 +718,7 @@ The API handles authentication, search, research data, user information, and adm
 | Authentication | Handles user sign-in and OTP |
 | Profile | Provides user profile information |
 | Saved Topics | Manages saved research topics |
-| Admin | Handles administrative account operations |
+| Admin | Handles admin account management operations |
 
 ### 15.2 Health Endpoint
 
@@ -823,7 +822,7 @@ Potential future improvements include:
 - Adding more research discovery features.
 - Improving search relevance.
 - Expanding learning paths.
-- Improving administrative tools.
+- Improving admin tools.
 - Adding more automated tests.
 - Establishing a continuous integration pipeline.
 - Improving API rate limiting and error handling.
@@ -860,7 +859,7 @@ The application design includes:
 - My Thread.
 - User authentication.
 - User profile.
-- Administrative pages.
+- Admin pages.
 
 ---
 
