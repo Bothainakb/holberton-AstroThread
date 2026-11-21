@@ -7,10 +7,17 @@ import { Button } from "../../components/Button/Button";
 import { ResearchAssistant } from "../../components/ResearchAssistant/ResearchAssistant";
 import { getCurrentSession } from "../../data/demoAuth";
 import { getMyThread, isTopicSaved, recordPaperView, saveTopic } from "../../data/myThread";
+import { setPathRead } from "../../data/pathReads";
 import { navigate, paperPath, routes, useLocation } from "../../lib/router";
 import { formatAllAuthors } from "../../lib/formatPaper";
 import { PAPER_TYPE_LABELS } from "../../lib/searchResults";
-import { getPaper, getRelatedPapers } from "../../services/research/researchService";
+import {
+  findLivePaperId,
+  getPaper,
+  getRelatedPapers,
+  isSamplePaperId,
+} from "../../services/research/researchService";
+import { searchSource } from "../../services/search/searchService";
 import type { PaperDetails, PaperSummary } from "../../types/research";
 import "./PaperDetailsPage.css";
 
@@ -100,8 +107,18 @@ export function PaperDetailsPage({ paperId }: PaperDetailsPageProps) {
   useEffect(() => {
     const controller = new AbortController();
 
-    getPaper(paperId, controller.signal)
-      .then(async (loadedPaper) => {
+    findLivePaperId(paperId, controller.signal)
+      .then(async (liveId) => {
+        if (liveId) {
+          if (session) {
+            setPathRead(session.email, paperId, true);
+          }
+
+          navigate(`${paperPath(liveId)}${window.location.search}`, { replace: true });
+          return;
+        }
+
+        const loadedPaper = await getPaper(paperId, controller.signal);
         const relatedPapers = loadedPaper
           ? await getRelatedPapers(loadedPaper, controller.signal)
           : [];
@@ -117,12 +134,22 @@ export function PaperDetailsPage({ paperId }: PaperDetailsPageProps) {
       });
 
     return () => controller.abort();
-  }, [paperId, requestKey]);
+  }, [paperId, requestKey, session]);
 
   useEffect(() => {
-    if (paper && session) {
-      setMyThread(recordPaperView(session.email, paper));
+    if (!paper || !session) {
+      return;
     }
+
+    if (isSamplePaperId(paper.id)) {
+      setPathRead(session.email, paper.id, true);
+
+      if (searchSource === "api") {
+        return;
+      }
+    }
+
+    setMyThread(recordPaperView(session.email, paper));
   }, [paper, session]);
 
   useEffect(() => {
