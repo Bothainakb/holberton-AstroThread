@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, KeyboardEvent } from "react";
 import { Button } from "../Button/Button";
 import { askAboutPaper } from "../../services/research/askService";
+import { isSamplePaperId } from "../../services/research/researchService";
 import { searchSource } from "../../services/search/searchService";
 import type { PaperDetails } from "../../types/research";
 import "./ResearchAssistant.css";
@@ -31,6 +32,7 @@ const USES_AI = searchSource === "api";
 const LIVE_NOTE = "Written by AI from this paper’s abstract.";
 const ERROR_NOTE = "No answer this time. You can ask again.";
 const DEMO_NOTE = "Answer from this paper’s details. Live AI answers aren’t connected yet.";
+const SAVED_NOTE = "Answer from this paper’s saved details.";
 const THINKING_DELAY_MS = 600;
 const MAX_QUESTION_LENGTH = 300;
 
@@ -64,7 +66,7 @@ function answerFromPaper(paper: PaperDetails, question: string): string {
     } paper like this one, the usual questions are ${focus}.`;
   }
 
-  return "Live answers aren’t available yet. Try one of the suggested questions, which are answered from this paper’s details.";
+  return "For this paper I can answer the suggested questions below, from its saved details. Try one of them.";
 }
 
 function SparkIcon() {
@@ -151,13 +153,13 @@ export function ResearchAssistant({
     ]);
     setIsThinking(true);
 
-    if (USES_AI) {
+    if (USES_AI && !isSamplePaperId(paper.id)) {
       void askTheAi(text);
       return;
     }
 
     timer.current = window.setTimeout(() => {
-      addAnswer(answerFromPaper(paper, text), DEMO_NOTE);
+      addAnswer(answerFromPaper(paper, text), USES_AI ? SAVED_NOTE : DEMO_NOTE);
     }, THINKING_DELAY_MS);
   }
 
