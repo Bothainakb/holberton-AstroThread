@@ -1,6 +1,8 @@
 import json
 import os
+import re
 import socket
+from difflib import SequenceMatcher
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -19,7 +21,8 @@ MAX_AUTHORS = 3
 MAX_AUTHOR_LIST = 10
 MAX_KEYWORDS = 6
 MAX_ABSTRACT_LENGTH = 1200
-
+LOOKUP_CANDIDATES = 5
+TITLE_MATCH_RATIO = 0.85
 
 class OpenAlexError(Exception):
 
@@ -50,6 +53,36 @@ def search_papers(query):
     return [paper for paper in papers if paper is not None]
 
 
+    def find_paper(title, year=None):
+   
+    words = " ".join(re.sub(r"[,:|]", " ", title).split())
+    filters = [f"title.search:{words}"]
+    if year:
+        filters.append(f"publication_year:{year - 1}-{year + 1}")
+    params = urlencode({
+        "filter": ",".join(filters),
+        "sort": "cited_by_count:desc",
+        "per-page": LOOKUP_CANDIDATES,
+        "select": FIELDS,
+    })
+    data = get_json(f"{WORKS_URL}?{params}")
+
+    results = data.get("results") if isinstance(data, dict) else None
+    if not isinstance(results, list):
+        raise OpenAlexError("OpenAlex sent results in an unexpected format")
+
+    for work in results:
+        paper = to_paper(work)
+        if paper is not None and same_title(paper["title"], title):
+            return paper
+    return None
+
+
+def same_title(a, b):
+    def simple(text):
+        return " ".join(re.sub(r"[^a-z0-9]+", " ", text.lower()).split())
+
+    return SequenceMatcher(None, simple(a), simple(b)).ratio() >= TITLE_MATCH_RATIO
 def get_json(url):
     headers = {"Accept": "application/json", "User-Agent": "AstroThread/1.0"}
     api_key = os.getenv("OPENALEX_API_KEY", "").strip()
