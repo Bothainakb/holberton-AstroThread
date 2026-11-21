@@ -26,7 +26,6 @@ function load(email: string): ReadonlySet<string> {
       ids = parsed.filter((id): id is string => typeof id === "string");
     }
   } catch {
-
   }
 
   const reads = new Set(ids);
@@ -40,7 +39,6 @@ function save(email: string, reads: ReadonlySet<string>) {
   try {
     window.localStorage.setItem(storageKey(email), JSON.stringify([...reads]));
   } catch {
-    // The tick still shows until the page is reloaded.
   }
 
   listeners.forEach((listener) => listener());
