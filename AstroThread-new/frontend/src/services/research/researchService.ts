@@ -41,6 +41,10 @@ async function fetchJson(path: string, signal: AbortSignal): Promise<unknown> {
   return response.json();
 }
 
+export function isSamplePaperId(id: string) {
+  return id.startsWith("sample-");
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
 }
@@ -66,7 +70,7 @@ export async function getPaper(
   id: string,
   signal: AbortSignal,
 ): Promise<PaperDetails | null> {
-  if (searchSource === "api") {
+  if (searchSource === "api" && !isSamplePaperId(id)) {
     const body = await fetchJson(`/papers/${encodeURIComponent(id)}`, signal);
     return isRecord(body) ? toPaperDetails(body) : null;
   }
@@ -83,11 +87,44 @@ export async function getPaper(
   return toPaperDetails({ ...paper, ...samplePaperDetails[paper.id] });
 }
 
+export async function findLivePaperId(
+  id: string,
+  signal: AbortSignal,
+): Promise<string | null> {
+  if (searchSource !== "api" || !isSamplePaperId(id)) {
+    return null;
+  }
+
+  const { samplePapers } = await loadSampleLibrary();
+  const sample = samplePapers.find((item) => item.id === id);
+
+  if (!sample) {
+    return null;
+  }
+
+  const params = new URLSearchParams({ title: sample.title });
+
+  if (sample.year) {
+    params.set("year", String(sample.year));
+  }
+
+  try {
+    const body = await fetchJson(`/papers/lookup?${params.toString()}`, signal);
+    return isRecord(body) && typeof body.id === "string" ? body.id : null;
+  } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+
+    return null;
+  }
+}
+
 export async function getRelatedPapers(
   paper: PaperSummary,
   signal: AbortSignal,
 ): Promise<PaperSummary[]> {
-  if (searchSource === "api") {
+  if (searchSource === "api" && !isSamplePaperId(paper.id)) {
     const body = await fetchJson(
       `/papers/${encodeURIComponent(paper.id)}/related`,
       signal,
