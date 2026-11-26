@@ -229,7 +229,7 @@ export function SignUpPage() {
           <div className="sign-up-page__terms">
             <CheckboxField
               id={FIELD_IDS.terms}
-              label="I agree to the Terms of Use and Privacy Policy."
+              label="I agree to the Terms of Use."
               checked={acceptedTerms}
               aria-invalid={errors.terms ? true : undefined}
               aria-describedby={errors.terms ? TERMS_ERROR_ID : undefined}
