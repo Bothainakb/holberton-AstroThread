@@ -1,4 +1,3 @@
-
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
@@ -185,6 +184,92 @@ describe('useRecentSearches', () => {
     act(() => {
       result.current.clear();
     });
+
+    expect(result.current.searches).toEqual([]);
+  });
+});
+
+describe('recent searches for each person', () => {
+  const firstUser = { email: 'First@Example.com', fullName: 'First User' };
+  const secondUser = { email: 'second@example.com', fullName: 'Second User' };
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+    vi.mocked(getCurrentSession).mockReturnValue(null);
+  });
+
+  it('hides guest searches after logging in', () => {
+    addRecentSearch('black holes');
+
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+
+    expect(getRecentSearches()).toEqual([]);
+  });
+
+  it('keeps each account\'s searches separate', () => {
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    addRecentSearch('black holes');
+
+    vi.mocked(getCurrentSession).mockReturnValue(secondUser as never);
+    addRecentSearch('exoplanets');
+
+    expect(getRecentSearches()).toEqual(['exoplanets']);
+
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    expect(getRecentSearches()).toEqual(['black holes']);
+  });
+
+  it('hides an account\'s searches after logging out and keeps them for next time', () => {
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    addRecentSearch('black holes');
+
+    vi.mocked(getCurrentSession).mockReturnValue(null);
+    expect(getRecentSearches()).toEqual([]);
+
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    expect(getRecentSearches()).toEqual(['black holes']);
+  });
+
+  it('saves an account\'s searches under its lowercased email', () => {
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    addRecentSearch('black holes');
+
+    expect(localStorage.getItem(`${STORAGE_KEY}:first@example.com`)).toBe(
+      JSON.stringify(['black holes']),
+    );
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  it('clearing only removes the current person\'s searches', () => {
+    addRecentSearch('guest search');
+
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    addRecentSearch('black holes');
+    clearRecentSearches();
+
+    expect(getRecentSearches()).toEqual([]);
+
+    vi.mocked(getCurrentSession).mockReturnValue(null);
+    expect(getRecentSearches()).toEqual(['guest search']);
+  });
+
+  it('records searches in My Thread only for signed-in users', () => {
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    addRecentSearch('black holes');
+
+    expect(recordSearch).toHaveBeenCalledWith('First@Example.com', 'black holes');
+  });
+
+  it('shows the right list after logging out without leaving the page', () => {
+    vi.mocked(getCurrentSession).mockReturnValue(firstUser as never);
+    addRecentSearch('black holes');
+
+    const { result, rerender } = renderHook(() => useRecentSearches());
+    expect(result.current.searches).toEqual(['black holes']);
+
+    vi.mocked(getCurrentSession).mockReturnValue(null);
+    rerender();
 
     expect(result.current.searches).toEqual([]);
   });
