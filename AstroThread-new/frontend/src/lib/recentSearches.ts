@@ -67,7 +67,10 @@ function sendToServer(method: "POST" | "DELETE", path: string, body?: unknown) {
     });
 }
 
-export async function syncRecentSearches(email: string | null | undefined): Promise<string[] | null> {
+export async function syncRecentSearches(
+  email: string | null | undefined,
+  signal?: AbortSignal,
+): Promise<string[] | null> {
   if (!USES_BACKEND || !email) {
     return null;
   }
@@ -75,6 +78,7 @@ export async function syncRecentSearches(email: string | null | undefined): Prom
   try {
     const response = await fetch(`${apiBaseUrl}/recent-searches`, {
       headers: { Accept: "application/json" },
+      signal,
     });
 
     if (!response.ok) {
@@ -150,17 +154,15 @@ export function useRecentSearches() {
       return;
     }
 
-    let active = true;
+    const controller = new AbortController();
 
-    syncRecentSearches(email).then((fromServer) => {
-      if (active && fromServer) {
+    syncRecentSearches(email, controller.signal).then((fromServer) => {
+      if (!controller.signal.aborted && fromServer) {
         setSaved({ key: keyFor(email), searches: fromServer });
       }
     });
 
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [email]);
 
   return {
